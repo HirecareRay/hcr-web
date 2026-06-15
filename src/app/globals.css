@@ -1,1 +1,75 @@
 @import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* @theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+} */
+
+/* @theme {
+  --color-main: #6000ff;
+  --color-mainL: #eef2ff;
+  --color-subText: #9ca3af;
+  --color-bgc: #f7f9fb;
+  --color-bgc2: #faf5ff;
+  --color-inputBox: #f3f4f6;
+  --color-red: #fee2e1;
+  --color-redL: #fef2f2;
+  --color-yellow: #fef9c3;
+  --color-yellowL: #fefce8;
+  --color-green: #58ba72;
+  --color-greenL: #dcfce7;
+  --font-sans: "Pretendard";
+} */
+
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+} */
+
+* {
+  max-width: min(100svw, 100svh);
+  outline: none;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-size: clamp(10px, min(2.54vw, 1.17vh), 200%);
+  outline: none;
+  margin: none;
+  padding: none;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: none;
+  border: none;
+}
+
+.text-good {
+  background: linear-gradient(180deg, #5046e5 50%, #9134eb 143.75%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
