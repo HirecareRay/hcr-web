@@ -5,10 +5,5 @@ interface Props {
 }
 
 export function FinancialChart({ data }: Props) {
-  return (
-    <div>
-      <p className="text-sm text-gray-500">{data.source} · {data.year}</p>
-      <p>{data.summary}</p>
-    </div>
-  )
+  return <></>
 }
