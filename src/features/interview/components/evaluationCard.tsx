@@ -5,11 +5,5 @@ interface Props {
 }
 
 export function EvaluationCard({ evaluation }: Props) {
-  return (
-    <div>
-      <p>점수: {evaluation.score}점</p>
-      <p>{evaluation.feedback}</p>
-      <p>{evaluation.improvement}</p>
-    </div>
-  )
+  return <></>
 }

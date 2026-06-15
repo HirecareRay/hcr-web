@@ -1,7 +1,3 @@
-export default function InterviewPage({
-  params,
-}: {
-  params: { companyId: string }
-}) {
-  return <div>{params.companyId}</div>
+export default function InterviewPage() {
+  return <></>
 }
