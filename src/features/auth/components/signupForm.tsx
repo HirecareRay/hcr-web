@@ -3,33 +3,49 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
-import { loginSchema, type LoginFormValues } from "../types/auth"
-import { useLogin } from "../hooks/useLogin"
+import { signupSchema, type SignupFormValues } from "../types/auth"
+import { useSignup } from "../hooks/useSignup"
 
-export function LoginForm() {
-  const { handleLogin, error, isLoading } = useLogin()
+export function SignupForm() {
+  const { handleSignup, error, isLoading } = useSignup()
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
   })
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-blue-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-blue-50 px-4 py-8">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600">
             <span className="text-lg font-bold text-white">H</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">로그인</h1>
-          <p className="mt-1 text-sm text-gray-500">HireCareRay에 오신 걸 환영합니다</p>
+          <h1 className="text-2xl font-bold text-gray-900">회원가입</h1>
+          <p className="mt-1 text-sm text-gray-500">취업 준비를 시작해보세요</p>
         </div>
 
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <form onSubmit={handleSubmit(handleLogin)} className="space-y-4">
+          <form onSubmit={handleSubmit(handleSignup)} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-gray-700">
+                이름
+              </label>
+              <div className="flex items-center rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+                <input
+                  id="name"
+                  type="text"
+                  {...register("name")}
+                  placeholder="이름을 입력하세요"
+                  className="w-full bg-transparent text-sm text-gray-800 placeholder-gray-400"
+                />
+              </div>
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+            </div>
+
             <div>
               <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
                 이메일
@@ -55,12 +71,33 @@ export function LoginForm() {
                   id="password"
                   type="password"
                   {...register("password")}
-                  placeholder="비밀번호를 입력하세요"
+                  placeholder="8자 이상 입력하세요"
                   className="w-full bg-transparent text-sm text-gray-800 placeholder-gray-400"
                 />
               </div>
               {errors.password && (
                 <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                비밀번호 확인
+              </label>
+              <div className="flex items-center rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  {...register("confirmPassword")}
+                  placeholder="비밀번호를 다시 입력하세요"
+                  className="w-full bg-transparent text-sm text-gray-800 placeholder-gray-400"
+                />
+              </div>
+              {errors.confirmPassword && (
+                <p className="mt-1 text-xs text-red-500">{errors.confirmPassword.message}</p>
               )}
             </div>
 
@@ -75,15 +112,15 @@ export function LoginForm() {
               disabled={isLoading}
               className="mt-2 w-full rounded-lg bg-blue-600 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-blue-300"
             >
-              {isLoading ? "로그인 중..." : "로그인"}
+              {isLoading ? "가입 중..." : "회원가입"}
             </button>
           </form>
         </div>
 
         <p className="mt-5 text-center text-sm text-gray-500">
-          계정이 없으신가요?{" "}
-          <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-700">
-            회원가입
+          이미 계정이 있으신가요?{" "}
+          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
+            로그인
           </Link>
         </p>
       </div>
