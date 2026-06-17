@@ -20,9 +20,11 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.18.0",
     "next": "15.5.19",
+    "next-swagger-doc": "^0.4.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.79.0",
+    "swagger-ui-react": "^5.32.6",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
