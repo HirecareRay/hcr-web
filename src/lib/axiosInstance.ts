@@ -13,8 +13,8 @@ import axios from "axios"
 
 // axios 인스턴스 생성 — 프로젝트 전용 HTTP 클라이언트
 const axiosInstance = axios.create({
-  // 모든 요청의 기본 URL. 환경변수가 없으면 로컬 Flask 서버(5000번 포트)로 연결
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000",
+  // 모든 요청의 기본 URL. 환경변수가 없으면 로컬 Next 서버(3000번 포트)로 연결
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000",
   // 서버 응답이 10초(10000ms) 넘으면 자동으로 요청 취소
   timeout: 10000,
   // 모든 요청에 JSON 형식임을 명시 (서버가 body를 올바르게 파싱하도록)
