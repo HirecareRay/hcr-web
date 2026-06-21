@@ -34,7 +34,7 @@ export function NavBar() {
             <li key={label} className="relative flex-1">
               {/* 활성 탭 상단 인디케이터 */}
               {isActive && (
-                <span className="bg-primary absolute inset-x-0 top-0 mx-auto h-[3px] w-20 rounded-full" />
+                <span className="bg-primary absolute inset-x-0 top-0 mx-auto h-1 w-20 rounded-full" />
               )}
 
               <Link
