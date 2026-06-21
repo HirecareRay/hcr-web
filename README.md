@@ -1,22 +1,22 @@
-# HCR (HireCareRay) — Frontend
+# HCR (HireCareRay)
 
 채용공고·기업사이트·DART 기반 기업 분석 + AI 모의 면접을 제공하는 원스톱 취업 준비 서비스.
 
 ## 기술 스택
 
-| 패키지 | 버전 | 용도 |
-|--------|------|------|
-| Next.js | 15 | 프레임워크 (App Router + Turbopack) |
-| React | 19 | UI 라이브러리 |
-| TypeScript | 5 | 타입 안전성 |
-| Tailwind CSS | 4 | 스타일링 |
-| axios | latest | HTTP 통신 |
-| @tanstack/react-query | latest | 서버 상태 관리 |
-| react-hook-form + zod + @hookform/resolvers | latest | 폼 + 검증 |
-| zustand | latest | 전역 상태 (로그인 등) |
-| clsx + tailwind-merge | latest | 조건부 클래스 유틸리티 (`cn()`) |
-| lucide-react | latest | 아이콘 |
-| Prettier | 3 | 코드 포맷팅 |
+| 패키지                                      | 버전   | 용도                                |
+| ------------------------------------------- | ------ | ----------------------------------- |
+| Next.js                                     | 15     | 프레임워크 (App Router + Turbopack) |
+| React                                       | 19     | UI 라이브러리                       |
+| TypeScript                                  | 5      | 타입 안전성                         |
+| Tailwind CSS                                | 4      | 스타일링                            |
+| axios                                       | latest | HTTP 통신                           |
+| @tanstack/react-query                       | latest | 서버 상태 관리                      |
+| react-hook-form + zod + @hookform/resolvers | latest | 폼 + 검증                           |
+| zustand                                     | latest | 전역 상태 (로그인 등)               |
+| clsx + tailwind-merge                       | latest | 조건부 클래스 유틸리티 (`cn()`)     |
+| lucide-react                                | latest | 아이콘                              |
+| Prettier                                    | 3      | 코드 포맷팅                         |
 
 ## 개발 명령어
 
@@ -82,6 +82,7 @@ app/page.tsx            ← import + return만 (코드 작성 금지)
 ```
 
 **`app/` 규칙:**
+
 - 로직, 상태, API 호출 작성 금지
 - `features/`에서 만든 컴포넌트를 import해서 return만 할 것
 
@@ -105,15 +106,16 @@ export default function CompanyPage({ params }) {
 
 ## 코드 컨벤션
 
-| 대상 | 규칙 |
-|------|------|
-| 컴포넌트 / 클래스 | `PascalCase` |
-| 변수 / 함수 / 상수 | `camelCase` |
-| 파일명 | `camelCase` |
+| 대상               | 규칙         |
+| ------------------ | ------------ |
+| 컴포넌트 / 클래스  | `PascalCase` |
+| 변수 / 함수 / 상수 | `camelCase`  |
+| 파일명             | `camelCase`  |
 
 ## Git 컨벤션
 
 **브랜치:**
+
 ```
 feat/front/[feature-name]   # 기능 개발 (develop → develop), 영어 kebab-case
 issue/[feature-name]        # 버그 수정 (develop → develop), 영어 kebab-case
@@ -121,6 +123,7 @@ hotfix/[feature-name]       # 배포 후 긴급 수정 (main → main), 영어 k
 ```
 
 **커밋:** 한국어, 명령문, 50자 이내, 마침표 없음
+
 ```
 feat: 회사 검색 페이지 추가
 
