@@ -12,21 +12,28 @@
   --font-mono: var(--font-geist-mono);
 } */
 
-/* @theme {
-  --color-main: #6000ff;
-  --color-mainL: #eef2ff;
-  --color-subText: #9ca3af;
-  --color-bgc: #f7f9fb;
-  --color-bgc2: #faf5ff;
-  --color-inputBox: #f3f4f6;
-  --color-red: #fee2e1;
-  --color-redL: #fef2f2;
-  --color-yellow: #fef9c3;
-  --color-yellowL: #fefce8;
-  --color-green: #58ba72;
-  --color-greenL: #dcfce7;
-  --font-sans: "Pretendard";
-} */
+/* 공통 디자인 토큰 — Figma "01.공통 컴포넌트 & 디자인 토큰" 기준 */
+@theme {
+  /* Brand / Coral */
+  --color-primary: #ff6b57; /* 메인 강조: 활성 탭, 인디케이터 */
+  --color-coral-deep: #ff5a4f; /* 헤더 배경 */
+  --color-coral-beam: #ff8a6b; /* 보조 코랄 */
+  --color-coral-light: #fff3ef; /* 활성 탭 배경 */
+
+  /* Surface / Border */
+  --color-background: #fafafa; /* neutral/background — 화면 기본 배경 */
+  --color-warm-bg: #fff9f6; /* 웜 톤 배경 (강조 영역) */
+  --color-warm-border: #f1d8cf; /* 보더 */
+
+  /* Status */
+  --color-error: #f24d4d;
+  --color-success: #26bf67;
+
+  /* Text (컴포넌트에서 관찰된 중립색) */
+  --color-ink: #1a1a1a; /* 강한 본문 */
+  --color-muted: #666666; /* 보조 텍스트 */
+  --color-disabled: #a6a6a6; /* 비활성 텍스트 */
+}
 
 /* @media (prefers-color-scheme: dark) {
   :root {
@@ -37,7 +44,6 @@
 
 @layer base {
   * {
-    max-width: 100%;
     outline: none;
   }
 }
