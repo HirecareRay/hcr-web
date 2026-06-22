@@ -1,4 +1,28 @@
+import axiosInstance from "@/lib/axiosInstance"
+import { logger } from "@/lib/logger"
 import type { JobDetail, JobListItem } from "../types/job"
+
+export async function fetchJobs(): Promise<JobListItem[]> {
+  try {
+    const { data } = await axiosInstance.get<{ success: boolean; data: JobListItem[] }>("/api/jobs")
+    return data.data
+  } catch (error) {
+    logger.error("fetchJobs 실패", error)
+    return jobListFixtures
+  }
+}
+
+export async function fetchJobDetail(id: string): Promise<JobDetail | undefined> {
+  try {
+    const { data } = await axiosInstance.get<{ success: boolean; data: JobDetail }>(
+      `/api/jobs/${id}`
+    )
+    return data.data
+  } catch (error) {
+    logger.error("fetchJobDetail 실패", error)
+    return jobDetailFixtures.find((job) => job.id === id)
+  }
+}
 
 export const jobListFixtures: JobListItem[] = [
   {
