@@ -11,6 +11,31 @@ export const userProfileFixture: UserProfileFixture = {
   completionRate: 65,
 }
 
+export const jobCategories = [
+  {
+    label: "개발",
+    jobs: ["프론트엔드", "백엔드", "풀스택", "iOS", "Android", "DevOps", "QA"],
+  },
+  {
+    label: "데이터",
+    jobs: ["데이터 분석", "머신러닝", "데이터 엔지니어", "BI 분석"],
+  },
+  {
+    label: "디자인",
+    jobs: ["UI/UX", "그래픽 디자인", "제품 디자인", "브랜드 디자인"],
+  },
+  {
+    label: "기획",
+    jobs: ["서비스 기획", "PM", "콘텐츠 기획", "마케팅"],
+  },
+  {
+    label: "보안",
+    jobs: ["정보보안", "클라우드 보안", "개인정보보호", "침해 대응"],
+  },
+]
+
+export const defaultInterestJobs = ["프론트엔드", "스타트업", "신입"]
+
 export const careerDocumentFixtures: CareerDocumentFixture[] = [
   {
     id: "resume",
