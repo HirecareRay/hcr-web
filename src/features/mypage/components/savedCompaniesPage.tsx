@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { BookOpen, ChevronLeft, Sparkles } from "lucide-react"
 
 const savedCompanies = [
@@ -13,6 +14,7 @@ const savedCompanies = [
 ]
 
 export function SavedCompaniesPage() {
+  const router = useRouter()
   return (
     <section className="bg-background min-h-full pb-10">
       <header className="border-warm-border border-b bg-white px-5 pt-10 pb-4">
@@ -52,14 +54,17 @@ export function SavedCompaniesPage() {
                   </span>
                 </div>
               </div>
-              <Link
-                href={`/company/${company.id}`}
+              <button
+                type="button"
                 className="bg-coral-light text-primary flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[0.625rem] font-semibold"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.preventDefault()
+                  router.push(`/company/${company.id}`)
+                }}
               >
                 <Sparkles className="size-3" />
                 AI 리포트
-              </Link>
+              </button>
             </Link>
           ))}
         </div>
