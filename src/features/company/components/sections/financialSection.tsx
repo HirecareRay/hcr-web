@@ -1,5 +1,6 @@
 import { ReportSection } from "../reportSection"
 import { FinancialChart } from "../financialChart"
+import { AiSummary } from "../aiSummary"
 import type { FinancialSection as FinancialData } from "../../types/company"
 
 interface Props {
@@ -20,9 +21,9 @@ export function FinancialSection({ data }: Props) {
         </div>
       </div>
 
-      <p className="bg-warm-bg text-muted mt-5 rounded-lg px-4 py-3 text-sm leading-relaxed">
-        {data.summary}
-      </p>
+      <div className="mt-5">
+        <AiSummary>{data.summary}</AiSummary>
+      </div>
     </ReportSection>
   )
 }

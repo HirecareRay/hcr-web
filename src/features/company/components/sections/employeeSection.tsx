@@ -38,13 +38,13 @@ export function EmployeeSection({ data }: Props) {
 
       <div className="mt-4">
         <div className="mb-1 flex justify-between text-xs font-medium">
-          <span style={{ color: "#2f6fed" }}>남성 {ratio(data.maleCount, data.totalCount)}</span>
+          <span className="text-info">남성 {ratio(data.maleCount, data.totalCount)}</span>
           <span className="text-primary">여성 {ratio(data.femaleCount, data.totalCount)}</span>
         </div>
         <div className="bg-warm-border/40 flex h-2 w-full overflow-hidden rounded-full">
           <div
-            className="h-full"
-            style={{ width: ratio(data.maleCount, data.totalCount), backgroundColor: "#2f6fed" }}
+            className="bg-info h-full"
+            style={{ width: ratio(data.maleCount, data.totalCount) }}
           />
           <div
             className="bg-primary h-full"

@@ -1,4 +1,5 @@
 import { ReportSection } from "../reportSection"
+import { AiSummary } from "../aiSummary"
 import { formatDate } from "../../lib/formatters"
 import type { GrowthSection as GrowthData } from "../../types/company"
 
@@ -9,7 +10,7 @@ interface Props {
 export function GrowthSection({ data }: Props) {
   return (
     <ReportSection title="성장성 · 뉴스">
-      <p className="text-ink text-sm leading-relaxed">{data.summary}</p>
+      <AiSummary>{data.summary}</AiSummary>
 
       {data.news.length > 0 && (
         <ul className="divide-warm-border mt-4 divide-y">
@@ -24,7 +25,7 @@ export function GrowthSection({ data }: Props) {
                 {item.title}
               </a>
               <p className="text-disabled mt-0.5 text-xs">
-                {item.source} · {formatDate(item.publishedAt)}
+                {item.media} · {formatDate(item.date)}
               </p>
             </li>
           ))}
