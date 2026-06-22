@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import {
   Bookmark,
   BriefcaseBusiness,
@@ -8,6 +9,7 @@ import {
   ChevronRight,
   MapPin,
   Search,
+  Sparkles,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useJobList } from "../hooks/useJobList"
@@ -38,60 +40,76 @@ function JobCard({
 }) {
   return (
     <article className="border-warm-border rounded-2xl border bg-white p-4">
-      <div className="flex items-start gap-3">
-        <div className="bg-coral-light text-primary flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold">
-          CJ
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "rounded-full px-2 py-1 text-[0.625rem] font-bold",
-                job.status === "closed" ? "bg-warm-bg text-disabled" : "bg-coral-light text-primary"
-              )}
-            >
-              {statusLabels[job.status]}
-            </span>
-            <span className="text-muted text-xs font-semibold">{job.companyName}</span>
+      <Link href={`/jobs/${job.id}`} className="block">
+        <div className="flex items-start gap-3">
+          <div className="bg-coral-light text-primary flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold">
+            CJ
           </div>
-          <h2 className="text-ink mt-2 text-sm leading-5 font-bold">{job.title}</h2>
-        </div>
-        <button
-          type="button"
-          onClick={onToggleBookmark}
-          aria-label={`${job.title} ${isBookmarked ? "찜 해제" : "찜하기"}`}
-          className="shrink-0 p-1"
-        >
-          <Bookmark
-            className={cn("size-5", isBookmarked ? "fill-primary text-primary" : "text-disabled")}
-          />
-        </button>
-      </div>
-
-      <div className="text-muted mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[0.6875rem]">
-        <span className="flex items-center gap-1">
-          <MapPin className="size-3.5" />
-          {job.location}
-        </span>
-        <span className="flex items-center gap-1">
-          <BriefcaseBusiness className="size-3.5" />
-          {job.employmentType}
-        </span>
-        <span className="flex items-center gap-1">
-          <CalendarDays className="size-3.5" />
-          {formatDeadline(job)}
-        </span>
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {job.tags.map((tag) => (
-          <span
-            key={tag}
-            className="bg-warm-bg text-muted rounded-full px-2.5 py-1 text-[0.625rem]"
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "rounded-full px-2 py-1 text-[0.625rem] font-bold",
+                  job.status === "closed"
+                    ? "bg-warm-bg text-disabled"
+                    : "bg-coral-light text-primary"
+                )}
+              >
+                {statusLabels[job.status]}
+              </span>
+              <span className="text-muted text-xs font-semibold">{job.companyName}</span>
+            </div>
+            <h2 className="text-ink mt-2 text-sm leading-5 font-bold">{job.title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              onToggleBookmark()
+            }}
+            aria-label={`${job.title} ${isBookmarked ? "찜 해제" : "찜하기"}`}
+            className="shrink-0 p-1"
           >
-            {tag}
+            <Bookmark
+              className={cn("size-5", isBookmarked ? "fill-primary text-primary" : "text-disabled")}
+            />
+          </button>
+        </div>
+
+        <div className="text-muted mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[0.6875rem]">
+          <span className="flex items-center gap-1">
+            <MapPin className="size-3.5" />
+            {job.location}
           </span>
-        ))}
+          <span className="flex items-center gap-1">
+            <BriefcaseBusiness className="size-3.5" />
+            {job.employmentType}
+          </span>
+          <span className="flex items-center gap-1">
+            <CalendarDays className="size-3.5" />
+            {formatDeadline(job)}
+          </span>
+        </div>
+      </Link>
+
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          {job.tags.map((tag) => (
+            <span
+              key={tag}
+              className="bg-warm-bg text-muted rounded-full px-2.5 py-1 text-[0.625rem]"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+        <Link
+          href={`/company/${job.companyId}`}
+          className="bg-coral-light text-primary flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[0.625rem] font-semibold"
+        >
+          <Sparkles className="size-3" />
+          AI 리포트
+        </Link>
       </div>
     </article>
   )

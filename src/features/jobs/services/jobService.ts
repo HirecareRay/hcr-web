@@ -1,4 +1,4 @@
-import type { JobListItem } from "../types/job"
+import type { JobDetail, JobListItem } from "../types/job"
 
 export const jobListFixtures: JobListItem[] = [
   {
@@ -67,3 +67,187 @@ export const jobListFixtures: JobListItem[] = [
     tags: ["개인정보보호", "ISMS-P", "Cloud"],
   },
 ]
+
+export const jobDetailFixtures: JobDetail[] = [
+  {
+    id: "a63f1ca8292ecdd80c30",
+    companyId: "4c6a2dc35bec6d932b68",
+    companyName: "CJ ENM",
+    title: "Data Scientist 채용",
+    jobName: "Data Scientist",
+    category: "개발·데이터",
+    employmentType: "정규직",
+    location: "서울",
+    deadline: "2026-07-03",
+    status: "open",
+    tags: ["Python", "SQL", "LLM"],
+    companyWebsite: "https://www.cjenm.com",
+    description:
+      "CJ ENM에서 데이터 기반 의사결정을 주도할 Data Scientist를 모집합니다. 커머스·엔터 도메인의 대규모 데이터를 분석하고 ML/AI 모델을 개발·운영하는 역할입니다.",
+    responsibilities: [
+      "커머스·미디어 도메인 대규모 데이터 분석 및 인사이트 도출",
+      "추천, 수요 예측, 이탈 방지 등 ML 모델 개발 및 운영",
+      "LLM 기반 생성형 AI 서비스 R&D",
+      "데이터 파이프라인 설계 및 피처 엔지니어링",
+      "비즈니스 팀과 협업하여 분석 결과를 제품에 반영",
+    ],
+    requirements: [
+      "Python 기반 ML/DL 모델 개발 경험 2년 이상",
+      "SQL을 활용한 데이터 추출·분석 능숙",
+      "통계 분석 및 A/B 테스트 설계·해석 경험",
+      "TensorFlow 또는 PyTorch 사용 경험",
+    ],
+    preferredQualifications: [
+      "LLM Fine-tuning 또는 RAG 시스템 구축 경험",
+      "Spark, Airflow 등 데이터 파이프라인 운영 경험",
+      "추천 시스템 개발 경험",
+      "커머스·미디어 도메인 분석 경험",
+    ],
+    hiringProcess: ["서류 전형", "1차 직무 면접", "2차 임원 면접", "최종 합격"],
+    documents: ["이력서", "경력기술서", "포트폴리오 (선택)"],
+  },
+  {
+    id: "b07667cb3eb79ffd3139",
+    companyId: "4c6a2dc35bec6d932b68",
+    companyName: "CJ ENM",
+    title: "Mnet Plus Product Designer 경력채용",
+    jobName: "Product Designer",
+    category: "디자인",
+    employmentType: "정규직",
+    location: "서울",
+    deadline: "2026-06-26",
+    status: "open",
+    tags: ["UI/UX", "디자인 시스템", "프로토타이핑"],
+    companyWebsite: "https://www.cjenm.com",
+    description:
+      "Mnet Plus 앱·웹 서비스의 UI/UX를 설계하고 디자인 시스템을 발전시킬 Product Designer를 모집합니다.",
+    responsibilities: [
+      "Mnet Plus 앱/웹 신규 기능 UI/UX 설계 및 화면 디자인",
+      "사용자 리서치를 통한 문제 정의 및 개선 제안",
+      "디자인 시스템 구축 및 유지보수",
+      "개발팀·기획팀과 협업하여 제품 완성도 향상",
+    ],
+    requirements: [
+      "Figma를 활용한 프로덕트 디자인 경력 3년 이상",
+      "모바일 앱 UI/UX 디자인 경험",
+      "디자인 시스템 구축 또는 운영 경험",
+      "포트폴리오 필수 제출",
+    ],
+    preferredQualifications: [
+      "엔터테인먼트·미디어 서비스 디자인 경험",
+      "사용자 리서치·UT 진행 경험",
+      "Motion 디자인 경험",
+    ],
+    hiringProcess: ["서류 및 포트폴리오 검토", "실무 면접", "임원 면접", "최종 합격"],
+    documents: ["이력서", "포트폴리오 (필수)"],
+  },
+  {
+    id: "62945315cd3b3c07da52",
+    companyId: "4c6a2dc35bec6d932b68",
+    companyName: "CJ ENM",
+    title: "[Mnet Plus] Web/App Lead 경력채용",
+    jobName: "Web/App Lead",
+    category: "개발·데이터",
+    employmentType: "정규직 (협의)",
+    location: "서울 마포구",
+    deadline: null,
+    status: "rolling",
+    tags: ["React Native", "TypeScript", "Tech Lead"],
+    companyWebsite: "https://www.cjenm.com",
+    description:
+      "Mnet Plus 서비스의 프론트엔드 개발을 리드할 Web/App Lead를 상시 모집합니다. 기술 방향을 설정하고 팀을 이끌 리더십과 기술력을 갖춘 분을 찾습니다.",
+    responsibilities: [
+      "Mnet Plus 앱(React Native) 및 웹(React) 개발 리드",
+      "프론트엔드 아키텍처 설계 및 기술 의사결정",
+      "팀원 코드리뷰 및 기술 성장 지원",
+      "백엔드·디자인 팀과 협업하여 기능 개발",
+      "성능 최적화 및 품질 관리",
+    ],
+    requirements: [
+      "React Native 개발 경력 5년 이상",
+      "TypeScript 기반 프로젝트 경험",
+      "팀 리드 또는 테크리드 경험",
+      "CI/CD 구축 및 운영 경험",
+    ],
+    preferredQualifications: [
+      "대용량 트래픽 서비스 운영 경험",
+      "디자인 시스템 연동 경험",
+      "성능 최적화(번들 사이즈, 렌더링) 경험",
+    ],
+    hiringProcess: ["서류 전형", "기술 면접", "리더십 면접", "최종 합격"],
+    documents: ["이력서", "경력기술서", "GitHub 링크 (선택)"],
+  },
+  {
+    id: "4337b91b45eba194235b",
+    companyId: "4c6a2dc35bec6d932b68",
+    companyName: "CJ ENM",
+    title: "커머스부문 추천 플랫폼 엔지니어",
+    jobName: "추천 플랫폼 엔지니어",
+    category: "개발·데이터",
+    employmentType: "정규직",
+    location: "서울",
+    deadline: "2026-06-21",
+    status: "closed",
+    tags: ["Java", "Python", "AWS"],
+    companyWebsite: "https://www.cjenm.com",
+    description:
+      "CJ온스타일 추천 플랫폼을 개발·운영할 엔지니어를 모집합니다. 대규모 추천 시스템의 백엔드와 ML 서빙 파이프라인을 담당합니다.",
+    responsibilities: [
+      "실시간 상품 추천 시스템 백엔드 개발",
+      "ML 모델 서빙 파이프라인 구축 및 운영",
+      "추천 A/B 테스트 플랫폼 개발",
+      "대용량 데이터 처리 및 API 성능 최적화",
+    ],
+    requirements: [
+      "Java 또는 Python 백엔드 개발 경력 3년 이상",
+      "AWS 기반 서비스 설계 및 운영 경험",
+      "RESTful API 설계 경험",
+    ],
+    preferredQualifications: [
+      "추천 시스템 또는 ML 서빙 경험",
+      "Kafka, Redis 활용 경험",
+      "MSA 환경 개발 경험",
+    ],
+    hiringProcess: ["서류 전형", "기술 면접", "임원 면접", "최종 합격"],
+    documents: ["이력서", "경력기술서"],
+  },
+  {
+    id: "3c3fa750ba51bce320ea",
+    companyId: "4c6a2dc35bec6d932b68",
+    companyName: "CJ ENM",
+    title: "커머스부문 개인정보보호 담당자",
+    jobName: "개인정보보호 담당자",
+    category: "보안",
+    employmentType: "정규직",
+    location: "서울",
+    deadline: "2026-06-14",
+    status: "closed",
+    tags: ["개인정보보호", "ISMS-P", "Cloud"],
+    companyWebsite: "https://www.cjenm.com",
+    description:
+      "CJ ENM 커머스부문의 개인정보보호 정책 수립 및 법적 컴플라이언스를 담당할 전문가를 모집합니다.",
+    responsibilities: [
+      "개인정보보호 정책 수립 및 관리",
+      "ISMS-P 인증 유지 및 심사 대응",
+      "개인정보 영향평가(PIA) 수행",
+      "임직원 개인정보보호 교육 기획·운영",
+      "개인정보 관련 법령 검토 및 내부 가이드 제정",
+    ],
+    requirements: [
+      "개인정보보호 업무 경력 3년 이상",
+      "ISMS-P 또는 ISO 27001 인증 심사 경험",
+      "개인정보보호법·정통망법 등 관련 법령 이해",
+    ],
+    preferredQualifications: [
+      "개인정보보호 전문가(CIPP/A) 자격 보유",
+      "클라우드 환경 개인정보보호 경험",
+      "이커머스 도메인 경험",
+    ],
+    hiringProcess: ["서류 전형", "실무 면접", "임원 면접", "최종 합격"],
+    documents: ["이력서", "경력기술서", "자격증 사본 (있는 경우)"],
+  },
+]
+
+export function getJobDetail(id: string): JobDetail | undefined {
+  return jobDetailFixtures.find((job) => job.id === id)
+}

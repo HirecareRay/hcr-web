@@ -15,3 +15,13 @@ export type JobListItem = {
   status: JobStatus
   tags: string[]
 }
+
+export type JobDetail = JobListItem & {
+  responsibilities: string[]
+  requirements: string[]
+  preferredQualifications: string[]
+  hiringProcess: string[]
+  documents: string[]
+  description: string
+  companyWebsite?: string
+}
