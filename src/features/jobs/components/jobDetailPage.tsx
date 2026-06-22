@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Bookmark,
   BriefcaseBusiness,
@@ -12,7 +12,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getJobDetail, jobDetailFixtures } from "../services/jobService"
+import { fetchJobDetail, jobDetailFixtures } from "../services/jobService"
 import type { JobDetail } from "../types/job"
 
 const statusLabels = {
@@ -103,8 +103,24 @@ function SimilarJobCard({ job }: { job: JobDetail }) {
 }
 
 export function JobDetailPage({ jobId }: { jobId: string }) {
-  const job = getJobDetail(jobId)
+  const [job, setJob] = useState<JobDetail | undefined>(undefined)
+  const [loading, setLoading] = useState(true)
   const [bookmarked, setBookmarked] = useState(false)
+
+  useEffect(() => {
+    fetchJobDetail(jobId).then((data) => {
+      setJob(data)
+      setLoading(false)
+    })
+  }, [jobId])
+
+  if (loading) {
+    return (
+      <section className="bg-background flex min-h-full items-center justify-center">
+        <p className="text-muted text-sm">불러오는 중...</p>
+      </section>
+    )
+  }
 
   if (!job) {
     return (

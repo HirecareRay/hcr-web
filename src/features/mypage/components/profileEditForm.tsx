@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import { ArrowLeft, Camera, CheckCircle2, Plus, Search, UserRound, X } from "lucide-react"
+import axiosInstance from "@/lib/axiosInstance"
 import { defaultInterestJobs, jobCategories, userProfileFixture } from "../services/myPageService"
 
 export function ProfileEditForm() {
@@ -9,6 +10,17 @@ export function ProfileEditForm() {
   const [email, setEmail] = useState(userProfileFixture.email)
   const [statusMessage, setStatusMessage] = useState(userProfileFixture.statusMessage)
   const [interestJobs, setInterestJobs] = useState<string[]>(defaultInterestJobs)
+
+  useEffect(() => {
+    axiosInstance.get("/api/mypage/profile").then(({ data }) => {
+      const p = data.data
+      setName(p.name)
+      setEmail(p.email)
+      if (p.interestJobs) setInterestJobs(p.interestJobs)
+      if (p.companySize) setCompanySize(p.companySize)
+      if (p.careerLevel) setCareerLevel(p.careerLevel)
+    })
+  }, [])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [companySize, setCompanySize] = useState<string[]>(["스타트업"])
@@ -35,8 +47,15 @@ export function ProfileEditForm() {
     setIsSaved(false)
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    await axiosInstance.put("/api/mypage/profile", {
+      name,
+      email,
+      companySize,
+      careerLevel,
+      interestJobs,
+    })
     setIsSaved(true)
   }
 

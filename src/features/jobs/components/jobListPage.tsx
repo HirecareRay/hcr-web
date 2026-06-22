@@ -12,8 +12,9 @@ import {
   Sparkles,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useEffect, useState } from "react"
 import { useJobList } from "../hooks/useJobList"
-import { jobListFixtures } from "../services/jobService"
+import { fetchJobs, jobListFixtures } from "../services/jobService"
 import type { JobCategory, JobListItem, JobSort } from "../types/job"
 
 const categories: JobCategory[] = ["전체", "개발·데이터", "디자인", "보안"]
@@ -116,6 +117,12 @@ function JobCard({
 }
 
 export function JobListPage() {
+  const [jobs, setJobs] = useState(jobListFixtures)
+
+  useEffect(() => {
+    fetchJobs().then(setJobs)
+  }, [])
+
   const {
     keyword,
     updateKeyword,
@@ -132,7 +139,7 @@ export function JobListPage() {
     paginatedJobs,
     bookmarkedIds,
     toggleBookmark,
-  } = useJobList(jobListFixtures)
+  } = useJobList(jobs)
 
   return (
     <section className="bg-background min-h-full pb-8">
