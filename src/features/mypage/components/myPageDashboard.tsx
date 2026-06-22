@@ -106,8 +106,7 @@ export function MyPageDashboard() {
           </p>
         </div>
         <div className="py-4">
-          <p className="text-ink text-sm font-bold">나의 관심 직무는</p>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {["프론트엔드", "스타트업", "신입"].map((tag) => (
               <span key={tag} className="text-primary text-base font-extrabold">
                 #{tag}
