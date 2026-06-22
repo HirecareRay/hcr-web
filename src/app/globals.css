@@ -1,17 +1,5 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-/* @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-} */
-
 /* 공통 디자인 토큰 — Figma "01.공통 컴포넌트 & 디자인 토큰" 기준 */
 @theme {
   /* Brand / Coral */
@@ -21,7 +9,8 @@
   --color-coral-light: #fff3ef; /* 활성 탭 배경 */
 
   /* Surface / Border */
-  --color-background: #fafafa; /* neutral/background — 화면 기본 배경 */
+  --color-background: #fafafa; /* neutral/background — 콘텐츠(가운데) 영역 배경 */
+  --color-gutter: #ececec; /* 데스크탑 양옆 여백 — 콘텐츠보다 한 단계 어둡게 구분 */
   --color-warm-bg: #fff9f6; /* 웜 톤 배경 (강조 영역) */
   --color-warm-border: #f1d8cf; /* 보더 */
 
@@ -54,6 +43,11 @@ html {
   padding: 0;
   box-sizing: border-box;
   outline: none;
+}
+
+/* 전역 페이지 배경 — 여백(gutter)색. 가운데 콘텐츠 영역은 appShell이 #fafafa로 덮음 */
+body {
+  background-color: var(--color-gutter);
 }
 
 img,
