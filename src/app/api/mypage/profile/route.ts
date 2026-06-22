@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { logger } from "@/lib/logger"
 
 /**
  * @swagger
@@ -44,6 +45,7 @@ import { NextRequest, NextResponse } from "next/server"
  *         description: 수정 성공
  */
 export async function GET() {
+  logger.api("GET", "/api/mypage/profile")
   return NextResponse.json({
     success: true,
     data: {
@@ -60,6 +62,7 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   const body = await req.json()
+  logger.api("PUT", "/api/mypage/profile", body)
   return NextResponse.json({
     success: true,
     data: { ...body },

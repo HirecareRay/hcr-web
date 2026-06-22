@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { logger } from "@/lib/logger"
 
 /**
  * @swagger
@@ -38,6 +39,7 @@ import { NextResponse } from "next/server"
  *                     $ref: '#/components/schemas/JobListItem'
  */
 export async function GET() {
+  logger.api("GET", "/api/jobs")
   return NextResponse.json({
     success: true,
     data: [
