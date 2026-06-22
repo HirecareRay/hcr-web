@@ -93,7 +93,7 @@ export function MyPageDashboard() {
   return (
     <section className="bg-background min-h-full pb-10">
       {/* 프로필 헤더 바 */}
-      <div className="border-warm-border border-b bg-white px-5 pt-5 pb-0">
+      <div className="border-warm-border border-b bg-white px-5 pt-10 pb-0">
         <div className="flex items-center justify-between">
           <p className="text-primary text-sm font-extrabold tracking-tight">HireCareRay</p>
           <Link href="/mypage/profile" aria-label="설정">
@@ -124,12 +124,7 @@ export function MyPageDashboard() {
         {/* 내 관리 목록 */}
         <h2 className="text-ink mt-8 mb-3 text-base font-bold">내 관리 목록</h2>
         <div className="flex flex-col gap-2.5">
-          <ManageRow
-            icon={FileText}
-            title="내 이력 정보"
-            subtitle="이력서·자기소개서"
-            href="/mypage/resume"
-          />
+          <ManageRow icon={FileText} title="내 이력 정보" subtitle="이력서·자기소개서" href="#" />
           <ManageRow
             icon={MessageCircle}
             title="AI 면접 기록"
