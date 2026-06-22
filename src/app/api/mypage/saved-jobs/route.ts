@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { logger } from "@/lib/logger"
 
 /**
  * @swagger
@@ -11,6 +12,8 @@ import { NextResponse } from "next/server"
  *     responses:
  *       200:
  *         description: 저장한 채용공고 목록
+ *       500:
+ *         description: 서버 오류
  *   post:
  *     summary: 공고 저장/취소 토글
  *     tags: [MyPage]
@@ -28,34 +31,51 @@ import { NextResponse } from "next/server"
  *     responses:
  *       200:
  *         description: 저장 상태 변경 성공
+ *       500:
+ *         description: 서버 오류
  */
 export async function GET() {
-  return NextResponse.json({
-    success: true,
-    data: [
+  try {
+    logger.api("GET", "/api/mypage/saved-jobs")
+    return NextResponse.json(
       {
-        id: "a63f1ca8292ecdd80c30",
-        companyName: "CJ ENM",
-        title: "Data Scientist 채용",
-        location: "서울",
-        employmentType: "정규직",
-        deadline: "2026.07.03",
-        status: "open",
+        success: true,
+        data: [
+          {
+            id: "a63f1ca8292ecdd80c30",
+            companyName: "CJ ENM",
+            title: "Data Scientist 채용",
+            location: "서울",
+            employmentType: "정규직",
+            deadline: "2026.07.03",
+            status: "open",
+          },
+          {
+            id: "62945315cd3b3c07da52",
+            companyName: "CJ ENM",
+            title: "[Mnet Plus] Web/App Lead 경력채용",
+            location: "서울 마포구",
+            employmentType: "정규직 (협의)",
+            deadline: "상시채용",
+            status: "rolling",
+          },
+        ],
       },
-      {
-        id: "62945315cd3b3c07da52",
-        companyName: "CJ ENM",
-        title: "[Mnet Plus] Web/App Lead 경력채용",
-        location: "서울 마포구",
-        employmentType: "정규직 (협의)",
-        deadline: "상시채용",
-        status: "rolling",
-      },
-    ],
-  })
+      { status: 200 }
+    )
+  } catch (error) {
+    logger.error("GET /api/mypage/saved-jobs 실패", error)
+    return NextResponse.json({ success: false, message: "서버 오류" }, { status: 500 })
+  }
 }
 
 export async function POST(req: Request) {
-  const { jobId } = await req.json()
-  return NextResponse.json({ success: true, data: { jobId, bookmarked: true } })
+  try {
+    const { jobId } = await req.json()
+    logger.api("POST", "/api/mypage/saved-jobs", { jobId })
+    return NextResponse.json({ success: true, data: { jobId, bookmarked: true } }, { status: 200 })
+  } catch (error) {
+    logger.error("POST /api/mypage/saved-jobs 실패", error)
+    return NextResponse.json({ success: false, message: "서버 오류" }, { status: 500 })
+  }
 }

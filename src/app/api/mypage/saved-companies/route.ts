@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { logger } from "@/lib/logger"
 
 /**
  * @swagger
@@ -11,6 +12,8 @@ import { NextResponse } from "next/server"
  *     responses:
  *       200:
  *         description: 찜한 기업 목록
+ *       500:
+ *         description: 서버 오류
  *   post:
  *     summary: 기업 찜/취소 토글
  *     tags: [MyPage]
@@ -28,22 +31,39 @@ import { NextResponse } from "next/server"
  *     responses:
  *       200:
  *         description: 찜 상태 변경 성공
+ *       500:
+ *         description: 서버 오류
  */
 export async function GET() {
-  return NextResponse.json({
-    success: true,
-    data: [
+  try {
+    logger.api("GET", "/api/mypage/saved-companies")
+    return NextResponse.json(
       {
-        id: "4c6a2dc35bec6d932b68",
-        name: "CJ ENM",
-        category: "엔터테인먼트·커머스",
-        openJobs: 3,
+        success: true,
+        data: [
+          {
+            id: "4c6a2dc35bec6d932b68",
+            name: "CJ ENM",
+            category: "엔터테인먼트·커머스",
+            openJobs: 3,
+          },
+        ],
       },
-    ],
-  })
+      { status: 200 }
+    )
+  } catch (error) {
+    logger.error("GET /api/mypage/saved-companies 실패", error)
+    return NextResponse.json({ success: false, message: "서버 오류" }, { status: 500 })
+  }
 }
 
 export async function POST(req: Request) {
-  const { companyId } = await req.json()
-  return NextResponse.json({ success: true, data: { companyId, saved: true } })
+  try {
+    const { companyId } = await req.json()
+    logger.api("POST", "/api/mypage/saved-companies", { companyId })
+    return NextResponse.json({ success: true, data: { companyId, saved: true } }, { status: 200 })
+  } catch (error) {
+    logger.error("POST /api/mypage/saved-companies 실패", error)
+    return NextResponse.json({ success: false, message: "서버 오류" }, { status: 500 })
+  }
 }
