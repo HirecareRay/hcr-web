@@ -28,6 +28,7 @@
   /* Status */
   --color-error: #f24d4d;
   --color-success: #26bf67;
+  --color-info: #2f6fed; /* 파랑 — 보조/정보, 데이터 시각화(예: 남녀 비율) */
 
   /* Text (컴포넌트에서 관찰된 중립색) */
   --color-ink: #1a1a1a; /* 강한 본문 */
@@ -52,10 +53,7 @@ html {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-size: clamp(10px, min(2.54vw, 1.17vh), 200%);
   outline: none;
-  margin: none;
-  padding: none;
 }
 
 img,
