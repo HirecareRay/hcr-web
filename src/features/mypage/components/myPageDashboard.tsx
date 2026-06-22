@@ -107,18 +107,22 @@ export function MyPageDashboard() {
         </div>
         <div className="py-4">
           <p className="text-ink text-sm font-bold">나의 관심 직무는</p>
-          <p className="text-primary mt-1.5 text-base font-extrabold">
-            #프론트엔드 #스타트업 #신입
-          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {["프론트엔드", "스타트업", "신입"].map((tag) => (
+              <span key={tag} className="text-primary text-base font-extrabold">
+                #{tag}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="px-5 pt-5 pb-8">
-        {/* 취준 현황 */}
-        <h2 className="text-ink mt-5 mb-3 text-base font-bold">취준 현황</h2>
+        {/* 내 분석 현황 */}
+        <h2 className="text-ink mt-5 mb-3 text-base font-bold">내 분석 현황</h2>
         <div className="flex gap-3">
-          <StatusCard icon={BarChart2} label="평균 적합도" value="85" unit="점" color="success" />
-          <StatusCard icon={Sparkles} label="AI 면접 평균" value="82" unit="점" color="primary" />
+          <StatusCard icon={BarChart2} label="직무 적합도" value="85" unit="점" color="success" />
+          <StatusCard icon={Sparkles} label="AI 면접 결과" value="82" unit="점" color="primary" />
         </div>
 
         {/* 내 관리 목록 */}
