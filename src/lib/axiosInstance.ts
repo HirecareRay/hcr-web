@@ -10,6 +10,7 @@
  */
 
 import axios from "axios"
+import { logger } from "@/lib/logger"
 
 // axios 인스턴스 생성 — 프로젝트 전용 HTTP 클라이언트
 const axiosInstance = axios.create({
@@ -26,9 +27,9 @@ const axiosInstance = axios.create({
 // localStorage에 저장된 토큰을 꺼내 Authorization 헤더에 자동으로 붙여줍니다.
 // 덕분에 API 호출할 때마다 토큰을 직접 넣지 않아도 됩니다.
 axiosInstance.interceptors.request.use((config) => {
-  // 서버사이드 렌더링(SSR) 환경에서는 localStorage가 없으므로 브라우저 환경인지 확인
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
   if (token) config.headers.Authorization = `Bearer ${token}`
+  logger.api(config.method ?? "?", config.url ?? "?", config.data)
   return config
 })
 
@@ -37,11 +38,15 @@ axiosInstance.interceptors.request.use((config) => {
 // 정상 응답은 그대로 통과시키고, 에러가 발생하면 공통 처리를 합니다.
 axiosInstance.interceptors.response.use(
   // 성공 응답: 그대로 반환
-  (response) => response,
-  // 에러 응답: 상태 코드에 따라 공통 처리
+  (response) => {
+    logger.info(`${response.status} ${response.config.url}`, response.data)
+    return response
+  },
   (error) => {
-    // 401 = 인증 실패 (토큰 만료 또는 미로그인)
-    // 저장된 토큰을 지우고 로그인 페이지로 이동
+    logger.error(
+      `${error.response?.status ?? "network"} ${error.config?.url}`,
+      error.response?.data
+    )
     if (error.response?.status === 401) {
       localStorage.removeItem("token")
       window.location.href = "/login"
