@@ -60,12 +60,12 @@ export function InterviewListPage() {
               <p className="text-muted border-warm-border mt-3 border-t pt-3 text-xs leading-relaxed">
                 {item.feedback}
               </p>
-              <button
-                type="button"
+              <Link
+                href={`/mypage/interview/${item.id}`}
                 className="text-primary mt-2 flex items-center gap-1 text-xs font-semibold"
               >
                 상세 보기 <ChevronRight className="size-3" />
-              </button>
+              </Link>
             </div>
           ))}
         </div>

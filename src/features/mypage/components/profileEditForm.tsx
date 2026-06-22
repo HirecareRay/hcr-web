@@ -97,24 +97,6 @@ export function ProfileEditForm() {
             />
           </label>
 
-          <label className="block">
-            <span className="text-ink mb-2 block text-sm font-semibold">한 줄 소개</span>
-            <textarea
-              value={statusMessage}
-              onChange={(event) => {
-                setStatusMessage(event.target.value)
-                setIsSaved(false)
-              }}
-              maxLength={80}
-              rows={4}
-              className="border-warm-border text-ink placeholder:text-disabled w-full resize-none rounded-2xl border bg-white px-4 py-3 text-sm leading-6"
-              placeholder="나를 소개하는 문장을 입력하세요"
-            />
-            <span className="text-disabled mt-1 block text-right text-[0.6875rem]">
-              {statusMessage.length}/80
-            </span>
-          </label>
-
           <div>
             <span className="text-ink mb-2 block text-sm font-semibold">기업 규모</span>
             <div className="flex flex-wrap gap-2">

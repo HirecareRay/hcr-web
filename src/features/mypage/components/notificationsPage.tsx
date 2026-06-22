@@ -26,13 +26,13 @@ function ToggleRow({
         role="switch"
         aria-checked={value}
         onClick={() => onChange(!value)}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+        className={`relative h-6 w-11 shrink-0 overflow-hidden rounded-full transition-colors ${
           value ? "bg-primary" : "bg-warm-bg"
         }`}
       >
         <span
-          className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform ${
-            value ? "translate-x-5" : "translate-x-0.5"
+          className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform ${
+            value ? "translate-x-[22px]" : "translate-x-0"
           }`}
         />
       </button>
