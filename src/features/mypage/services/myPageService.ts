@@ -34,7 +34,7 @@ export const jobCategories = [
   },
 ]
 
-export const defaultInterestJobs = ["프론트엔드", "스타트업", "신입"]
+export const defaultInterestJobs = ["프론트엔드"]
 
 export const careerDocumentFixtures: CareerDocumentFixture[] = [
   {
