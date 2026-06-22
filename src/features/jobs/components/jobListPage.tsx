@@ -11,6 +11,7 @@ import {
   Search,
   Sparkles,
 } from "lucide-react"
+import axiosInstance from "@/lib/axiosInstance"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 import { useJobList } from "../hooks/useJobList"
@@ -141,6 +142,11 @@ export function JobListPage() {
     toggleBookmark,
   } = useJobList(jobs)
 
+  async function handleToggleBookmark(jobId: string) {
+    toggleBookmark(jobId)
+    await axiosInstance.post("/api/mypage/saved-jobs", { jobId })
+  }
+
   return (
     <section className="bg-background min-h-full pb-8">
       <header className="border-warm-border border-b bg-white px-5 py-4">
@@ -214,7 +220,7 @@ export function JobListPage() {
                 key={job.id}
                 job={job}
                 isBookmarked={bookmarkedIds.includes(job.id)}
-                onToggleBookmark={() => toggleBookmark(job.id)}
+                onToggleBookmark={() => handleToggleBookmark(job.id)}
               />
             ))}
           </div>
