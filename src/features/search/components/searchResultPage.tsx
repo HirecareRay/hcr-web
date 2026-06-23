@@ -1,8 +1,10 @@
 "use client"
 
+import { Suspense } from "react"
 import Link from "next/link"
-import { Building2, ChevronRight, Search, Sparkles } from "lucide-react"
+import { ChevronRight, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { SearchBar } from "@/components/ui/searchBar"
 import { useSearchResults } from "../hooks/useSearchResults"
 import {
   companySearchResults,
@@ -59,6 +61,15 @@ function JobCard({ jobPosting }: { jobPosting: RelatedJobPosting }) {
 }
 
 export function SearchResultPage() {
+  // useSearchResults가 useSearchParams로 ?q=를 읽으므로 Suspense 경계로 감싼다
+  return (
+    <Suspense>
+      <SearchResultContent />
+    </Suspense>
+  )
+}
+
+function SearchResultContent() {
   const { keyword, setKeyword, selectedCategory, setSelectedCategory, filteredCompanies } =
     useSearchResults(companySearchResults)
 
@@ -68,20 +79,14 @@ export function SearchResultPage() {
         <p className="text-primary text-sm font-semibold">기업과 공고를 한 번에</p>
         <h1 className="text-ink mt-1 text-2xl font-bold">검색 결과</h1>
 
-        <label className="border-warm-border bg-warm-bg mt-5 flex items-center gap-3 rounded-2xl border px-4 py-3">
-          <Building2 className="text-primary size-5 shrink-0" />
-          <span className="sr-only">기업 검색</span>
-          <input
-            type="search"
+        <div className="mt-5">
+          <SearchBar
             value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
+            onChange={setKeyword}
             placeholder="기업명 또는 업종을 검색하세요"
-            className="text-ink placeholder:text-disabled min-w-0 flex-1 bg-transparent text-sm font-semibold"
+            ariaLabel="기업 검색"
           />
-          <span className="bg-primary flex size-9 shrink-0 items-center justify-center rounded-full text-white">
-            <Search className="size-4" />
-          </span>
-        </label>
+        </div>
       </header>
 
       <section className="mt-6">
