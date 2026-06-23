@@ -26,7 +26,12 @@ export function SearchBar({
 }: SearchBarProps) {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    onSubmit?.(value)
+
+    // 공백뿐이거나 아무것도 입력하지 않은 경우 검색하지 않는다
+    const trimmedValue = value.trim()
+    if (trimmedValue.length === 0) return
+
+    onSubmit?.(trimmedValue)
   }
 
   return (
@@ -45,7 +50,8 @@ export function SearchBar({
       <button
         type="submit"
         aria-label="검색"
-        className="bg-primary absolute top-1/2 right-2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full text-white transition-opacity hover:opacity-90"
+        disabled={value.trim().length === 0}
+        className="bg-primary absolute top-1/2 right-2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Search className="size-5" />
       </button>
