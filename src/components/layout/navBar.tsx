@@ -25,7 +25,7 @@ export function NavBar() {
   const pathname = usePathname()
 
   return (
-    <nav className="border-warm-border mx-auto w-full max-w-4xl shrink-0 border-t bg-white">
+    <nav className="border-warm-border w-full shrink-0 border-t bg-white">
       <ul className="flex">
         {navItems.map(({ label, href, icon: Icon }) => {
           const isActive = href !== "#" && pathname === href
