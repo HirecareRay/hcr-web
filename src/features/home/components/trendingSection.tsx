@@ -15,7 +15,7 @@ export function TrendingSection({ companies }: { companies: TrendingCompany[] })
     <section>
       <SectionHeader icon={Flame} title="오늘 많이 분석된 채용공고" />
 
-      <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 lg:grid-cols-5">
+      <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
         {companies.map((company) => (
           <TrendingCompanyCard key={company.companyId} company={company} />
         ))}
