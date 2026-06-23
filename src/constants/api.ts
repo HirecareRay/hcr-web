@@ -1,6 +1,9 @@
 export const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000"
 
 export const apiEndpoints = {
+  home: {
+    feed: "/api/home/feed",
+  },
   auth: {
     login: "/api/auth/login",
     signup: "/api/auth/signup",

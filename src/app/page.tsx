@@ -1,3 +1,5 @@
+import { HomePage } from "@/features/home/components/homePage"
+
 export default function Home() {
-  return <>안녕하세요 메인 홈화면입니다</>
+  return <HomePage />
 }
