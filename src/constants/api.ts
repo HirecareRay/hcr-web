@@ -16,5 +16,8 @@ export const apiEndpoints = {
     sessions: "/api/interview/sessions",
     answer: (id: string) => `/api/interview/sessions/${id}/answer`,
     stt: (id: string) => `/api/interview/sessions/${id}/stt`,
+    // 면접 결과 리포트 — 현재는 companyId로 최신 결과 조회.
+    // TODO: 세션 영속화 후 resultId 기준 조회로 확장.
+    result: (companyId: string) => `/api/interview/results/${companyId}`,
   },
 }
