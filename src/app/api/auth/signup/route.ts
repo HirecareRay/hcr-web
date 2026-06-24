@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
-import { logger } from "@/lib/logger"
+import { NextRequest } from "next/server"
+import { proxyAuth } from "../proxyAuth"
 
 /**
  * @swagger
@@ -30,26 +30,7 @@ import { logger } from "@/lib/logger"
  *         description: 서버 오류
  */
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json()
-    logger.api("POST", "/api/auth/signup", body)
-
-    return NextResponse.json(
-      {
-        success: true,
-        data: {
-          token: "temp-dev-token",
-          user: {
-            id: "1",
-            name: body.name ?? "신규유저",
-            email: body.email ?? "new@example.com",
-          },
-        },
-      },
-      { status: 200 }
-    )
-  } catch (error) {
-    logger.error("POST /api/auth/signup 실패", error)
-    return NextResponse.json({ success: false, message: "서버 오류" }, { status: 500 })
-  }
+  const body = await req.json()
+  // FastAPI POST /auth/signup 으로 중계 — 응답을 { success, data } 로 감싸 반환
+  return proxyAuth("/auth/signup", body)
 }

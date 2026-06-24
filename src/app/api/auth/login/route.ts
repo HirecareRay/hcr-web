@@ -1,7 +1,7 @@
-// app/api/login/route.ts
+// app/api/auth/login/route.ts
 
-import { NextRequest, NextResponse } from "next/server"
-// import bcrypt from "bcrypt";
+import { NextRequest } from "next/server"
+import { proxyAuth } from "../proxyAuth"
 
 /**
  * @swagger
@@ -27,16 +27,6 @@ import { NextRequest, NextResponse } from "next/server"
  */
 export async function POST(req: NextRequest) {
   const body = await req.json()
-
-  return NextResponse.json({
-    success: true,
-    data: {
-      token: "temp-dev-token",
-      user: {
-        id: "1",
-        name: "테스트유저",
-        email: body.email ?? "test@example.com",
-      },
-    },
-  })
+  // FastAPI POST /auth/login 으로 중계 — 응답을 { success, data } 로 감싸 반환
+  return proxyAuth("/auth/login", body)
 }
