@@ -8,10 +8,13 @@ import {
   ChevronRight,
   FileText,
   Lock,
+  LogOut,
   MessageCircle,
   Settings,
   Sparkles,
 } from "lucide-react"
+import { useAuthStore } from "@/features/auth/store/authStore"
+import { useLogout } from "@/features/auth/hooks/useLogout"
 
 function StatusCard({
   icon: Icon,
@@ -90,6 +93,10 @@ function SupportRow({
 }
 
 export function MyPageDashboard() {
+  // 로그인한 사용자 정보 — 미들웨어가 비로그인 진입을 막으므로 보통 채워져 있다.
+  const user = useAuthStore((s) => s.user)
+  const { handleLogout, isLoading: isLoggingOut } = useLogout()
+
   return (
     <section className="bg-background min-h-full pb-10">
       {/* 프로필 헤더 바 */}
@@ -102,7 +109,8 @@ export function MyPageDashboard() {
         </div>
         <div className="border-warm-border mt-3 border-b pb-4">
           <p className="text-ink text-2xl font-extrabold">
-            김취준<span className="text-muted text-base font-semibold"> 님</span>
+            {user?.name ?? "사용자"}
+            <span className="text-muted text-base font-semibold"> 님</span>
           </p>
         </div>
         <div className="py-4">
@@ -167,6 +175,17 @@ export function MyPageDashboard() {
           <span className="text-muted text-sm">앱 버전</span>
           <span className="text-primary text-sm font-semibold">version 1.0.0</span>
         </div>
+
+        {/* 로그아웃 */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="text-muted hover:text-ink border-warm-border mt-6 flex w-full items-center justify-center gap-2 rounded-xl border bg-white py-3 text-sm font-semibold transition-colors disabled:opacity-60"
+        >
+          <LogOut className="size-4" />
+          {isLoggingOut ? "로그아웃 중…" : "로그아웃"}
+        </button>
       </div>
     </section>
   )
