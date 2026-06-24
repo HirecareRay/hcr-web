@@ -13,4 +13,7 @@ export const routes = {
   signup: "/signup",
   company: (companyId: string) => `/company/${companyId}`,
   interview: (companyId: string) => `/interview/${companyId}`,
+  // 면접 결과 리포트 — 결과는 세션 단위지만, 지금은 companyId로 최신 결과를 본다.
+  // TODO: 세션 영속화 후 `/interview/[companyId]/result/[resultId]`로 확장.
+  interviewResult: (companyId: string) => `/interview/${companyId}/result`,
 }

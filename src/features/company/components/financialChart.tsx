@@ -26,7 +26,13 @@ const POSITIVE_COLOR = "#ff6b57" // --color-primary (코랄/레드, 양수)
 const NEGATIVE_COLOR = "#2f6fed" // 파랑 (음수)
 const INK_COLOR = "#1a1a1a" // --color-ink
 const AXIS_COLOR = "#666666" // --color-muted
+const TRACK_COLOR = "#f1d8cf" // --color-warm-border (바탕 트랙, fillOpacity 0.4 = warm-border/40)
 const ROW_HEIGHT = 34
+
+// 막대 디자인 스펙(앱 공통): 두께 8px · 알약 모서리 · 연한 바탕 트랙.
+// CSS 점수 막대(interview/metricBar)와 시각 언어를 통일하기 위한 값입니다.
+const BAR_SIZE = 8
+const BAR_RADIUS = 4 // 두께의 절반 = 알약 형태
 
 interface ChartDatum {
   label: string
@@ -123,9 +129,10 @@ export function FinancialChart({ indicators }: Props) {
           />
           <Bar
             dataKey="magnitude"
-            barSize={11}
-            radius={[0, 4, 4, 0]}
-            minPointSize={4}
+            barSize={BAR_SIZE}
+            radius={[BAR_RADIUS, BAR_RADIUS, BAR_RADIUS, BAR_RADIUS]}
+            background={{ fill: TRACK_COLOR, fillOpacity: 0.4, radius: BAR_RADIUS }}
+            minPointSize={BAR_RADIUS}
             isAnimationActive={false}
           >
             {data.map((datum) => (
