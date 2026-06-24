@@ -3,8 +3,12 @@
 import axiosInstance from "@/lib/axiosInstance"
 import type { AuthUser, LoginResponse, SignupResponse } from "../types/auth"
 
-export async function loginUser(email: string, password: string): Promise<LoginResponse> {
-  const { data } = await axiosInstance.post("/api/auth/login", { email, password })
+export async function loginUser(
+  email: string,
+  password: string,
+  remember = false
+): Promise<LoginResponse> {
+  const { data } = await axiosInstance.post("/api/auth/login", { email, password, remember })
   return data.data as LoginResponse
 }
 
