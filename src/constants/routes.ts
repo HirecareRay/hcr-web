@@ -11,6 +11,7 @@ export const routes = {
   },
   login: "/login",
   signup: "/signup",
+  mypage: "/mypage",
   company: (companyId: string) => `/company/${companyId}`,
   interview: (companyId: string) => `/interview/${companyId}`,
 }
