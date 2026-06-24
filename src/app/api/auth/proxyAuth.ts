@@ -9,7 +9,7 @@
 // BFF 가 쿠키의 토큰을 꺼내 FastAPI 에 Bearer 로 다시 전달한다.
 
 import { NextResponse } from "next/server"
-import { authCookieName, authCookieOptions } from "@/features/auth/authCookie"
+import { authCookieName, buildAuthCookieOptions } from "@/features/auth/authCookie"
 import { logger } from "@/lib/logger"
 
 // 서버 사이드 전용 env (NEXT_PUBLIC_ 아님 — 브라우저에 노출되지 않는다)
@@ -24,10 +24,15 @@ interface BackendAuthResponse {
  * 인증 요청을 FastAPI 로 중계하고, 프론트 계약 { success, data } 로 감싸 응답한다.
  * 성공 시 토큰을 httpOnly 쿠키로 심는다.
  *
- * @param path  백엔드 경로 (예: "/auth/login", "/auth/signup")
- * @param body  프론트가 보낸 원본 요청 body (email/password 등)
+ * @param path      백엔드 경로 (예: "/auth/login", "/auth/signup")
+ * @param body      백엔드로 보낼 인증 정보 (email/password 등 — remember 는 제외하고 넘긴다)
+ * @param remember  "로그인 상태 유지" 여부. true 면 지속 쿠키, false 면 세션 쿠키
  */
-export async function proxyAuth(path: string, body: unknown): Promise<NextResponse> {
+export async function proxyAuth(
+  path: string,
+  body: unknown,
+  remember = false
+): Promise<NextResponse> {
   try {
     const res = await fetch(`${backendApiUrl}${path}`, {
       method: "POST",
@@ -51,7 +56,8 @@ export async function proxyAuth(path: string, body: unknown): Promise<NextRespon
     const data = payload as BackendAuthResponse
     const response = NextResponse.json({ success: true, data }, { status: res.status })
     // 토큰은 응답 본문이 아니라 httpOnly 쿠키로 보관한다(XSS 안전)
-    response.cookies.set(authCookieName, data.token, authCookieOptions)
+    // remember 에 따라 지속 쿠키/세션 쿠키로 발급한다.
+    response.cookies.set(authCookieName, data.token, buildAuthCookieOptions(remember))
     return response
   } catch (error) {
     // 백엔드가 꺼져 있거나 네트워크 오류 — 502 로 알린다

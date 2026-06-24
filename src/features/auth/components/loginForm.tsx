@@ -49,6 +49,16 @@ export function LoginForm() {
               {...register("password")}
             />
 
+            <label htmlFor="remember" className="text-muted flex cursor-pointer items-center gap-2">
+              <input
+                id="remember"
+                type="checkbox"
+                {...register("remember")}
+                className="accent-primary size-4 cursor-pointer rounded"
+              />
+              <span className="text-sm">로그인 상태 유지</span>
+            </label>
+
             {error && (
               <div className="border-warm-border bg-coral-light rounded-xl border px-3.5 py-2.5">
                 <p className="text-error text-xs font-medium">{error}</p>
