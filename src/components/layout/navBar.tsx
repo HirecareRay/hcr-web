@@ -18,7 +18,7 @@ const navItems: NavItem[] = [
   { label: "홈", href: routes.home, icon: Home },
   { label: "탐색", href: "#", icon: Compass }, // TODO: 기업 탐색 목록 라우트 연결
   { label: "AI면접", href: "#", icon: Mic }, // TODO: 면접 목록 라우트 연결
-  { label: "마이", href: routes.login, icon: User }, // TODO: 마이페이지 라우트 연결
+  { label: "마이", href: routes.mypage, icon: User }, // 비로그인 시 미들웨어가 /login 으로 보냄
 ]
 
 export function NavBar() {

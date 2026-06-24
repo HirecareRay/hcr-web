@@ -11,6 +11,7 @@
 
 import axios from "axios"
 import { logger } from "@/lib/logger"
+import { useAuthStore } from "@/features/auth/store/authStore"
 
 // axios 인스턴스 생성 — 프로젝트 전용 HTTP 클라이언트
 const axiosInstance = axios.create({
@@ -20,15 +21,14 @@ const axiosInstance = axios.create({
   timeout: 10000,
   // 모든 요청에 JSON 형식임을 명시 (서버가 body를 올바르게 파싱하도록)
   headers: { "Content-Type": "application/json" },
+  // 인증 토큰은 httpOnly 쿠키로 관리 — 같은 출처 BFF 호출에 쿠키를 함께 보낸다.
+  withCredentials: true,
 })
 
 // ─── 요청 인터셉터 ────────────────────────────────────────────────────────────
-// 모든 API 요청이 서버로 나가기 직전에 실행됩니다.
-// localStorage에 저장된 토큰을 꺼내 Authorization 헤더에 자동으로 붙여줍니다.
-// 덕분에 API 호출할 때마다 토큰을 직접 넣지 않아도 됩니다.
+// 토큰은 httpOnly 쿠키에 있어 JS 가 손대지 않는다(브라우저가 자동으로 실어 보냄).
+// 여기선 로깅만 한다.
 axiosInstance.interceptors.request.use((config) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-  if (token) config.headers.Authorization = `Bearer ${token}`
   logger.api(config.method ?? "?", config.url ?? "?", config.data)
   return config
 })
@@ -43,14 +43,19 @@ axiosInstance.interceptors.response.use(
     return response
   },
   (error) => {
-    logger.error(
-      `${error.response?.status ?? "network"} ${error.config?.url}`,
-      error.response?.data
-    )
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token")
-      window.location.href = "/login"
+    const status = error.response?.status
+    const url = error.config?.url ?? "?"
+
+    // 401: 토큰 만료·비로그인 — "로그인 안 함"이라는 정상 신호다(에러 아님).
+    // 전역 인증 상태만 비우고 조용히 넘어간다(콘솔을 빨갛게 만들지 않음).
+    // 보호 페이지 진입 차단은 미들웨어가 담당하므로 여기서 강제 이동은 하지 않는다.
+    if (status === 401) {
+      useAuthStore.getState().clearUser()
+      logger.info(`401 ${url} — 비로그인`)
+      return Promise.reject(error)
     }
+
+    logger.error(`${status ?? "network"} ${url}`, error.response?.data)
     return Promise.reject(error)
   }
 )
