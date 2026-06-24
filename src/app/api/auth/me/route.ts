@@ -9,6 +9,33 @@ import { backendApiUrl } from "../proxyAuth"
 import { authCookieName } from "@/features/auth/authCookie"
 import { logger } from "@/lib/logger"
 
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: 현재 로그인 사용자 조회
+ *     tags: [Auth]
+ *     description: httpOnly 쿠키(hcr_token)의 토큰을 검증해 로그인 사용자를 반환한다. 앱 로드 시 로그인 상태 복원에 사용한다.
+ *     responses:
+ *       200:
+ *         description: 로그인 사용자 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthUserResponse'
+ *       401:
+ *         description: 비로그인 또는 토큰 만료·무효
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthErrorResponse'
+ *       502:
+ *         description: 백엔드 서버 연결 실패
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthErrorResponse'
+ */
 export async function GET(req: NextRequest) {
   const token = req.cookies.get(authCookieName)?.value
   if (!token) {
