@@ -11,6 +11,7 @@ export const routes = {
   },
   login: "/login",
   signup: "/signup",
+  mypage: "/mypage",
   company: (companyId: string) => `/company/${companyId}`,
   interview: (companyId: string) => `/interview/${companyId}`,
   // 면접 결과 리포트 — 결과는 세션 단위지만, 지금은 companyId로 최신 결과를 본다.
