@@ -18,6 +18,60 @@ const schemas = {
     required: ["success", "error"],
   },
 
+  // ─── 인증 (auth BFF: 프론트↔FastAPI 중계) ─────────────────────────────────
+  AuthUser: {
+    type: "object",
+    description: "응답에 실리는 사용자 정보(비밀번호 제외)",
+    properties: {
+      id: { type: "string", example: "1" },
+      name: { type: "string", example: "홍길동" },
+      email: { type: "string", format: "email", example: "user@example.com" },
+    },
+    required: ["id", "name", "email"],
+  },
+
+  AuthResponse: {
+    type: "object",
+    description:
+      "로그인·회원가입 성공 응답. 토큰은 본문뿐 아니라 httpOnly 쿠키(hcr_token)로도 내려가며, 이후 인증은 쿠키로 한다.",
+    properties: {
+      success: { type: "boolean", example: true },
+      data: {
+        type: "object",
+        properties: {
+          token: {
+            type: "string",
+            description: "JWT(참고용). 실제 인증은 httpOnly 쿠키 사용",
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+          },
+          user: { $ref: "#/components/schemas/AuthUser" },
+        },
+        required: ["token", "user"],
+      },
+    },
+    required: ["success", "data"],
+  },
+
+  AuthUserResponse: {
+    type: "object",
+    description: "현재 로그인 사용자 조회(/api/auth/me) 성공 응답",
+    properties: {
+      success: { type: "boolean", example: true },
+      data: { $ref: "#/components/schemas/AuthUser" },
+    },
+    required: ["success", "data"],
+  },
+
+  AuthErrorResponse: {
+    type: "object",
+    description: "인증 실패 응답(BFF 는 error 가 아니라 message 필드를 쓴다)",
+    properties: {
+      success: { type: "boolean", example: false },
+      message: { type: "string", example: "이메일 또는 비밀번호가 올바르지 않습니다" },
+    },
+    required: ["success", "message"],
+  },
+
   CompanyReportResponse: {
     type: "object",
     properties: {

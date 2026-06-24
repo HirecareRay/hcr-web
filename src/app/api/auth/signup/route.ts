@@ -7,6 +7,7 @@ import { proxyAuth } from "../proxyAuth"
  *   post:
  *     summary: 회원가입
  *     tags: [Auth]
+ *     description: 회원가입 후 자동 로그인된다. 성공 시 JWT를 httpOnly 쿠키(hcr_token)로 발급한다.
  *     requestBody:
  *       required: true
  *       content:
@@ -19,15 +20,30 @@ import { proxyAuth } from "../proxyAuth"
  *                 type: string
  *               email:
  *                 type: string
+ *                 format: email
  *               password:
  *                 type: string
+ *                 format: password
+ *                 minLength: 8
  *     responses:
- *       200:
- *         description: 회원가입 성공 및 토큰 반환
+ *       201:
+ *         description: 회원가입 성공 (Set-Cookie 로 hcr_token 발급)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
  *       409:
  *         description: 이미 가입된 이메일
- *       500:
- *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthErrorResponse'
+ *       502:
+ *         description: 백엔드 서버 연결 실패
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthErrorResponse'
  */
 export async function POST(req: NextRequest) {
   const body = await req.json()
