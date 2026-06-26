@@ -12,8 +12,18 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { downstreamEventSchema } from "../types/interviewProtocolSchema"
-import type { ControlAction, QuestionEvent, SummaryEvent } from "../types/interviewProtocol"
+import {
+  downstreamEventSchema,
+  eventSnapshotMessageSchema,
+  landmarkFrameMessageSchema,
+} from "../types/interviewProtocolSchema"
+import type {
+  ControlAction,
+  EventSnapshotMessage,
+  LandmarkFrameMessage,
+  QuestionEvent,
+  SummaryEvent,
+} from "../types/interviewProtocol"
 
 const WS_BASE = process.env.NEXT_PUBLIC_INTERVIEW_WS_URL ?? "ws://localhost:8000"
 
@@ -94,11 +104,28 @@ export function useInterviewSocket(sessionId: string | null) {
     socketRef.current?.send(chunk)
   }, [])
 
+  // 비언어 지표 프레임(landmark_frame) 송신 — 계약 위반 프레임이 서버로 새지 않도록
+  // 송신 직전 Zod 로 1차 검증한 뒤 raw snake_case JSON 으로 보냅니다.
+  const sendLandmark = useCallback((frame: LandmarkFrameMessage) => {
+    const parsed = landmarkFrameMessageSchema.safeParse(frame)
+    if (!parsed.success) return
+    socketRef.current?.send(JSON.stringify(parsed.data))
+  }, [])
+
+  // 이벤트 증거 스냅샷(event_snapshot) 송신 — 시선이탈·무표정 등 감지 시.
+  const sendEventSnapshot = useCallback((snapshot: EventSnapshotMessage) => {
+    const parsed = eventSnapshotMessageSchema.safeParse(snapshot)
+    if (!parsed.success) return
+    socketRef.current?.send(JSON.stringify(parsed.data))
+  }, [])
+
   return {
     ...view,
     answerStart: useCallback(() => sendControl("answer_start"), [sendControl]),
     answerEnd: useCallback(() => sendControl("answer_end"), [sendControl]),
     next: useCallback(() => sendControl("next"), [sendControl]),
     sendAudio,
+    sendLandmark,
+    sendEventSnapshot,
   }
 }
