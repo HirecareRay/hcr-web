@@ -193,18 +193,24 @@ export function NonverbalDemo({ companyId }: Props) {
       <div className="grid grid-cols-2 gap-2 text-sm">
         <Metric
           label="gaze_x"
+          hint="시선 좌우"
           value={fmt(capture.metrics.gazeX)}
           warn={isAway(capture.metrics.gazeX)}
         />
         <Metric
           label="gaze_y"
+          hint="시선 위아래"
           value={fmt(capture.metrics.gazeY)}
           warn={isAway(capture.metrics.gazeY)}
         />
-        <Metric label="head_yaw" value={fmt(capture.metrics.headYaw, 1)} />
-        <Metric label="head_pitch" value={fmt(capture.metrics.headPitch, 1)} />
-        <Metric label="head_roll" value={fmt(capture.metrics.headRoll, 1)} />
-        <Metric label="expression" value={capture.metrics.expression ?? "—"} />
+        <Metric label="head_yaw" hint="고개 좌우(도리)" value={fmt(capture.metrics.headYaw, 1)} />
+        <Metric
+          label="head_pitch"
+          hint="고개 위아래(끄덕)"
+          value={fmt(capture.metrics.headPitch, 1)}
+        />
+        <Metric label="head_roll" hint="고개 갸웃" value={fmt(capture.metrics.headRoll, 1)} />
+        <Metric label="expression" hint="표정" value={capture.metrics.expression ?? "—"} />
       </div>
       <p className="text-xs text-gray-500">
         답변 중: <span className="font-medium">{answering ? "예 (송신 중)" : "아니오"}</span> ·
@@ -243,10 +249,22 @@ function isAway(value: number | null): boolean {
   return value !== null && Math.abs(value) > 0.3
 }
 
-function Metric({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
+function Metric({
+  label,
+  hint,
+  value,
+  warn,
+}: {
+  label: string
+  hint: string
+  value: string
+  warn?: boolean
+}) {
   return (
     <div className={"rounded border p-2 " + (warn ? "border-red-300 bg-red-50" : "")}>
-      <p className="text-xs text-gray-400">{label}</p>
+      <p className="text-xs text-gray-400">
+        {label} <span className="text-gray-500">· {hint}</span>
+      </p>
       <p className="font-mono text-sm">{value}</p>
     </div>
   )
