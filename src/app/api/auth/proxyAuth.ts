@@ -33,6 +33,9 @@ export async function proxyAuth(path: string, body: unknown): Promise<NextRespon
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      // 백엔드가 응답 없이 멈추면(행) 8초 후 끊는다. 프론트 axios(10s)보다 짧게 잡아
+      // 무한 대기 대신 아래 catch 에서 깨끗한 502 로 떨어지게 한다.
+      signal: AbortSignal.timeout(8000),
     })
 
     // FastAPI 응답을 JSON 으로 파싱 (성공: {token,user} / 실패: {detail})
