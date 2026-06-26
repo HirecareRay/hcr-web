@@ -47,8 +47,9 @@ interface UseNonverbalCaptureParams {
   active: boolean // 캡처 루프 on/off (카메라 준비됐을 때 true)
   answering: boolean // 답변 구간 → 송신 게이팅
   produceMetrics: MetricsProducer
-  sendLandmark: (frame: LandmarkFrameMessage) => void
-  sendEventSnapshot: (snapshot: EventSnapshotMessage) => void
+  // 송신 성공 여부를 돌려준다(소켓이 닫혀 있으면 false) — 실제 송신된 프레임만 카운트한다.
+  sendLandmark: (frame: LandmarkFrameMessage) => boolean
+  sendEventSnapshot: (snapshot: EventSnapshotMessage) => boolean
   config?: Partial<CaptureConfig>
 }
 
@@ -113,11 +114,11 @@ export function useNonverbalCapture({
 
       if (!answering) return // 답변 구간이 아니면 오버레이만, 송신 없음
 
-      // landmark_frame ~1s throttle 송신
+      // landmark_frame ~1s throttle 송신 — 소켓이 닫혀 있어 실제 송신에 실패하면
+      // 카운트하지 않는다(검증 지표가 실제 전송 수를 반영하도록).
       if (shouldEmit(lastSendAtRef.current, now, cfg.sendIntervalMs)) {
         lastSendAtRef.current = now
-        sendLandmark(metricsToFrame(next))
-        setSentFrameCount((c) => c + 1)
+        if (sendLandmark(metricsToFrame(next))) setSentFrameCount((c) => c + 1)
       }
 
       // 이벤트 감지 → 스냅샷 → event_snapshot 송신

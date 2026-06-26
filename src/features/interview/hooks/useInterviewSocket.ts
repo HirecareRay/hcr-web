@@ -95,29 +95,52 @@ export function useInterviewSocket(sessionId: string | null) {
   }, [sessionId, applyMessage])
 
   // ── 업스트림 송신 액션 ──────────────────────────────────────────────────────
-  const sendControl = useCallback((action: ControlAction) => {
-    socketRef.current?.send(JSON.stringify({ type: "control", action }))
+
+  // 모든 송신의 공통 관문. 소켓이 OPEN 일 때만 보내고, 닫힘/네트워크 오류로 인한 예외를
+  // 흡수한다. 비언어 캡처는 rAF 루프에서 매초 landmark_frame 을 보내므로, 닫힌(CLOSING/
+  // CLOSED) 소켓에 send 하면 던지는 InvalidStateError 가 루프를 오염시키지 않도록 차단한다.
+  // 송신 성공 여부를 boolean 으로 돌려주어, 손실 프레임을 호출 측이 셀 수 있게 한다.
+  // (버퍼링·재연결은 Phase 6 범위 — 지금은 손실 프레임을 다음 프레임으로 자연 복구한다.)
+  const safeSend = useCallback((data: string | ArrayBuffer | Blob): boolean => {
+    const socket = socketRef.current
+    if (!socket || socket.readyState !== WebSocket.OPEN) return false
+    try {
+      socket.send(data)
+      return true
+    } catch (err) {
+      console.error("WS 송신 실패:", err)
+      return false
+    }
   }, [])
 
+  const sendControl = useCallback(
+    (action: ControlAction) => safeSend(JSON.stringify({ type: "control", action })),
+    [safeSend]
+  )
+
   // 오디오 청크(binary)는 JSON 이 아니라 바이너리 프레임으로 보냅니다.
-  const sendAudio = useCallback((chunk: ArrayBuffer | Blob) => {
-    socketRef.current?.send(chunk)
-  }, [])
+  const sendAudio = useCallback((chunk: ArrayBuffer | Blob) => safeSend(chunk), [safeSend])
 
   // 비언어 지표 프레임(landmark_frame) 송신 — 계약 위반 프레임이 서버로 새지 않도록
   // 송신 직전 Zod 로 1차 검증한 뒤 raw snake_case JSON 으로 보냅니다.
-  const sendLandmark = useCallback((frame: LandmarkFrameMessage) => {
-    const parsed = landmarkFrameMessageSchema.safeParse(frame)
-    if (!parsed.success) return
-    socketRef.current?.send(JSON.stringify(parsed.data))
-  }, [])
+  const sendLandmark = useCallback(
+    (frame: LandmarkFrameMessage): boolean => {
+      const parsed = landmarkFrameMessageSchema.safeParse(frame)
+      if (!parsed.success) return false
+      return safeSend(JSON.stringify(parsed.data))
+    },
+    [safeSend]
+  )
 
   // 이벤트 증거 스냅샷(event_snapshot) 송신 — 시선이탈·무표정 등 감지 시.
-  const sendEventSnapshot = useCallback((snapshot: EventSnapshotMessage) => {
-    const parsed = eventSnapshotMessageSchema.safeParse(snapshot)
-    if (!parsed.success) return
-    socketRef.current?.send(JSON.stringify(parsed.data))
-  }, [])
+  const sendEventSnapshot = useCallback(
+    (snapshot: EventSnapshotMessage): boolean => {
+      const parsed = eventSnapshotMessageSchema.safeParse(snapshot)
+      if (!parsed.success) return false
+      return safeSend(JSON.stringify(parsed.data))
+    },
+    [safeSend]
+  )
 
   return {
     ...view,
