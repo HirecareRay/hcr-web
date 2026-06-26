@@ -12,7 +12,10 @@ export interface EventDetectorConfig {
   gazeThreshold: number // |gaze|>이 값이면 이탈로 간주 (백엔드 계약: 0.3)
   gazeHoldMs: number // 이탈이 이만큼 지속돼야 이벤트
   flatHoldMs: number // 무표정이 이만큼 지속돼야 이벤트
-  cooldownMs: number // 같은 종류 이벤트 재발화 최소 간격
+  // 같은 종류 이벤트 재발화 최소 간격. 이탈/무표정이 "계속 지속"되면 이 간격마다 의도적으로
+  // 재발화한다 — 1회성 알림이 아니라 지속 시간을 증거로 누적하기 위함이다(meta.durationMs 가
+  // 매번 늘어나 백엔드가 지속 길이를 알 수 있다). 상태가 정상으로 돌아오면 since 가 리셋된다.
+  cooldownMs: number
 }
 
 export const defaultEventConfig: EventDetectorConfig = {
