@@ -11,7 +11,7 @@ export const apiEndpoints = {
     logout: "/api/auth/logout",
   },
   companies: {
-    search: "/api/companies",
+    search: "/api/companies/search",
     report: (id: string) => `/api/companies/${id}/report`,
   },
   interview: {
