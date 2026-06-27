@@ -1,15 +1,9 @@
 // app/api/companies/[companyId]/report/route.ts
 
+import { isAxiosError } from "axios"
 import { NextRequest, NextResponse } from "next/server"
-import { buildDummyReport } from "./dummyReport"
+import backendApi from "@/lib/backendAxiosInstance"
 import { companyReportSchema } from "@/features/company/types/companyReportSchema"
-
-// 실제 LLM 분석 대기를 흉내내기 위한 인위적 지연(ms).
-// 프론트의 로딩/스켈레톤 UX를 지금 단계에서 완성하기 위한 장치입니다.
-// TODO: 실제 DB·LLM 연결 시 이 지연은 제거하세요.
-const dummyAnalysisDelayMs = 1500
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /**
  * @swagger
@@ -59,18 +53,22 @@ export async function GET(
       return NextResponse.json({ success: false, error: "companyId가 필요합니다" }, { status: 400 })
     }
 
-    // 실제 LLM 분석 대기를 흉내내기 위한 지연 (로딩/스켈레톤 UX 확인용).
-    await delay(dummyAnalysisDelayMs)
-
-    // TODO: 백엔드(DB/AI) 연결 시 이 줄을 실제 조회 로직으로 교체하세요.
-    const report = buildDummyReport(companyId)
+    // FastAPI 백엔드에서 실제 보고서를 조회한다 (BFF→FastAPI 전용 axios 인스턴스).
+    const { data: report } = await backendApi.get(`/companies/${companyId}/report`)
 
     // 응답이 계약(CompanyReport)을 지키는지 Zod로 검증한 뒤 내려보냅니다.
-    // 나중에 더미를 실제 DB·LLM 산출물로 바꿔도, 형태가 깨지면 여기서 바로 잡힙니다.
+    // 형태가 깨지면 여기서 바로 잡힙니다(아래 catch 로 500 + 콘솔 로그).
     const validated = companyReportSchema.parse(report)
 
     return NextResponse.json({ success: true, data: validated })
   } catch (error) {
+    // 백엔드가 4xx/5xx 로 응답하면 그 상태코드를 그대로 전달(예: 없는 기업 404).
+    if (isAxiosError(error) && error.response) {
+      return NextResponse.json(
+        { success: false, error: `백엔드 오류 (${error.response.status})` },
+        { status: error.response.status }
+      )
+    }
     console.error("회사 보고서 조회 실패:", error)
     return NextResponse.json(
       { success: false, error: "보고서를 불러오는 중 오류가 발생했습니다" },
