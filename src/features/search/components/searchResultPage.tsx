@@ -6,11 +6,7 @@ import { ChevronRight, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SearchBar } from "@/components/ui/searchBar"
 import { useSearchResults } from "../hooks/useSearchResults"
-import {
-  companySearchResults,
-  relatedJobPostingCount,
-  relatedJobPostings,
-} from "../services/searchService"
+import { relatedJobPostingCount, relatedJobPostings } from "../services/searchService"
 import type { CompanyCategory, CompanySearchResult, RelatedJobPosting } from "../types/search"
 
 const categories: CompanyCategory[] = ["전체", "미디어"]
@@ -71,7 +67,7 @@ export function SearchResultPage() {
 
 function SearchResultContent() {
   const { keyword, setKeyword, selectedCategory, setSelectedCategory, filteredCompanies } =
-    useSearchResults(companySearchResults)
+    useSearchResults()
 
   return (
     <section className="bg-background min-h-full px-6 pt-7 pb-8">
