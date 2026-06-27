@@ -1,4 +1,6 @@
 // src/app/api/upload/route.ts
+import backendAxiosInstance from "@/lib/backendAxiosInstance"
+import axios from "axios"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
@@ -42,37 +44,54 @@ export async function POST(request: Request) {
     fastapiFormData.append(actualKey, file, file.name)
 
     // 3. FastAPI 백엔드로 외부 요청 송신
-    // 환경변수(예: FASTAPI_URL)가 없다면 실제 FastAPI 주소(예: http://localhost:8000)를 입력하세요.
-    const fastapiUrl = process.env.FASTAPI_URL ?? "http://localhost:8000/documents/upload"
-
-    console.log("incomingFormData")
-    console.log(incomingFormData)
-    console.log("incomingFormData")
-
-    const response = await fetch(fastapiUrl, {
-      method: "POST",
-      body: fastapiFormData,
-      // ⚠️ 주의: 'Content-Type' 헤더를 수동으로 지정하지 마세요.
-      // fetch가 멀티파트 경계선(boundary)을 자동으로 생성해야 FastAPI가 올바르게 파싱합니다.
+    const response = await backendAxiosInstance.post("/documents/upload", fastapiFormData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     })
+    // // 환경변수(예: FASTAPI_URL)가 없다면 실제 FastAPI 주소(예: http://localhost:8000)를 입력하세요.
+    // const fastapiUrl = process.env.FASTAPI_URL ?? "http://localhost:8000/documents/upload"
 
-    // 4. FastAPI의 응답 상태에 따른 처리
-    if (!response.ok) {
-      const errorText = await response.text()
-      return NextResponse.json(
-        { error: `FastAPI 서버 에러: ${errorText}` },
-        { status: response.status }
-      )
-    }
+    // const response = await fetch(fastapiUrl, {
+    //   method: "POST",
+    //   body: fastapiFormData,
+    //   // ⚠️ 주의: 'Content-Type' 헤더를 수동으로 지정하지 마세요.
+    //   // fetch가 멀티파트 경계선(boundary)을 자동으로 생성해야 FastAPI가 올바르게 파싱합니다.
+    // })
 
-    const data = await response.json()
-    console.log("data")
-    console.log(data)
+    // // 4. FastAPI의 응답 상태에 따른 처리
+    // if (!response.ok) {
+    //   const errorText = await response.text()
+    //   return NextResponse.json(
+    //     { error: `FastAPI 서버 에러: ${errorText}` },
+    //     { status: response.status }
+    //   )
+    // }
+
+    const data = await response.data
 
     // 5. 클라이언트에 최종 성공 응답 반환
     return NextResponse.json({ ok: true, ...data })
   } catch (error: any) {
+    // 💡 [변경 구간] FastAPI 서버에서 에러 상태 코드(4xx, 5xx)를 반환한 경우 처리
+    if (axios.isAxiosError(error) && error.response) {
+      const errorText =
+        typeof error.response.data === "string"
+          ? error.response.data
+          : JSON.stringify(error.response.data)
+
+      console.error("FastAPI Server Error:", errorText)
+      return NextResponse.json(
+        { error: `FastAPI 서버 에러: ${errorText}` },
+        { status: error.response.status }
+      )
+    }
+
+    // 일반 네트워크 에러 또는 기타 BFF 내부 오류 처리
     console.error("BFF Upload Error:", error)
-    return NextResponse.json({ error: "BFF 내부 서버 오류가 발생했습니다." }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || "BFF 내부 서버 오류가 발생했습니다." },
+      { status: 500 }
+    )
   }
 }
