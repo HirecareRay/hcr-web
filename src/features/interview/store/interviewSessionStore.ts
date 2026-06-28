@@ -26,6 +26,7 @@ interface InterviewSessionState {
   evaluations: LiveEvaluation[]
   listening: boolean // 답변 인식 중(🔴) 여부
   cameraConsented: boolean // 카메라 비언어 분석·스냅샷 전송 동의 여부
+  liveQuestionNo: number // WS 주도: 도착한 질문 러닝 카운터(꼬리질문 포함, 분모 없음)
 
   // ─── 액션 ───
   configure: (config: InterviewConfig) => void
@@ -37,6 +38,10 @@ interface InterviewSessionState {
   advanceQuestion: () => void
   finishNow: () => void
   reset: () => void
+
+  // ─── WS 주도 액션 (Step C에서 페이지가 사용) ───
+  presentQuestion: () => void // 새 WS 질문 도착 → asking + 러닝 카운터 증가
+  beginEvaluating: () => void // 답변 종료 → evaluating(평가 스트림 표시)
 }
 
 const initialState = {
@@ -47,6 +52,7 @@ const initialState = {
   evaluations: [] as LiveEvaluation[],
   listening: false,
   cameraConsented: false,
+  liveQuestionNo: 0,
 }
 
 export const useInterviewSessionStore = create<InterviewSessionState>((set) => ({
@@ -83,6 +89,18 @@ export const useInterviewSessionStore = create<InterviewSessionState>((set) => (
   finishNow: () => set(() => ({ phase: "finished", listening: false })),
 
   reset: () => set(() => ({ ...initialState })),
+
+  // ── WS 주도 ──
+  // 백엔드가 보낸 새 질문(메인/꼬리) 도착 시: asking 진입 + 러닝 카운터 증가.
+  presentQuestion: () =>
+    set((state) => ({
+      phase: "asking",
+      listening: false,
+      liveQuestionNo: state.liveQuestionNo + 1,
+    })),
+
+  // 답변 종료(answer_end) 직후: 평가(eval_delta) 스트림을 표시하는 단계로.
+  beginEvaluating: () => set(() => ({ phase: "evaluating", listening: false })),
 }))
 
 /** 현재 질문을 반환하는 셀렉터 (없으면 null). */
