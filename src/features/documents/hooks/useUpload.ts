@@ -1,18 +1,35 @@
-// hooks/useUpload.ts
+import { useEffect } from "react"
 import { useUploadStore } from "../store/uploadStore"
 import { uploadFile } from "../services/uploadService"
 import { UploadType } from "../types/upload"
+import { documentService, DocSlug } from "../services/documentService"
+
+export const UPLOAD_TYPE_TO_SLUG: Record<UploadType, DocSlug> = {
+  resume: "resume",
+  coverLetter: "cover_letter",
+  portfolio: "portfolio",
+  workExperience: "work_experience",
+}
 
 export function useUploadFiles() {
-  const { items, setFile } = useUploadStore()
+  const { items, setFile, setExists } = useUploadStore()
 
-  // type 인자를 any 대신 정확한 타입으로 지정합니다.
+  useEffect(() => {
+    items.forEach(({ id }) => {
+      documentService
+        .get(UPLOAD_TYPE_TO_SLUG[id])
+        .then(() => setExists(id, true))
+        .catch(() => {})
+    })
+    // ponytail: 마운트 1회만 조회
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function upload(type: UploadType, file: File) {
     setFile(type, file)
     try {
-      // 서비스 함수에 파일과 타입을 함께 전달합니다.
       const result = await uploadFile(file, type)
-      console.log("parsed result:", result)
+      setExists(type, true)
       return result
     } catch (error) {
       console.log("파일 형식이 잘못되었습니다.", error)

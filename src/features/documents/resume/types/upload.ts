@@ -7,5 +7,4 @@ export interface UploadItem {
   required: boolean
   file?: File | null
   uploadedUrl?: string
-  exists?: boolean
 }
