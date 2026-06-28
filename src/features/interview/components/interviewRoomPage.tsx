@@ -27,6 +27,7 @@ import { SessionTimerBar } from "./room/sessionTimerBar"
 import { VideoStage } from "./room/videoStage"
 import { InterviewerPanel } from "./room/interviewerPanel"
 import { AnswerPanel } from "./room/answerPanel"
+import { EvaluationPanel } from "./room/evaluationPanel"
 import { ListeningIndicator } from "./room/listeningIndicator"
 import type { InterviewConfig, InterviewMode } from "../types/interviewSession"
 
@@ -57,6 +58,7 @@ export function InterviewRoomPage({ companyId }: Props) {
   const tts = useTts()
 
   const [answerText, setAnswerText] = useState("")
+  const [nextRequested, setNextRequested] = useState(false) // "다음 질문" 누른 뒤 도착 대기
   const mode: InterviewMode = config?.mode ?? "text"
 
   // ─── 실시간 스트리밍(WS + 비언어 + 오디오) ───
@@ -95,6 +97,7 @@ export function InterviewRoomPage({ companyId }: Props) {
     if (lastPresentedRef.current === liveQuestion.questionId) return
     lastPresentedRef.current = liveQuestion.questionId
     setAnswerText("")
+    setNextRequested(false)
     presentQuestion()
     void tts.speak(liveQuestion.ttsText ?? liveQuestion.text)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -133,13 +136,18 @@ export function InterviewRoomPage({ companyId }: Props) {
     beginAnswering()
   }, [tts, wsAnswerStart, beginAnswering])
 
-  // 답변 종료 — (텍스트 모드면 입력값 송신) 후 종료·다음 요청, 평가 단계로.
+  // 답변 종료 — (텍스트 모드면 입력값 송신) 후 종료 신호, 평가 단계로(평가 토큰 스트림 표시).
   const handleEndAnswer = useCallback(() => {
     if (mode === "text" && answerText.trim()) wsSendTextAnswer(answerText.trim())
     wsAnswerEnd()
-    wsNext()
     beginEvaluating()
-  }, [mode, answerText, wsSendTextAnswer, wsAnswerEnd, wsNext, beginEvaluating])
+  }, [mode, answerText, wsSendTextAnswer, wsAnswerEnd, beginEvaluating])
+
+  // 다음 질문 요청 — 백엔드가 꼬리질문/다음 메인 또는 요약을 보낸다. 도착까지 대기 표시.
+  const handleNext = useCallback(() => {
+    setNextRequested(true)
+    wsNext()
+  }, [wsNext])
 
   const handleRetry = useCallback(() => reset(), [reset]) // 연결 실패 시 처음부터(재연결은 Phase 6)
 
@@ -229,10 +237,12 @@ export function InterviewRoomPage({ companyId }: Props) {
       />
 
       {phase === "evaluating" ? (
-        <section className="border-warm-border bg-background flex items-center gap-2 rounded-2xl border p-4 text-sm shadow-sm">
-          <Loader2 className="text-primary h-4 w-4 animate-spin" />
-          <span className="text-muted">답변을 평가하고 다음 질문을 준비하고 있어요…</span>
-        </section>
+        <EvaluationPanel
+          transcript={live.transcript}
+          evaluation={live.evaluation}
+          nextRequested={nextRequested}
+          onNext={handleNext}
+        />
       ) : (
         <AnswerPanel
           mode={mode}
