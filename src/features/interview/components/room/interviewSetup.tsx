@@ -20,6 +20,7 @@ import { deriveQuestionCount, durationLabel, durationOptionsSec } from "../../li
 import type { InterviewMode } from "../../types/interviewSession"
 import type { MediaPermission } from "../../hooks/useMediaStream"
 import { VideoStage } from "./videoStage"
+import { CaptureConsentNotice } from "../captureConsentNotice"
 
 interface StartPayload {
   mode: InterviewMode
@@ -33,6 +34,8 @@ interface Props {
   deviceError: string | null
   isStarting: boolean
   startError: boolean
+  cameraConsented: boolean
+  onCameraConsentChange: (consented: boolean) => void
   onRequestDevices: () => void
   onStart: (payload: StartPayload) => void
 }
@@ -49,6 +52,8 @@ export function InterviewSetup({
   deviceError,
   isStarting,
   startError,
+  cameraConsented,
+  onCameraConsentChange,
   onRequestDevices,
   onStart,
 }: Props) {
@@ -130,15 +135,24 @@ export function InterviewSetup({
         <span className="text-ink text-sm font-semibold">카메라 · 마이크</span>
         <VideoStage stream={stream} />
         {permission !== "granted" && (
-          <button
-            type="button"
-            onClick={onRequestDevices}
-            disabled={permission === "requesting"}
-            className="border-warm-border text-ink inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
-          >
-            <Camera className="h-4 w-4" />
-            {permission === "requesting" ? "권한 요청 중…" : "카메라·마이크 켜기"}
-          </button>
+          <>
+            {/* 동의 전에는 카메라를 켤 수 없게 게이트합니다(프라이버시). */}
+            <CaptureConsentNotice agreed={cameraConsented} onAgreedChange={onCameraConsentChange} />
+            <button
+              type="button"
+              onClick={onRequestDevices}
+              disabled={permission === "requesting" || !cameraConsented}
+              title={!cameraConsented ? "먼저 카메라 분석에 동의해 주세요" : undefined}
+              className="border-warm-border text-ink inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+            >
+              <Camera className="h-4 w-4" />
+              {permission === "requesting"
+                ? "권한 요청 중…"
+                : !cameraConsented
+                  ? "동의 후 카메라를 켤 수 있어요"
+                  : "카메라·마이크 켜기"}
+            </button>
+          </>
         )}
         {deviceError && <p className="text-error text-xs">{deviceError}</p>}
       </div>

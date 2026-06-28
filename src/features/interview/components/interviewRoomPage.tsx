@@ -16,6 +16,7 @@ import { useMediaStream } from "../hooks/useMediaStream"
 import { useStt } from "../hooks/useStt"
 import { useTts } from "../hooks/useTts"
 import { useInterviewTimer } from "../hooks/useInterviewTimer"
+import { useLiveStreaming } from "../hooks/useLiveStreaming"
 import { selectCurrentQuestion, useInterviewSessionStore } from "../store/interviewSessionStore"
 import { InterviewSetup } from "./room/interviewSetup"
 import { SessionTimerBar } from "./room/sessionTimerBar"
@@ -41,6 +42,8 @@ export function InterviewRoomPage({ companyId }: Props) {
   const advanceQuestion = useInterviewSessionStore((s) => s.advanceQuestion)
   const finishNow = useInterviewSessionStore((s) => s.finishNow)
   const reset = useInterviewSessionStore((s) => s.reset)
+  const cameraConsented = useInterviewSessionStore((s) => s.cameraConsented)
+  const setCameraConsent = useInterviewSessionStore((s) => s.setCameraConsent)
   const currentQuestion = useInterviewSessionStore(selectCurrentQuestion)
 
   // ─── 미디어 · 음성 · 세션 ───
@@ -52,6 +55,20 @@ export function InterviewRoomPage({ companyId }: Props) {
   const [answerText, setAnswerText] = useState("")
   const answerStartRef = useRef<number>(0)
   const mode: InterviewMode = config?.mode ?? "text"
+
+  // ─── 실시간 스트리밍(WS + 비언어 + 오디오) ───
+  // VideoStage 가 노출하는 <video> 픽셀을 MediaPipe 가 그대로 읽습니다(디코드 1회).
+  const analysisVideoRef = useRef<HTMLVideoElement | null>(null)
+  const live = useLiveStreaming({
+    sessionId: session?.sessionId ?? null,
+    phase,
+    mode,
+    videoRef: analysisVideoRef,
+    stream: media.stream,
+    consented: cameraConsented,
+  })
+  // control 트리거는 안정 신원이라 핸들러 deps 에 안전하게 넣을 수 있게 구조분해합니다.
+  const { answerStart: wsAnswerStart, answerEnd: wsAnswerEnd, next: wsNext } = live
 
   // 전체 시간 카운트다운 — setup/finished를 제외한 단계에서 작동, 0이면 즉시 종료
   const running = phase !== "setup" && phase !== "finished"
@@ -90,8 +107,9 @@ export function InterviewRoomPage({ companyId }: Props) {
   const handleBeginAnswering = useCallback(() => {
     tts.cancel()
     answerStartRef.current = Date.now()
+    wsAnswerStart() // WS control: 답변 시작(소켓 닫혀 있으면 no-op)
     beginAnswering()
-  }, [tts, beginAnswering])
+  }, [tts, wsAnswerStart, beginAnswering])
 
   const handleStartRecording = useCallback(() => {
     if (media.stream) stt.start(media.stream)
@@ -114,8 +132,19 @@ export function InterviewRoomPage({ companyId }: Props) {
       hasVideo: Boolean(media.stream?.getVideoTracks().length),
       hasAudio: mode === "voice" && Boolean(media.stream?.getAudioTracks().length),
     })
+    wsAnswerEnd() // WS control: 답변 종료 → 다음 질문 요청(소켓 닫혀 있으면 no-op)
+    wsNext()
     advanceQuestion()
-  }, [currentQuestion, answerText, media.stream, mode, submit, advanceQuestion])
+  }, [
+    currentQuestion,
+    answerText,
+    media.stream,
+    mode,
+    submit,
+    wsAnswerEnd,
+    wsNext,
+    advanceQuestion,
+  ])
 
   // ─── 렌더 ───
   if (phase === "setup") {
@@ -126,6 +155,8 @@ export function InterviewRoomPage({ companyId }: Props) {
         deviceError={media.error}
         isStarting={isStarting}
         startError={startError}
+        cameraConsented={cameraConsented}
+        onCameraConsentChange={setCameraConsent}
         onRequestDevices={() => media.request({ video: true, audio: true })}
         onStart={handleStart}
       />
@@ -145,7 +176,7 @@ export function InterviewRoomPage({ companyId }: Props) {
       />
 
       <div className="relative">
-        <VideoStage stream={media.stream} />
+        <VideoStage stream={media.stream} videoRef={analysisVideoRef} />
         <div className="absolute top-2 right-2">
           <ListeningIndicator active={listening} />
         </div>

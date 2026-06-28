@@ -74,7 +74,11 @@ export function useInterviewSocket(sessionId: string | null) {
   useEffect(() => {
     if (!sessionId) return
 
-    const socket = new WebSocket(`${WS_BASE}/interviews/ws/${sessionId}`)
+    // ⚠️ TODO(Phase 6 · 배포 전 필수): 이 채널로 얼굴 스냅샷(event_snapshot)·음성(audio_chunk)이 흐른다.
+    //   현재는 토큰 없이 sessionId 만으로 직결 + 평문(ws://)이라 로컬 데모 한정으로만 안전하다.
+    //   배포 전: ① BFF에서 단기 WS 토큰 발급 → 서브프로토콜/쿼리로 전달 + origin 검증,
+    //            ② wss:// 강제(프라이버시 데이터 평문 전송 금지).
+    const socket = new WebSocket(`${WS_BASE}/interviews/ws/${encodeURIComponent(sessionId)}`)
     socketRef.current = socket
     setView({ ...EMPTY_VIEW, state: "connecting" })
 
