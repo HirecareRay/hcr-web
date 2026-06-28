@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { loginUser } from "../services/authService"
 import { useAuthStore } from "../store/authStore"
+import { documentService } from "@/features/documents/services/documentService"
 import type { LoginFormValues } from "../types/auth"
 
 export function useLogin() {
@@ -9,6 +10,7 @@ export function useLogin() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const setUser = useAuthStore((s) => s.setUser)
+  const setDocExists = useAuthStore((s) => s.setDocExists)
 
   async function handleLogin(data: LoginFormValues) {
     setError("")
@@ -17,6 +19,10 @@ export function useLogin() {
       const result = await loginUser(data.email, data.password)
       // 토큰은 BFF 가 쿠키로 심었으니, 여기선 유저 정보만 전역 스토어에 채운다.
       setUser(result.user)
+      documentService
+        .exists()
+        .then(setDocExists)
+        .catch(() => {})
       // 보호 페이지에서 튕겨와 로그인했다면 원래 가려던 곳으로, 아니면 홈으로.
       const redirect = new URLSearchParams(window.location.search).get("redirect")
       router.push(redirect ?? "/")

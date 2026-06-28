@@ -64,9 +64,7 @@ export default function DocumentForm({
     const empty: Item = Object.fromEntries(
       (sec.subFields ?? []).map((f) => [f.key, f.type === "boolean" ? false : null])
     )
-    const subItem = sec.subHasItemEtc
-      ? { ...empty, etc: { custom_key: null, custom_content: null } }
-      : empty
+    const subItem = sec.subHasItemEtc ? { ...empty, etc: [] } : empty
     const updated = [...getSubItems(sec.key, parentIdx, sec.subKey!), subItem]
     updateField(sec.key, parentIdx, sec.subKey!, updated)
   }
@@ -89,8 +87,92 @@ export default function DocumentForm({
     updateField(sec.key, parentIdx, sec.subKey!, updated)
   }
 
+  // 구 DB 데이터: etc가 단일 객체로 저장된 경우 배열로 정규화
+  const toEtcArray = (val: unknown): EtcItem[] => {
+    if (!val) return []
+    if (Array.isArray(val)) return val as EtcItem[]
+    return [val as EtcItem]
+  }
+
+  // ── item-level etc helpers (portfolio / work_experience 항목) ─────
+  const getItemEtc = (secKey: string, idx: number): EtcItem[] =>
+    toEtcArray(getItems(secKey)[idx]?.etc)
+
+  const addItemEtc = (secKey: string, idx: number) =>
+    updateField(secKey, idx, "etc", [
+      ...getItemEtc(secKey, idx),
+      { custom_key: "", custom_content: "" },
+    ])
+
+  const removeItemEtc = (secKey: string, idx: number, etcIdx: number) =>
+    updateField(
+      secKey,
+      idx,
+      "etc",
+      getItemEtc(secKey, idx).filter((_, i) => i !== etcIdx)
+    )
+
+  const updateItemEtcField = (
+    secKey: string,
+    idx: number,
+    etcIdx: number,
+    key: keyof EtcItem,
+    val: string
+  ) =>
+    updateField(
+      secKey,
+      idx,
+      "etc",
+      getItemEtc(secKey, idx).map((e, i) => (i === etcIdx ? { ...e, [key]: val } : e))
+    )
+
+  // ── sub-item-level etc helpers (work_experience > project) ────────
+  const getSubItemEtc = (sec: SectionDef, parentIdx: number, subIdx: number): EtcItem[] =>
+    toEtcArray(getSubItems(sec.key, parentIdx, sec.subKey!)[subIdx]?.etc)
+
+  const addSubItemEtc = (sec: SectionDef, parentIdx: number, subIdx: number) => {
+    const subs = getSubItems(sec.key, parentIdx, sec.subKey!)
+    const updated = subs.map((sub, i) =>
+      i === subIdx
+        ? {
+            ...sub,
+            etc: [...getSubItemEtc(sec, parentIdx, subIdx), { custom_key: "", custom_content: "" }],
+          }
+        : sub
+    )
+    updateField(sec.key, parentIdx, sec.subKey!, updated)
+  }
+
+  const removeSubItemEtc = (sec: SectionDef, parentIdx: number, subIdx: number, etcIdx: number) => {
+    const subs = getSubItems(sec.key, parentIdx, sec.subKey!)
+    const updated = subs.map((sub, i) =>
+      i === subIdx ? { ...sub, etc: toEtcArray(sub.etc).filter((_, j) => j !== etcIdx) } : sub
+    )
+    updateField(sec.key, parentIdx, sec.subKey!, updated)
+  }
+
+  const updateSubItemEtcField = (
+    sec: SectionDef,
+    parentIdx: number,
+    subIdx: number,
+    etcIdx: number,
+    key: keyof EtcItem,
+    val: string
+  ) => {
+    const subs = getSubItems(sec.key, parentIdx, sec.subKey!)
+    const updated = subs.map((sub, i) =>
+      i === subIdx
+        ? {
+            ...sub,
+            etc: toEtcArray(sub.etc).map((e, j) => (j === etcIdx ? { ...e, [key]: val } : e)),
+          }
+        : sub
+    )
+    updateField(sec.key, parentIdx, sec.subKey!, updated)
+  }
+
   // ── etc (문서 최상위) helpers ──────────────────────────────────────
-  const etcList = (): EtcItem[] => (formData.etc as EtcItem[]) ?? []
+  const etcList = (): EtcItem[] => toEtcArray(formData.etc)
   const setEtc = (list: EtcItem[]) => setFormData((prev) => ({ ...prev, etc: list }))
   const addEtc = () => setEtc([...etcList(), { custom_key: "", custom_content: "" }])
   const removeEtc = (idx: number) => setEtc(etcList().filter((_, i) => i !== idx))
@@ -135,34 +217,52 @@ export default function DocumentForm({
     )
   }
 
-  // ── 항목 etc 렌더 (project 내부) ──────────────────────────────────
-  function renderItemEtc(
-    etcVal: unknown,
-    onChangeKey: (v: string) => void,
-    onChangeContent: (v: string) => void
+  // ── 항목 etc 렌더 (top-level etc와 동일한 스타일) ────────────────
+  function renderEtcList(
+    label: string,
+    list: EtcItem[],
+    onAdd: () => void,
+    onRemove: (i: number) => void,
+    onUpdate: (i: number, key: keyof EtcItem, val: string) => void
   ) {
-    const etc = (etcVal as { custom_key?: string; custom_content?: string }) ?? {}
     return (
-      <div className="mt-2 rounded border border-dashed border-gray-300 p-2">
-        <p className="mb-1 text-xs font-medium text-gray-400">기타 (항목)</p>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="mb-0.5 block text-xs text-gray-500">항목명</label>
-            <input
-              className="w-full rounded border px-2 py-1 text-sm"
-              value={etc.custom_key ?? ""}
-              onChange={(e) => onChangeKey(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-xs text-gray-500">내용</label>
-            <input
-              className="w-full rounded border px-2 py-1 text-sm"
-              value={etc.custom_content ?? ""}
-              onChange={(e) => onChangeContent(e.target.value)}
-            />
-          </div>
+      <div className="mt-3">
+        <h2 className="mb-2 text-base font-bold">{label}</h2>
+        <div className="space-y-2">
+          {Array.isArray(list) &&
+            list.map((etc, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <div className="flex-1">
+                  <label className="mb-0.5 block text-xs text-gray-500">항목명</label>
+                  <input
+                    className="w-full rounded border px-2 py-1 text-sm"
+                    value={etc.custom_key ?? ""}
+                    onChange={(e) => onUpdate(i, "custom_key", e.target.value)}
+                  />
+                </div>
+                <div className="flex-[2]">
+                  <label className="mb-0.5 block text-xs text-gray-500">내용</label>
+                  <input
+                    className="w-full rounded border px-2 py-1 text-sm"
+                    value={etc.custom_content ?? ""}
+                    onChange={(e) => onUpdate(i, "custom_content", e.target.value)}
+                  />
+                </div>
+                <button
+                  onClick={() => onRemove(i)}
+                  className="mt-5 text-xs text-red-400 hover:text-red-600"
+                >
+                  삭제
+                </button>
+              </div>
+            ))}
         </div>
+        <button
+          onClick={onAdd}
+          className="mt-2 rounded border px-3 py-1 text-sm text-gray-500 hover:bg-gray-50"
+        >
+          + 기타 추가
+        </button>
       </div>
     )
   }
@@ -218,18 +318,13 @@ export default function DocumentForm({
                             )}
                           </div>
                           {sec.subHasItemEtc &&
-                            renderItemEtc(
-                              sub.etc,
-                              (v) =>
-                                updateSubField(sec, idx, subIdx, "etc", {
-                                  ...(sub.etc as object),
-                                  custom_key: v,
-                                }),
-                              (v) =>
-                                updateSubField(sec, idx, subIdx, "etc", {
-                                  ...(sub.etc as object),
-                                  custom_content: v,
-                                })
+                            renderEtcList(
+                              "기타",
+                              getSubItemEtc(sec, idx, subIdx),
+                              () => addSubItemEtc(sec, idx, subIdx),
+                              (ei) => removeSubItemEtc(sec, idx, subIdx, ei),
+                              (ei, key, val) =>
+                                updateSubItemEtcField(sec, idx, subIdx, ei, key, val)
                             )}
                           <button
                             onClick={() => removeSubItem(sec, idx, subIdx)}
@@ -249,17 +344,14 @@ export default function DocumentForm({
                   </div>
                 )}
 
-                {/* 항목 etc (portfolio 프로젝트) */}
+                {/* 항목 etc (portfolio 프로젝트 / work_experience 경력 항목) */}
                 {sec.hasItemEtc &&
-                  renderItemEtc(
-                    item.etc,
-                    (v) =>
-                      updateField(sec.key, idx, "etc", { ...(item.etc as object), custom_key: v }),
-                    (v) =>
-                      updateField(sec.key, idx, "etc", {
-                        ...(item.etc as object),
-                        custom_content: v,
-                      })
+                  renderEtcList(
+                    "기타",
+                    getItemEtc(sec.key, idx),
+                    () => addItemEtc(sec.key, idx),
+                    (ei) => removeItemEtc(sec.key, idx, ei),
+                    (ei, key, val) => updateItemEtcField(sec.key, idx, ei, key, val)
                   )}
 
                 <button
@@ -280,44 +372,12 @@ export default function DocumentForm({
         </section>
       ))}
 
-      {/* 문서 최상위 etc */}
-      <section>
-        <h2 className="mb-2 text-base font-bold">기타 (사용자 정의)</h2>
-        <div className="space-y-2">
-          {etcList().map((entry, idx) => (
-            <div key={idx} className="flex items-start gap-2">
-              <div className="flex-1">
-                <label className="mb-0.5 block text-xs text-gray-500">항목명</label>
-                <input
-                  className="w-full rounded border px-2 py-1 text-sm"
-                  value={entry.custom_key}
-                  onChange={(e) => updateEtc(idx, "custom_key", e.target.value)}
-                />
-              </div>
-              <div className="flex-[2]">
-                <label className="mb-0.5 block text-xs text-gray-500">내용</label>
-                <input
-                  className="w-full rounded border px-2 py-1 text-sm"
-                  value={entry.custom_content}
-                  onChange={(e) => updateEtc(idx, "custom_content", e.target.value)}
-                />
-              </div>
-              <button
-                onClick={() => removeEtc(idx)}
-                className="mt-5 text-xs text-red-400 hover:text-red-600"
-              >
-                삭제
-              </button>
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={addEtc}
-          className="mt-2 rounded border px-3 py-1 text-sm text-gray-500 hover:bg-gray-50"
-        >
-          + 기타 추가
-        </button>
-      </section>
+      {/* 문서 최상위 etc — portfolio/work_experience는 항목별 etc를 사용하므로 제외 */}
+      {docType !== "portfolio" && docType !== "work_experience" && (
+        <section>
+          {renderEtcList("기타 (사용자 정의)", etcList(), addEtc, removeEtc, updateEtc)}
+        </section>
+      )}
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 

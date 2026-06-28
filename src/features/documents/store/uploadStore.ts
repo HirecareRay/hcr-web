@@ -4,7 +4,8 @@ import { UploadItem, UploadType } from "../types/upload"
 interface UploadState {
   items: UploadItem[]
   setFile: (type: UploadType, file: File) => void
-  setExists: (type: UploadType, exists: boolean) => void
+  setExists: (type: UploadType, exists: boolean, createdAt?: string) => void
+  setUploading: (type: UploadType, uploading: boolean) => void
 }
 
 export const useUploadStore = create<UploadState>((set) => ({
@@ -44,8 +45,15 @@ export const useUploadStore = create<UploadState>((set) => ({
       items: state.items.map((item) => (item.id === type ? { ...item, file } : item)),
     })),
 
-  setExists: (type, exists) =>
+  setExists: (type, exists, createdAt) =>
     set((state) => ({
-      items: state.items.map((item) => (item.id === type ? { ...item, exists } : item)),
+      items: state.items.map((item) =>
+        item.id === type ? { ...item, exists, ...(createdAt !== undefined && { createdAt }) } : item
+      ),
+    })),
+
+  setUploading: (type, uploading) =>
+    set((state) => ({
+      items: state.items.map((item) => (item.id === type ? { ...item, uploading } : item)),
     })),
 }))

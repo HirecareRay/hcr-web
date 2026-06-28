@@ -33,7 +33,11 @@ export default function UploadStepCard({ item, onUpload }: Props) {
           <div className={`text-sm ${selectedFile ? "text-primary font-medium" : "text-muted"}`}>
             {selectedFile ? `선택됨: ${selectedFile.name}` : item.description}
           </div>
-          {item.exists && <span className="text-xs font-medium text-green-600">등록됨 ✓</span>}
+          {item.exists && (
+            <span className="text-xs font-medium text-green-600">
+              {item.createdAt ? `${item.createdAt}에 등록됨` : "등록됨"} ✓
+            </span>
+          )}
         </div>
       </div>
 
@@ -46,14 +50,14 @@ export default function UploadStepCard({ item, onUpload }: Props) {
 
         <button
           onClick={handleUploadClick}
-          disabled={!selectedFile}
+          disabled={!selectedFile || !!item.uploading}
           className={`flex min-w-[10ch] items-center justify-center rounded-xl px-4 py-2 text-center text-sm whitespace-nowrap transition-colors ${
-            selectedFile
+            selectedFile && !item.uploading
               ? "bg-primary hover:bg-coral-beam cursor-pointer text-white"
               : "bg-gutter text-disabled cursor-not-allowed"
           }`}
         >
-          업로드
+          {item.uploading ? "파싱 중..." : "업로드"}
         </button>
 
         {item.exists && (
