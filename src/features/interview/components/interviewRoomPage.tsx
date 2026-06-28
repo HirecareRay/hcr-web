@@ -22,6 +22,7 @@ import { useTts } from "../hooks/useTts"
 import { useInterviewTimer } from "../hooks/useInterviewTimer"
 import { useLiveStreaming } from "../hooks/useLiveStreaming"
 import { useInterviewSessionStore } from "../store/interviewSessionStore"
+import { useInterviewSummaryStore } from "../store/interviewSummaryStore"
 import { InterviewSetup } from "./room/interviewSetup"
 import { SessionTimerBar } from "./room/sessionTimerBar"
 import { VideoStage } from "./room/videoStage"
@@ -51,6 +52,8 @@ export function InterviewRoomPage({ companyId }: Props) {
   const reset = useInterviewSessionStore((s) => s.reset)
   const cameraConsented = useInterviewSessionStore((s) => s.cameraConsented)
   const setCameraConsent = useInterviewSessionStore((s) => s.setCameraConsent)
+  const setLiveSummary = useInterviewSummaryStore((s) => s.setSummary)
+  const clearLiveSummary = useInterviewSummaryStore((s) => s.clearSummary)
 
   // ─── 미디어 · 음성 · 세션 ───
   const { start, isStarting, startError } = useInterview()
@@ -103,9 +106,11 @@ export function InterviewRoomPage({ companyId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveQuestion?.questionId])
 
-  // 최종 요약 도착 → 종료 전이
+  // 최종 요약 도착 → 결과 페이지로 넘길 핸드오프 스토어에 담고 종료 전이
   useEffect(() => {
-    if (live.summary) finishNow()
+    if (!live.summary) return
+    setLiveSummary(live.summary)
+    finishNow()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live.summary])
 
@@ -124,10 +129,12 @@ export function InterviewRoomPage({ companyId }: Props) {
 
   const handleStart = useCallback(
     (payload: { mode: InterviewMode; totalDurationSec: number; jobTitle: string }) => {
+      // 새 면접 시작 → 직전 세션의 요약 핸드오프를 비워 옛 결과가 새 면접에 섞이지 않게 한다.
+      clearLiveSummary()
       const cfg: InterviewConfig = { companyId, ...payload }
       start(cfg)
     },
-    [companyId, start]
+    [companyId, start, clearLiveSummary]
   )
 
   const handleBeginAnswering = useCallback(() => {
