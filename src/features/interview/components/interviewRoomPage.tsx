@@ -246,7 +246,6 @@ export function InterviewRoomPage({ companyId }: Props) {
       {phase === "evaluating" ? (
         <EvaluationPanel
           transcript={live.transcript}
-          evaluation={live.evaluation}
           nextRequested={nextRequested}
           onNext={handleNext}
         />
