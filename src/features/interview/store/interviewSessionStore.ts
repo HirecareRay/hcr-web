@@ -60,8 +60,16 @@ export const useInterviewSessionStore = create<InterviewSessionState>((set) => (
 
   configure: (config) => set(() => ({ config })),
 
+  // WS 주도: REST 로 세션(식별자·전체시간)만 확보하고, 첫 질문은 WS 에서 받으므로
+  // asking 이 아니라 connecting(첫 질문 대기)으로 진입한다.
   beginSession: (session) =>
-    set(() => ({ session, currentIndex: 0, evaluations: [], phase: "asking" })),
+    set(() => ({
+      session,
+      currentIndex: 0,
+      evaluations: [],
+      liveQuestionNo: 0,
+      phase: "connecting",
+    })),
 
   beginAnswering: () => set(() => ({ phase: "answering", listening: true })),
 

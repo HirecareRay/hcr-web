@@ -54,6 +54,7 @@ export interface LiveStreamingView {
   answerStart: () => void
   answerEnd: () => void
   next: () => void
+  sendTextAnswer: (text: string) => boolean // 텍스트 모드 답변 송신
 }
 
 export function useLiveStreaming({
@@ -107,5 +108,6 @@ export function useLiveStreaming({
     answerStart: socket.answerStart,
     answerEnd: socket.answerEnd,
     next: socket.next,
+    sendTextAnswer: socket.sendTextAnswer,
   }
 }
