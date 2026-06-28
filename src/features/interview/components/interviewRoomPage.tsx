@@ -1,23 +1,27 @@
 /**
  * interviewRoomPage.tsx
  *
- * 라이브 면접방의 최상위 컨테이너입니다. 상태머신(phase)에 따라 화면을 분기하고,
- * 미디어 스트림·TTS·STT·타이머·세션 진행을 한곳에서 조율합니다.
- *   setup → (질문 준비) → asking → answering → evaluating → feedback → … → finished → 결과 리포트
+ * 라이브 면접방의 최상위 컨테이너입니다(WS 주도). 상태머신(phase)에 따라 화면을 분기하고,
+ * 질문·자막·평가·요약을 백엔드 WS 이벤트로 받아 진행합니다.
+ *   setup → (REST로 세션 시작) → connecting(첫 질문 대기) → asking → answering
+ *         → evaluating(평가 표시·다음 대기) → asking … → finished → 결과 리포트
+ *
+ * REST(useInterview.start)는 세션 식별자(sessionId)와 전체 시간 확보용으로만 쓰고,
+ * 질문 진행·채점은 WS(useLiveStreaming)가 담당합니다.
  */
 
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { Loader2, WifiOff } from "lucide-react"
 import { routes } from "@/constants/routes"
 import { useInterview } from "../hooks/useInterview"
 import { useMediaStream } from "../hooks/useMediaStream"
-import { useStt } from "../hooks/useStt"
 import { useTts } from "../hooks/useTts"
 import { useInterviewTimer } from "../hooks/useInterviewTimer"
 import { useLiveStreaming } from "../hooks/useLiveStreaming"
-import { selectCurrentQuestion, useInterviewSessionStore } from "../store/interviewSessionStore"
+import { useInterviewSessionStore } from "../store/interviewSessionStore"
 import { InterviewSetup } from "./room/interviewSetup"
 import { SessionTimerBar } from "./room/sessionTimerBar"
 import { VideoStage } from "./room/videoStage"
@@ -38,22 +42,21 @@ export function InterviewRoomPage({ companyId }: Props) {
   const session = useInterviewSessionStore((s) => s.session)
   const config = useInterviewSessionStore((s) => s.config)
   const listening = useInterviewSessionStore((s) => s.listening)
+  const liveQuestionNo = useInterviewSessionStore((s) => s.liveQuestionNo)
   const beginAnswering = useInterviewSessionStore((s) => s.beginAnswering)
-  const advanceQuestion = useInterviewSessionStore((s) => s.advanceQuestion)
+  const presentQuestion = useInterviewSessionStore((s) => s.presentQuestion)
+  const beginEvaluating = useInterviewSessionStore((s) => s.beginEvaluating)
   const finishNow = useInterviewSessionStore((s) => s.finishNow)
   const reset = useInterviewSessionStore((s) => s.reset)
   const cameraConsented = useInterviewSessionStore((s) => s.cameraConsented)
   const setCameraConsent = useInterviewSessionStore((s) => s.setCameraConsent)
-  const currentQuestion = useInterviewSessionStore(selectCurrentQuestion)
 
   // ─── 미디어 · 음성 · 세션 ───
-  const { start, submit, isStarting, startError } = useInterview()
+  const { start, isStarting, startError } = useInterview()
   const media = useMediaStream()
   const tts = useTts()
-  const stt = useStt(session?.sessionId ?? null)
 
   const [answerText, setAnswerText] = useState("")
-  const answerStartRef = useRef<number>(0)
   const mode: InterviewMode = config?.mode ?? "text"
 
   // ─── 실시간 스트리밍(WS + 비언어 + 오디오) ───
@@ -67,21 +70,41 @@ export function InterviewRoomPage({ companyId }: Props) {
     stream: media.stream,
     consented: cameraConsented,
   })
-  // control 트리거는 안정 신원이라 핸들러 deps 에 안전하게 넣을 수 있게 구조분해합니다.
-  const { answerStart: wsAnswerStart, answerEnd: wsAnswerEnd, next: wsNext } = live
+  // 안정 신원 함수만 구조분해(핸들러 deps 안전).
+  const {
+    answerStart: wsAnswerStart,
+    answerEnd: wsAnswerEnd,
+    next: wsNext,
+    sendTextAnswer: wsSendTextAnswer,
+  } = live
+  const liveQuestion = live.question
 
   // 전체 시간 카운트다운 — setup/finished를 제외한 단계에서 작동, 0이면 즉시 종료
   const running = phase !== "setup" && phase !== "finished"
   const remainingSec = useInterviewTimer(session?.totalDurationSec ?? 0, running, finishNow)
 
-  // 질문이 바뀌고 asking 단계면 TTS로 질문을 읽어줌
+  // 세션이 바뀌면(새 면접·재시도) 질문 가드를 비워, 같은 id(m0)로 다시 시작해도 막히지 않게.
+  const lastPresentedRef = useRef<string | null>(null)
   useEffect(() => {
-    if (phase === "asking" && currentQuestion) {
-      setAnswerText("")
-      void tts.speak(currentQuestion.question)
-    }
+    lastPresentedRef.current = null
+  }, [session?.sessionId])
+
+  // 새 WS 질문(메인/꼬리) 도착 → asking 진입 + TTS 발화. questionId 당 1회만.
+  useEffect(() => {
+    if (!liveQuestion) return
+    if (lastPresentedRef.current === liveQuestion.questionId) return
+    lastPresentedRef.current = liveQuestion.questionId
+    setAnswerText("")
+    presentQuestion()
+    void tts.speak(liveQuestion.ttsText ?? liveQuestion.text)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, currentQuestion?.no])
+  }, [liveQuestion?.questionId])
+
+  // 최종 요약 도착 → 종료 전이
+  useEffect(() => {
+    if (live.summary) finishNow()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live.summary])
 
   // 종료되면 미디어/음성을 정리하고 결과 리포트로 이동
   useEffect(() => {
@@ -106,45 +129,19 @@ export function InterviewRoomPage({ companyId }: Props) {
 
   const handleBeginAnswering = useCallback(() => {
     tts.cancel()
-    answerStartRef.current = Date.now()
-    wsAnswerStart() // WS control: 답변 시작(소켓 닫혀 있으면 no-op)
+    wsAnswerStart() // WS control: 답변 시작
     beginAnswering()
   }, [tts, wsAnswerStart, beginAnswering])
 
-  const handleStartRecording = useCallback(() => {
-    if (media.stream) stt.start(media.stream)
-  }, [media.stream, stt])
-
-  // 녹음을 멈추고 전사 결과를 답변 박스에 채움(이미 입력이 있으면 보존)
-  const handleStopRecording = useCallback(async () => {
-    const transcript = await stt.stopAndTranscribe()
-    if (transcript) setAnswerText((prev) => (prev.trim() ? prev : transcript))
-  }, [stt])
-
-  // 답변 제출 — 백그라운드로 채점만 던지고(논블로킹) 즉시 다음 질문으로 넘어갑니다.
-  const handleSubmit = useCallback(() => {
-    if (!currentQuestion) return
-    const elapsedSec = Math.max(1, Math.round((Date.now() - answerStartRef.current) / 1000))
-    submit({
-      no: currentQuestion.no,
-      answerText: answerText.trim(),
-      elapsedSec,
-      hasVideo: Boolean(media.stream?.getVideoTracks().length),
-      hasAudio: mode === "voice" && Boolean(media.stream?.getAudioTracks().length),
-    })
-    wsAnswerEnd() // WS control: 답변 종료 → 다음 질문 요청(소켓 닫혀 있으면 no-op)
+  // 답변 종료 — (텍스트 모드면 입력값 송신) 후 종료·다음 요청, 평가 단계로.
+  const handleEndAnswer = useCallback(() => {
+    if (mode === "text" && answerText.trim()) wsSendTextAnswer(answerText.trim())
+    wsAnswerEnd()
     wsNext()
-    advanceQuestion()
-  }, [
-    currentQuestion,
-    answerText,
-    media.stream,
-    mode,
-    submit,
-    wsAnswerEnd,
-    wsNext,
-    advanceQuestion,
-  ])
+    beginEvaluating()
+  }, [mode, answerText, wsSendTextAnswer, wsAnswerEnd, wsNext, beginEvaluating])
+
+  const handleRetry = useCallback(() => reset(), [reset]) // 연결 실패 시 처음부터(재연결은 Phase 6)
 
   // ─── 렌더 ───
   if (phase === "setup") {
@@ -163,16 +160,56 @@ export function InterviewRoomPage({ companyId }: Props) {
     )
   }
 
-  // 세션/질문이 아직 없거나 종료 이동 중이면 렌더하지 않음
-  if (!session || !currentQuestion) return null
+  if (!session) return null
+
+  // 첫 질문 도착 전 — 연결 게이트(연결 중 / 끊김 재시도)
+  if (!liveQuestion) {
+    const closed = live.socketState === "closed"
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
+        {closed ? (
+          <>
+            <WifiOff className="text-error h-8 w-8" />
+            <p className="text-ink text-sm font-semibold">면접관과 연결이 끊어졌어요</p>
+            <p className="text-muted text-xs">네트워크를 확인하고 다시 시도해 주세요.</p>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="bg-primary mt-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+            >
+              다시 시도
+            </button>
+          </>
+        ) : (
+          <>
+            <Loader2 className="text-primary h-8 w-8 animate-spin" />
+            <p className="text-muted text-sm">면접관과 연결 중…</p>
+          </>
+        )}
+      </div>
+    )
+  }
+
+  const connectionLost = live.socketState === "closed"
 
   return (
     <div className="space-y-4 px-4 py-4">
+      {connectionLost && (
+        <div className="border-error/30 bg-error/10 text-error flex items-center justify-between gap-2 rounded-xl border p-3 text-xs">
+          <span className="flex items-center gap-1.5">
+            <WifiOff className="h-4 w-4" />
+            연결이 끊어졌어요. 답변이 전달되지 않을 수 있어요.
+          </span>
+          <button type="button" onClick={handleRetry} className="font-semibold underline">
+            다시 시도
+          </button>
+        </div>
+      )}
+
       <SessionTimerBar
         remainingSec={remainingSec}
         totalSec={session.totalDurationSec}
-        questionNo={currentQuestion.no}
-        questionCount={session.questionCount}
+        questionNo={liveQuestionNo}
       />
 
       <div className="relative">
@@ -183,25 +220,30 @@ export function InterviewRoomPage({ companyId }: Props) {
       </div>
 
       <InterviewerPanel
-        question={currentQuestion}
+        questionText={liveQuestion.text}
+        questionNo={liveQuestionNo}
+        isFollowUp={liveQuestion.questionId.startsWith("f")}
         isSpeaking={tts.isSpeaking}
         ttsSupported={tts.supported}
-        onReplay={() => void tts.speak(currentQuestion.question)}
+        onReplay={() => void tts.speak(liveQuestion.ttsText ?? liveQuestion.text)}
       />
 
-      <AnswerPanel
-        mode={mode}
-        phase={phase}
-        answerText={answerText}
-        recommendedAnswerSec={currentQuestion.recommendedAnswerSec}
-        isRecording={stt.isRecording}
-        isTranscribing={stt.isTranscribing}
-        onAnswerTextChange={setAnswerText}
-        onBeginAnswering={handleBeginAnswering}
-        onStartRecording={handleStartRecording}
-        onStopRecording={handleStopRecording}
-        onSubmit={handleSubmit}
-      />
+      {phase === "evaluating" ? (
+        <section className="border-warm-border bg-background flex items-center gap-2 rounded-2xl border p-4 text-sm shadow-sm">
+          <Loader2 className="text-primary h-4 w-4 animate-spin" />
+          <span className="text-muted">답변을 평가하고 다음 질문을 준비하고 있어요…</span>
+        </section>
+      ) : (
+        <AnswerPanel
+          mode={mode}
+          phase={phase}
+          answerText={answerText}
+          transcript={live.transcript}
+          onAnswerTextChange={setAnswerText}
+          onBeginAnswering={handleBeginAnswering}
+          onEndAnswer={handleEndAnswer}
+        />
+      )}
     </div>
   )
 }

@@ -125,6 +125,12 @@ export function useInterviewSocket(sessionId: string | null) {
   // 오디오 청크(binary)는 JSON 이 아니라 바이너리 프레임으로 보냅니다.
   const sendAudio = useCallback((chunk: ArrayBuffer | Blob) => safeSend(chunk), [safeSend])
 
+  // 텍스트 모드 답변(타이핑) 송신 — 백엔드가 answer_end 시 오디오 전사 대신 이 텍스트를 쓴다.
+  const sendTextAnswer = useCallback(
+    (text: string) => safeSend(JSON.stringify({ type: "text_answer", text })),
+    [safeSend]
+  )
+
   // 비언어 지표 프레임(landmark_frame) 송신 — 계약 위반 프레임이 서버로 새지 않도록
   // 송신 직전 Zod 로 1차 검증한 뒤 raw snake_case JSON 으로 보냅니다.
   const sendLandmark = useCallback(
@@ -152,6 +158,7 @@ export function useInterviewSocket(sessionId: string | null) {
     answerEnd: useCallback(() => sendControl("answer_end"), [sendControl]),
     next: useCallback(() => sendControl("next"), [sendControl]),
     sendAudio,
+    sendTextAnswer,
     sendLandmark,
     sendEventSnapshot,
   }
