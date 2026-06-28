@@ -25,12 +25,14 @@ interface InterviewSessionState {
   currentIndex: number
   evaluations: LiveEvaluation[]
   listening: boolean // 답변 인식 중(🔴) 여부
+  cameraConsented: boolean // 카메라 비언어 분석·스냅샷 전송 동의 여부
 
   // ─── 액션 ───
   configure: (config: InterviewConfig) => void
   beginSession: (session: InterviewSessionStart) => void
   beginAnswering: () => void
   setListening: (listening: boolean) => void
+  setCameraConsent: (consented: boolean) => void
   recordEvaluation: (evaluation: LiveEvaluation) => void
   advanceQuestion: () => void
   finishNow: () => void
@@ -44,6 +46,7 @@ const initialState = {
   currentIndex: 0,
   evaluations: [] as LiveEvaluation[],
   listening: false,
+  cameraConsented: false,
 }
 
 export const useInterviewSessionStore = create<InterviewSessionState>((set) => ({
@@ -57,6 +60,8 @@ export const useInterviewSessionStore = create<InterviewSessionState>((set) => (
   beginAnswering: () => set(() => ({ phase: "answering", listening: true })),
 
   setListening: (listening) => set(() => ({ listening })),
+
+  setCameraConsent: (cameraConsented) => set(() => ({ cameraConsented })),
 
   // 백그라운드 채점 결과를 누적만 합니다(단계 전환 없음 — UI를 막지 않음).
   // 누적된 평가는 추후 실백엔드 연결 시 결과 리포트 집계에 사용합니다.

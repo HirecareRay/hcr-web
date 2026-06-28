@@ -87,6 +87,13 @@ export function AnswerPanel({
         </div>
       )}
 
+      {mode === "voice" && (
+        <p className="text-muted text-xs">
+          음성 인식이 잘 안 되면 아래에 <span className="text-ink font-semibold">직접 입력</span>
+          해도 제출됩니다. 전사된 답변도 자유롭게 수정할 수 있어요.
+        </p>
+      )}
+
       <textarea
         value={answerText}
         onChange={(event) => onAnswerTextChange(event.target.value)}
