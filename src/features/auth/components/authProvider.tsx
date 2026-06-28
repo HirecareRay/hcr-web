@@ -7,16 +7,23 @@
 import { useEffect } from "react"
 import { fetchMe } from "../services/authService"
 import { useAuthStore } from "../store/authStore"
+import { documentService } from "@/features/documents/services/documentService"
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser)
   const clearUser = useAuthStore((s) => s.clearUser)
+  const setDocExists = useAuthStore((s) => s.setDocExists)
 
   useEffect(() => {
     let active = true
     fetchMe()
       .then((user) => {
-        if (active) setUser(user)
+        if (!active) return
+        setUser(user)
+        documentService
+          .exists()
+          .then(setDocExists)
+          .catch(() => {})
       })
       .catch(() => {
         if (active) clearUser()
@@ -24,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false
     }
-  }, [setUser, clearUser])
+  }, [setUser, clearUser, setDocExists])
 
   return <>{children}</>
 }

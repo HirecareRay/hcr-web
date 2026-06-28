@@ -6,6 +6,7 @@
 
 import { create } from "zustand"
 import type { AuthUser } from "../types/auth"
+import type { DocExists } from "@/features/documents/services/documentService"
 
 // loading: 아직 /auth/me 확인 중 / authenticated: 로그인됨 / unauthenticated: 비로그인
 type AuthStatus = "loading" | "authenticated" | "unauthenticated"
@@ -13,13 +14,17 @@ type AuthStatus = "loading" | "authenticated" | "unauthenticated"
 interface AuthState {
   user: AuthUser | null
   status: AuthStatus
+  docExists: DocExists | null
   setUser: (user: AuthUser) => void
   clearUser: () => void
+  setDocExists: (d: DocExists) => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   status: "loading",
+  docExists: null,
   setUser: (user) => set({ user, status: "authenticated" }),
-  clearUser: () => set({ user: null, status: "unauthenticated" }),
+  clearUser: () => set({ user: null, status: "unauthenticated", docExists: null }),
+  setDocExists: (docExists) => set({ docExists }),
 }))
