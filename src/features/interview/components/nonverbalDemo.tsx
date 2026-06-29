@@ -79,7 +79,9 @@ export function NonverbalDemo({ companyId }: Props) {
     const video = videoRef.current
     if (video && stream) {
       video.srcObject = stream
-      video.play().catch(() => {})
+      video.play().catch(() => {
+        // 브라우저 autoplay 정책으로 차단될 수 있음 — 사용자 제스처 없이 재생 시도 시 정상
+      })
     }
   }, [stream])
 
