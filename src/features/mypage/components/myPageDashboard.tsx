@@ -135,7 +135,12 @@ export function MyPageDashboard() {
         {/* 내 관리 목록 */}
         <h2 className="text-ink mt-8 mb-3 text-base font-bold">내 관리 목록</h2>
         <div className="flex flex-col gap-2.5">
-          <ManageRow icon={FileText} title="내 이력 정보" subtitle="이력서·자기소개서" href="#" />
+          <ManageRow
+            icon={FileText}
+            title="내 이력 정보"
+            subtitle="이력서·자기소개서·포트폴리오·경력기술서"
+            href="/mypage/documents"
+          />
           <ManageRow
             icon={MessageCircle}
             title="AI 면접 기록"
