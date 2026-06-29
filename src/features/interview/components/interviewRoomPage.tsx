@@ -1,27 +1,34 @@
 /**
  * interviewRoomPage.tsx
  *
- * 라이브 면접방의 최상위 컨테이너입니다. 상태머신(phase)에 따라 화면을 분기하고,
- * 미디어 스트림·TTS·STT·타이머·세션 진행을 한곳에서 조율합니다.
- *   setup → (질문 준비) → asking → answering → evaluating → feedback → … → finished → 결과 리포트
+ * 라이브 면접방의 최상위 컨테이너입니다(WS 주도). 상태머신(phase)에 따라 화면을 분기하고,
+ * 질문·자막·평가·요약을 백엔드 WS 이벤트로 받아 진행합니다.
+ *   setup → (REST로 세션 시작) → connecting(첫 질문 대기) → asking → answering
+ *         → evaluating(평가 표시·다음 대기) → asking … → finished → 결과 리포트
+ *
+ * REST(useInterview.start)는 세션 식별자(sessionId)와 전체 시간 확보용으로만 쓰고,
+ * 질문 진행·채점은 WS(useLiveStreaming)가 담당합니다.
  */
 
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { Loader2, WifiOff } from "lucide-react"
 import { routes } from "@/constants/routes"
 import { useInterview } from "../hooks/useInterview"
 import { useMediaStream } from "../hooks/useMediaStream"
-import { useStt } from "../hooks/useStt"
 import { useTts } from "../hooks/useTts"
 import { useInterviewTimer } from "../hooks/useInterviewTimer"
-import { selectCurrentQuestion, useInterviewSessionStore } from "../store/interviewSessionStore"
+import { useLiveStreaming } from "../hooks/useLiveStreaming"
+import { useInterviewSessionStore } from "../store/interviewSessionStore"
+import { useInterviewSummaryStore } from "../store/interviewSummaryStore"
 import { InterviewSetup } from "./room/interviewSetup"
 import { SessionTimerBar } from "./room/sessionTimerBar"
 import { VideoStage } from "./room/videoStage"
 import { InterviewerPanel } from "./room/interviewerPanel"
 import { AnswerPanel } from "./room/answerPanel"
+import { EvaluationPanel } from "./room/evaluationPanel"
 import { ListeningIndicator } from "./room/listeningIndicator"
 import type { InterviewConfig, InterviewMode } from "../types/interviewSession"
 
@@ -37,34 +44,75 @@ export function InterviewRoomPage({ companyId }: Props) {
   const session = useInterviewSessionStore((s) => s.session)
   const config = useInterviewSessionStore((s) => s.config)
   const listening = useInterviewSessionStore((s) => s.listening)
+  const liveQuestionNo = useInterviewSessionStore((s) => s.liveQuestionNo)
   const beginAnswering = useInterviewSessionStore((s) => s.beginAnswering)
-  const advanceQuestion = useInterviewSessionStore((s) => s.advanceQuestion)
+  const presentQuestion = useInterviewSessionStore((s) => s.presentQuestion)
+  const beginEvaluating = useInterviewSessionStore((s) => s.beginEvaluating)
   const finishNow = useInterviewSessionStore((s) => s.finishNow)
   const reset = useInterviewSessionStore((s) => s.reset)
-  const currentQuestion = useInterviewSessionStore(selectCurrentQuestion)
+  const cameraConsented = useInterviewSessionStore((s) => s.cameraConsented)
+  const setCameraConsent = useInterviewSessionStore((s) => s.setCameraConsent)
+  const setLiveSummary = useInterviewSummaryStore((s) => s.setSummary)
+  const clearLiveSummary = useInterviewSummaryStore((s) => s.clearSummary)
 
   // ─── 미디어 · 음성 · 세션 ───
-  const { start, submit, isStarting, startError } = useInterview()
+  const { start, isStarting, startError } = useInterview()
   const media = useMediaStream()
   const tts = useTts()
-  const stt = useStt(session?.sessionId ?? null)
 
   const [answerText, setAnswerText] = useState("")
-  const answerStartRef = useRef<number>(0)
+  const [nextRequested, setNextRequested] = useState(false) // "다음 질문" 누른 뒤 도착 대기
   const mode: InterviewMode = config?.mode ?? "text"
+
+  // ─── 실시간 스트리밍(WS + 비언어 + 오디오) ───
+  // VideoStage 가 노출하는 <video> 픽셀을 MediaPipe 가 그대로 읽습니다(디코드 1회).
+  const analysisVideoRef = useRef<HTMLVideoElement | null>(null)
+  const live = useLiveStreaming({
+    sessionId: session?.sessionId ?? null,
+    phase,
+    mode,
+    videoRef: analysisVideoRef,
+    stream: media.stream,
+    consented: cameraConsented,
+  })
+  // 안정 신원 함수만 구조분해(핸들러 deps 안전).
+  const {
+    answerStart: wsAnswerStart,
+    answerEnd: wsAnswerEnd,
+    next: wsNext,
+    sendTextAnswer: wsSendTextAnswer,
+  } = live
+  const liveQuestion = live.question
 
   // 전체 시간 카운트다운 — setup/finished를 제외한 단계에서 작동, 0이면 즉시 종료
   const running = phase !== "setup" && phase !== "finished"
   const remainingSec = useInterviewTimer(session?.totalDurationSec ?? 0, running, finishNow)
 
-  // 질문이 바뀌고 asking 단계면 TTS로 질문을 읽어줌
+  // 세션이 바뀌면(새 면접·재시도) 질문 가드를 비워, 같은 id(m0)로 다시 시작해도 막히지 않게.
+  const lastPresentedRef = useRef<string | null>(null)
   useEffect(() => {
-    if (phase === "asking" && currentQuestion) {
-      setAnswerText("")
-      void tts.speak(currentQuestion.question)
-    }
+    lastPresentedRef.current = null
+  }, [session?.sessionId])
+
+  // 새 WS 질문(메인/꼬리) 도착 → asking 진입 + TTS 발화. questionId 당 1회만.
+  useEffect(() => {
+    if (!liveQuestion) return
+    if (lastPresentedRef.current === liveQuestion.questionId) return
+    lastPresentedRef.current = liveQuestion.questionId
+    setAnswerText("")
+    setNextRequested(false)
+    presentQuestion()
+    void tts.speak(liveQuestion.ttsText ?? liveQuestion.text)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, currentQuestion?.no])
+  }, [liveQuestion?.questionId])
+
+  // 최종 요약 도착 → 결과 페이지로 넘길 핸드오프 스토어에 담고 종료 전이
+  useEffect(() => {
+    if (!live.summary) return
+    setLiveSummary(live.summary)
+    finishNow()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live.summary])
 
   // 종료되면 미디어/음성을 정리하고 결과 리포트로 이동
   useEffect(() => {
@@ -81,41 +129,34 @@ export function InterviewRoomPage({ companyId }: Props) {
 
   const handleStart = useCallback(
     (payload: { mode: InterviewMode; totalDurationSec: number; jobTitle: string }) => {
+      // 새 면접 시작 → 직전 세션의 요약 핸드오프를 비워 옛 결과가 새 면접에 섞이지 않게 한다.
+      clearLiveSummary()
       const cfg: InterviewConfig = { companyId, ...payload }
       start(cfg)
     },
-    [companyId, start]
+    [companyId, start, clearLiveSummary]
   )
 
   const handleBeginAnswering = useCallback(() => {
     tts.cancel()
-    answerStartRef.current = Date.now()
+    wsAnswerStart() // WS control: 답변 시작
     beginAnswering()
-  }, [tts, beginAnswering])
+  }, [tts, wsAnswerStart, beginAnswering])
 
-  const handleStartRecording = useCallback(() => {
-    if (media.stream) stt.start(media.stream)
-  }, [media.stream, stt])
+  // 답변 종료 — (텍스트 모드면 입력값 송신) 후 종료 신호, 평가 단계로(평가 토큰 스트림 표시).
+  const handleEndAnswer = useCallback(() => {
+    if (mode === "text" && answerText.trim()) wsSendTextAnswer(answerText.trim())
+    wsAnswerEnd()
+    beginEvaluating()
+  }, [mode, answerText, wsSendTextAnswer, wsAnswerEnd, beginEvaluating])
 
-  // 녹음을 멈추고 전사 결과를 답변 박스에 채움(이미 입력이 있으면 보존)
-  const handleStopRecording = useCallback(async () => {
-    const transcript = await stt.stopAndTranscribe()
-    if (transcript) setAnswerText((prev) => (prev.trim() ? prev : transcript))
-  }, [stt])
+  // 다음 질문 요청 — 백엔드가 꼬리질문/다음 메인 또는 요약을 보낸다. 도착까지 대기 표시.
+  const handleNext = useCallback(() => {
+    setNextRequested(true)
+    wsNext()
+  }, [wsNext])
 
-  // 답변 제출 — 백그라운드로 채점만 던지고(논블로킹) 즉시 다음 질문으로 넘어갑니다.
-  const handleSubmit = useCallback(() => {
-    if (!currentQuestion) return
-    const elapsedSec = Math.max(1, Math.round((Date.now() - answerStartRef.current) / 1000))
-    submit({
-      no: currentQuestion.no,
-      answerText: answerText.trim(),
-      elapsedSec,
-      hasVideo: Boolean(media.stream?.getVideoTracks().length),
-      hasAudio: mode === "voice" && Boolean(media.stream?.getAudioTracks().length),
-    })
-    advanceQuestion()
-  }, [currentQuestion, answerText, media.stream, mode, submit, advanceQuestion])
+  const handleRetry = useCallback(() => reset(), [reset]) // 연결 실패 시 처음부터(재연결은 Phase 6)
 
   // ─── 렌더 ───
   if (phase === "setup") {
@@ -126,51 +167,99 @@ export function InterviewRoomPage({ companyId }: Props) {
         deviceError={media.error}
         isStarting={isStarting}
         startError={startError}
+        cameraConsented={cameraConsented}
+        onCameraConsentChange={setCameraConsent}
         onRequestDevices={() => media.request({ video: true, audio: true })}
         onStart={handleStart}
       />
     )
   }
 
-  // 세션/질문이 아직 없거나 종료 이동 중이면 렌더하지 않음
-  if (!session || !currentQuestion) return null
+  if (!session) return null
+
+  // 첫 질문 도착 전 — 연결 게이트(연결 중 / 끊김 재시도)
+  if (!liveQuestion) {
+    const closed = live.socketState === "closed"
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
+        {closed ? (
+          <>
+            <WifiOff className="text-error h-8 w-8" />
+            <p className="text-ink text-sm font-semibold">면접관과 연결이 끊어졌어요</p>
+            <p className="text-muted text-xs">네트워크를 확인하고 다시 시도해 주세요.</p>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="bg-primary mt-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+            >
+              다시 시도
+            </button>
+          </>
+        ) : (
+          <>
+            <Loader2 className="text-primary h-8 w-8 animate-spin" />
+            <p className="text-muted text-sm">면접관과 연결 중…</p>
+          </>
+        )}
+      </div>
+    )
+  }
+
+  const connectionLost = live.socketState === "closed"
 
   return (
     <div className="space-y-4 px-4 py-4">
+      {connectionLost && (
+        <div className="border-error/30 bg-error/10 text-error flex items-center justify-between gap-2 rounded-xl border p-3 text-xs">
+          <span className="flex items-center gap-1.5">
+            <WifiOff className="h-4 w-4" />
+            연결이 끊어졌어요. 답변이 전달되지 않을 수 있어요.
+          </span>
+          <button type="button" onClick={handleRetry} className="font-semibold underline">
+            다시 시도
+          </button>
+        </div>
+      )}
+
       <SessionTimerBar
         remainingSec={remainingSec}
         totalSec={session.totalDurationSec}
-        questionNo={currentQuestion.no}
-        questionCount={session.questionCount}
+        questionNo={liveQuestionNo}
       />
 
       <div className="relative">
-        <VideoStage stream={media.stream} />
+        <VideoStage stream={media.stream} videoRef={analysisVideoRef} />
         <div className="absolute top-2 right-2">
           <ListeningIndicator active={listening} />
         </div>
       </div>
 
       <InterviewerPanel
-        question={currentQuestion}
+        questionText={liveQuestion.text}
+        questionNo={liveQuestionNo}
+        isFollowUp={liveQuestion.questionId.startsWith("f")}
         isSpeaking={tts.isSpeaking}
         ttsSupported={tts.supported}
-        onReplay={() => void tts.speak(currentQuestion.question)}
+        onReplay={() => void tts.speak(liveQuestion.ttsText ?? liveQuestion.text)}
       />
 
-      <AnswerPanel
-        mode={mode}
-        phase={phase}
-        answerText={answerText}
-        recommendedAnswerSec={currentQuestion.recommendedAnswerSec}
-        isRecording={stt.isRecording}
-        isTranscribing={stt.isTranscribing}
-        onAnswerTextChange={setAnswerText}
-        onBeginAnswering={handleBeginAnswering}
-        onStartRecording={handleStartRecording}
-        onStopRecording={handleStopRecording}
-        onSubmit={handleSubmit}
-      />
+      {phase === "evaluating" ? (
+        <EvaluationPanel
+          transcript={live.transcript}
+          nextRequested={nextRequested}
+          onNext={handleNext}
+        />
+      ) : (
+        <AnswerPanel
+          mode={mode}
+          phase={phase}
+          answerText={answerText}
+          transcript={live.transcript}
+          onAnswerTextChange={setAnswerText}
+          onBeginAnswering={handleBeginAnswering}
+          onEndAnswer={handleEndAnswer}
+        />
+      )}
     </div>
   )
 }

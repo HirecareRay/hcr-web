@@ -1,30 +1,27 @@
 /**
  * answerPanel.tsx
  *
- * 답변 입력부 — 단계와 모드에 따라 분기합니다.
- *   asking    : "답변 시작" 버튼(+권장 답변 시간 안내)
- *   answering : 텍스트 입력(textarea) + (음성 모드면) 녹음 시작/종료 + "답변 제출"
+ * 답변 입력부 — 단계와 모드에 따라 분기합니다(WS 주도).
+ *   asking    : "답변 시작" 버튼
+ *   answering : 음성 모드 → 실시간 자막(WS transcript) 표시 / 텍스트 모드 → 직접 입력
+ *               + "답변 종료" 버튼
  *
- * 로직(녹음/제출/STT)은 부모가 핸들러로 내려주고, 이 컴포넌트는 표시·이벤트 전달만 합니다.
+ * 음성은 답변 구간 동안 자동으로 WS 스트리밍되므로(useAudioStreamer) 수동 녹음 버튼이 없습니다.
+ * 로직(송신/전이)은 부모가 핸들러로 내려주고, 이 컴포넌트는 표시·이벤트 전달만 합니다.
  */
 
-import { Mic, Send, Square } from "lucide-react"
+import { Mic, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatClock } from "../../lib/formatters"
 import type { InterviewMode, InterviewPhase } from "../../types/interviewSession"
 
 interface Props {
   mode: InterviewMode
   phase: InterviewPhase
-  answerText: string
-  recommendedAnswerSec: number
-  isRecording: boolean
-  isTranscribing: boolean
+  answerText: string // 텍스트 모드 입력값
+  transcript: string // 음성 모드 실시간 자막(WS)
   onAnswerTextChange: (value: string) => void
   onBeginAnswering: () => void
-  onStartRecording: () => void
-  onStopRecording: () => void
-  onSubmit: () => void
+  onEndAnswer: () => void
 }
 
 const primaryButton =
@@ -34,21 +31,19 @@ export function AnswerPanel({
   mode,
   phase,
   answerText,
-  recommendedAnswerSec,
-  isRecording,
-  isTranscribing,
+  transcript,
   onAnswerTextChange,
   onBeginAnswering,
-  onStartRecording,
-  onStopRecording,
-  onSubmit,
+  onEndAnswer,
 }: Props) {
   // asking 단계 — 답변 시작 전
   if (phase === "asking") {
     return (
       <section className="border-warm-border bg-background space-y-3 rounded-2xl border p-4 shadow-sm">
         <p className="text-muted text-xs">
-          권장 답변 시간 {formatClock(recommendedAnswerSec)} · 강제로 종료되지 않아요
+          {mode === "voice"
+            ? "답변을 시작하면 음성이 실시간으로 면접관에게 전달돼요."
+            : "답변을 시작하고 아래에 직접 입력하세요."}
         </p>
         <button type="button" onClick={onBeginAnswering} className={cn(primaryButton, "w-full")}>
           답변 시작
@@ -57,56 +52,41 @@ export function AnswerPanel({
     )
   }
 
-  // answering 단계 — 입력 + 제출
-  const canSubmit = answerText.trim().length > 0 && !isRecording && !isTranscribing
+  // answering 단계 — 입력/자막 + 종료
+  const canEnd = mode === "voice" || answerText.trim().length > 0
 
   return (
     <section className="border-warm-border bg-background space-y-3 rounded-2xl border p-4 shadow-sm">
-      {mode === "voice" && (
-        <div className="flex items-center gap-2">
-          {isRecording ? (
-            <button
-              type="button"
-              onClick={onStopRecording}
-              className="bg-error inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
-            >
-              <Square className="h-4 w-4" />
-              녹음 종료
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onStartRecording}
-              className="border-warm-border text-ink inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold"
-            >
-              <Mic className="h-4 w-4" />
-              녹음 시작
-            </button>
-          )}
-          {isTranscribing && <span className="text-muted text-xs">전사 중…</span>}
-        </div>
+      {mode === "voice" ? (
+        <>
+          <div className="text-error flex items-center gap-1.5 text-xs font-medium">
+            <Mic className="h-4 w-4 animate-pulse" />
+            답변 받는 중
+          </div>
+          <div className="border-warm-border text-ink min-h-[6rem] rounded-xl border p-3 text-sm leading-relaxed">
+            {transcript || (
+              <span className="text-disabled">말씀하시면 실시간으로 자막이 표시돼요.</span>
+            )}
+          </div>
+        </>
+      ) : (
+        <textarea
+          value={answerText}
+          onChange={(event) => onAnswerTextChange(event.target.value)}
+          placeholder="여기에 답변을 입력하세요."
+          rows={5}
+          className="border-warm-border text-ink placeholder:text-disabled focus:border-primary w-full resize-none rounded-xl border p-3 text-sm leading-relaxed outline-none"
+        />
       )}
-
-      <textarea
-        value={answerText}
-        onChange={(event) => onAnswerTextChange(event.target.value)}
-        placeholder={
-          mode === "voice"
-            ? "녹음하면 전사된 답변이 채워집니다. 직접 수정도 가능해요."
-            : "여기에 답변을 입력하세요."
-        }
-        rows={5}
-        className="border-warm-border text-ink placeholder:text-disabled focus:border-primary w-full resize-none rounded-xl border p-3 text-sm leading-relaxed outline-none"
-      />
 
       <button
         type="button"
-        onClick={onSubmit}
-        disabled={!canSubmit}
+        onClick={onEndAnswer}
+        disabled={!canEnd}
         className={cn(primaryButton, "w-full")}
       >
         <Send className="h-4 w-4" />
-        답변 제출
+        답변 종료
       </button>
     </section>
   )

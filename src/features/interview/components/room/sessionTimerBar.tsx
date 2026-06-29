@@ -13,7 +13,8 @@ interface Props {
   remainingSec: number
   totalSec: number
   questionNo: number
-  questionCount: number
+  // WS 주도에선 꼬리질문으로 총 개수가 동적이라 분모를 생략한다(러닝 카운터).
+  questionCount?: number
 }
 
 export function SessionTimerBar({ remainingSec, totalSec, questionNo, questionCount }: Props) {
@@ -24,7 +25,8 @@ export function SessionTimerBar({ remainingSec, totalSec, questionNo, questionCo
     <div className="border-warm-border bg-background rounded-2xl border p-3 shadow-sm">
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted font-medium">
-          질문 {questionNo} / {questionCount}
+          질문 {questionNo}
+          {questionCount ? ` / ${questionCount}` : ""}
         </span>
         <span
           className={cn(

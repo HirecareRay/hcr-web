@@ -24,6 +24,7 @@ import type {
   LandmarkFrameMessage,
   QuestionEvent,
   SummaryEvent,
+  TextAnswerMessage,
   TranscriptDeltaEvent,
   UpstreamMessage,
 } from "./interviewProtocol"
@@ -63,10 +64,16 @@ export const eventSnapshotMessageSchema = z.object({
   meta: z.record(z.string(), z.unknown()),
 })
 
+export const textAnswerMessageSchema = z.object({
+  type: z.literal("text_answer"),
+  text: z.string(),
+})
+
 export const upstreamMessageSchema = z.discriminatedUnion("type", [
   controlMessageSchema,
   landmarkFrameMessageSchema,
   eventSnapshotMessageSchema,
+  textAnswerMessageSchema,
 ])
 
 // ─── 다운스트림 (camelCase 페이로드 / snake type 값) ──────────────────────────
@@ -120,6 +127,10 @@ const _assertLandmark: AssertSync<
 const _assertSnapshot: AssertSync<
   z.infer<typeof eventSnapshotMessageSchema>,
   EventSnapshotMessage
+> = true
+const _assertTextAnswer: AssertSync<
+  z.infer<typeof textAnswerMessageSchema>,
+  TextAnswerMessage
 > = true
 const _assertUpstream: AssertSync<z.infer<typeof upstreamMessageSchema>, UpstreamMessage> = true
 
