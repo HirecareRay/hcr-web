@@ -48,8 +48,8 @@ export async function GET() {
         success: true,
         data: [
           {
-            id: "a63f1ca8292ecdd80c30",
-            companyId: "4c6a2dc35bec6d932b68",
+            id: "5e9cabd040c307d7aa142e73",
+            companyId: "6a3ca079d7da326c0781963c",
             companyName: "CJ ENM",
             title: "Data Scientist 채용",
             category: "데이터",
@@ -61,8 +61,8 @@ export async function GET() {
             bookmarked: false,
           },
           {
-            id: "62945315cd3b3c07da52",
-            companyId: "4c6a2dc35bec6d932b68",
+            id: "500116c9eb165c7a8f97fbd3",
+            companyId: "6a3ca079d7da326c0781963c",
             companyName: "CJ ENM",
             title: "[Mnet Plus] Web/App Lead 경력채용",
             category: "개발",
