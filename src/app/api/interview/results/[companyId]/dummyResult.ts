@@ -237,19 +237,6 @@ export function buildDummyResult(companyId: string): InterviewResult {
         "데이터 분석 결과와 본인의 직관이 충돌하면 어떻게 결정하겠습니까?",
       ],
     },
-    // 녹화 인프라 미존재 — 현재는 플레이스홀더. 마커(질문별 타임스탬프)는 미리 구성해 둠.
-    replay: {
-      available: false,
-      mediaUrl: null,
-      durationSec: 752,
-      markers: [
-        { atSec: 0, no: 1, label: "Q1 자기소개" },
-        { atSec: 138, no: 2, label: "Q2 인상 깊은 콘텐츠" },
-        { atSec: 305, no: 3, label: "Q3 초기 도달 전략" },
-        { atSec: 489, no: 4, label: "Q4 협업 갈등 해결" },
-        { atSec: 642, no: 5, label: "Q5 입사 후 목표" },
-      ],
-    },
     // 이전 연습과의 차이 — 직전 세션(result-cjenm-0001) 대비. 첫 면접이면 null로 둡니다.
     comparison: {
       previousResultId: "result-cjenm-0001",

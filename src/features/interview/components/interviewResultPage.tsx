@@ -5,12 +5,12 @@
  *
  * AI 모의 면접 결과 리포트의 최상위 컴포넌트입니다.
  * useInterviewResult 훅으로 데이터를 받아 로딩/에러/정상 상태를 분기하고,
- * 정상일 때 11개 영역을 3개 탭(종합/피드백/복습)으로 나눠 조합 렌더링합니다.
+ * 정상일 때 각 영역을 3개 탭(종합/피드백/복습)으로 나눠 조합 렌더링합니다.
  *
  * 탭 구성:
  *   종합   : 강점·약점 / 보완점·보완 방법
  *   피드백 : 영역별 레이더 / 표정 / 음성 / 답변
- *   복습   : 질답 스크립트 / 예상 질문 / 다시 보기 / 이전 연습과의 차이
+ *   복습   : 질답 스크립트 / 예상 질문 / 이전 연습과의 차이
  */
 
 import { useState } from "react"
@@ -29,7 +29,6 @@ import { FeedbackOverviewSection } from "./sections/feedbackOverviewSection"
 import { ModalFeedbackSection } from "./sections/modalFeedbackSection"
 import { ScriptSection } from "./sections/scriptSection"
 import { RecommendedQuestionsSection } from "./sections/recommendedQuestionsSection"
-import { ReplaySection } from "./sections/replaySection"
 import { ComparisonSection } from "./sections/comparisonSection"
 
 interface Props {
@@ -100,7 +99,6 @@ export function InterviewResultPage({ companyId }: Props) {
           <>
             <ScriptSection script={data.script} />
             <RecommendedQuestionsSection questions={data.recommendedQuestions} />
-            <ReplaySection replay={data.replay} />
             <ComparisonSection comparison={data.comparison} />
           </>
         )}
@@ -119,8 +117,8 @@ function SampleReportNotice({ hasLiveSummary }: { hasLiveSummary: boolean }) {
       <span>
         아래 상세 리포트는 <span className="text-ink font-semibold">샘플 데이터</span>입니다.
         {hasLiveSummary
-          ? " 실제 채점 결과는 위 ‘실시간 채점 결과’를 확인하세요. 강점·약점, 표정·음성 점수, 다시 보기 등은 분석 인프라 연동 후 실제 값으로 채워집니다."
-          : " 강점·약점, 표정·음성 점수, 다시 보기 등은 분석 인프라 연동 후 실제 값으로 채워집니다."}
+          ? " 실제 채점 결과는 위 ‘실시간 채점 결과’를 확인하세요. 강점·약점, 표정·음성 점수 등은 분석 인프라 연동 후 실제 값으로 채워집니다."
+          : " 강점·약점, 표정·음성 점수 등은 분석 인프라 연동 후 실제 값으로 채워집니다."}
       </span>
     </div>
   )
