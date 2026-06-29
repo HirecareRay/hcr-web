@@ -96,3 +96,12 @@ export interface LiveEvaluation {
 export interface SttResult {
   transcript: string
 }
+
+// ─── WS 접속용 단기 티켓 (BFF 발급) ───────────────────────────────────────────
+// 브라우저 WebSocket 은 Authorization 헤더를 못 붙이고, JWT 는 httpOnly 쿠키라 JS 가
+// 못 읽는다. 그래서 입장 직전 BFF(쿠키→Bearer)로 백엔드에서 1회용·단기 티켓을 받아
+// WS URL 쿼리(?ticket=)로만 전달한다(JWT 를 URL 에 노출하지 않는 표준 패턴).
+export interface WsTicket {
+  ticket: string // 불투명 1회용 문자열
+  expiresIn: number // 만료까지 남은 초(예: 60) — 발급 직후 즉시 연결할 것
+}

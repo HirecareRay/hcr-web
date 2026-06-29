@@ -30,11 +30,14 @@ import type { SocketState } from "./useInterviewSocket"
 
 interface UseLiveStreamingParams {
   sessionId: string | null // WS 연결 키(REST 세션과 동일 ID — 백엔드 상관용)
+  companyId?: string | null // 기업 분석 컨텍스트 주입용(WS 쿼리, 선택)
+  jobTitle?: string | null // 지원 직무 — 질문 생성 컨텍스트(WS 쿼리, 선택)
   phase: InterviewPhase
   mode: InterviewMode
   videoRef: React.RefObject<HTMLVideoElement | null> // VideoStage 가 노출한 분석용 영상 element
   stream: MediaStream | null
   consented: boolean // 카메라 비언어 분석 동의
+  onAuthExpired?: () => void // WS 티켓 401(세션 만료) 시 — 보통 로그인 페이지로
 }
 
 export interface LiveStreamingView {
@@ -59,13 +62,16 @@ export interface LiveStreamingView {
 
 export function useLiveStreaming({
   sessionId,
+  companyId,
+  jobTitle,
   phase,
   mode,
   videoRef,
   stream,
   consented,
+  onAuthExpired,
 }: UseLiveStreamingParams): LiveStreamingView {
-  const socket = useInterviewSocket(sessionId)
+  const socket = useInterviewSocket(sessionId, { companyId, jobTitle, onAuthExpired })
 
   const hasVideoTrack = !!stream && stream.getVideoTracks().length > 0
   const answering = phase === "answering"
