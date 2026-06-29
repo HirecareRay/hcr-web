@@ -46,6 +46,18 @@ export function scoreToTone(score: number): "good" | "warn" | "bad" {
   return "bad"
 }
 
+/** 0~100 점수를 등급 라벨(A+~F)로 변환합니다. WS 요약처럼 등급이 없는 점수에 씁니다. */
+export function scoreToGrade(score: number): string {
+  if (score >= 90) return "A+"
+  if (score >= 85) return "A"
+  if (score >= 80) return "B+"
+  if (score >= 75) return "B"
+  if (score >= 70) return "C+"
+  if (score >= 65) return "C"
+  if (score >= 60) return "D"
+  return "F"
+}
+
 /** 질문 분류 코드를 한글 라벨로 변환합니다. */
 export function categoryLabel(category: "company" | "job" | "common"): string {
   if (category === "company") return "회사"

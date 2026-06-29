@@ -74,7 +74,11 @@ export function useInterviewSocket(sessionId: string | null) {
   useEffect(() => {
     if (!sessionId) return
 
-    const socket = new WebSocket(`${WS_BASE}/interviews/ws/${sessionId}`)
+    // ⚠️ TODO(Phase 6 · 배포 전 필수): 이 채널로 얼굴 스냅샷(event_snapshot)·음성(audio_chunk)이 흐른다.
+    //   현재는 토큰 없이 sessionId 만으로 직결 + 평문(ws://)이라 로컬 데모 한정으로만 안전하다.
+    //   배포 전: ① BFF에서 단기 WS 토큰 발급 → 서브프로토콜/쿼리로 전달 + origin 검증,
+    //            ② wss:// 강제(프라이버시 데이터 평문 전송 금지).
+    const socket = new WebSocket(`${WS_BASE}/interviews/ws/${encodeURIComponent(sessionId)}`)
     socketRef.current = socket
     setView({ ...EMPTY_VIEW, state: "connecting" })
 
@@ -121,6 +125,12 @@ export function useInterviewSocket(sessionId: string | null) {
   // 오디오 청크(binary)는 JSON 이 아니라 바이너리 프레임으로 보냅니다.
   const sendAudio = useCallback((chunk: ArrayBuffer | Blob) => safeSend(chunk), [safeSend])
 
+  // 텍스트 모드 답변(타이핑) 송신 — 백엔드가 answer_end 시 오디오 전사 대신 이 텍스트를 쓴다.
+  const sendTextAnswer = useCallback(
+    (text: string) => safeSend(JSON.stringify({ type: "text_answer", text })),
+    [safeSend]
+  )
+
   // 비언어 지표 프레임(landmark_frame) 송신 — 계약 위반 프레임이 서버로 새지 않도록
   // 송신 직전 Zod 로 1차 검증한 뒤 raw snake_case JSON 으로 보냅니다.
   const sendLandmark = useCallback(
@@ -148,6 +158,7 @@ export function useInterviewSocket(sessionId: string | null) {
     answerEnd: useCallback(() => sendControl("answer_end"), [sendControl]),
     next: useCallback(() => sendControl("next"), [sendControl]),
     sendAudio,
+    sendTextAnswer,
     sendLandmark,
     sendEventSnapshot,
   }

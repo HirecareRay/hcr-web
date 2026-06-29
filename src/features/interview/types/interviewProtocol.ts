@@ -60,8 +60,19 @@ export interface EventSnapshotMessage {
   meta: Record<string, unknown>
 }
 
+// 텍스트 모드 답변 (타이핑) — 음성 대신 직접 입력한 답변 본문.
+// 백엔드는 answer_end 시 이 텍스트를 답변으로 사용한다(오디오 전사 대체).
+export interface TextAnswerMessage {
+  type: "text_answer"
+  text: string
+}
+
 // 업스트림 JSON 메시지 유니온 (audio_chunk binary 는 제외 — 파일 상단 주석 참고)
-export type UpstreamMessage = ControlMessage | LandmarkFrameMessage | EventSnapshotMessage
+export type UpstreamMessage =
+  | ControlMessage
+  | LandmarkFrameMessage
+  | EventSnapshotMessage
+  | TextAnswerMessage
 
 // ─── 다운스트림 (FastAPI → 브라우저, camelCase 페이로드) ──────────────────────
 
