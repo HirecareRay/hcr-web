@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { signupUser } from "../services/authService"
 import { useAuthStore } from "../store/authStore"
+import { logger } from "@/lib/logger"
 import type { SignupFormValues } from "../types/auth"
 
 export function useSignup() {
@@ -19,7 +20,8 @@ export function useSignup() {
       setUser(result.user)
       router.push("/")
       router.refresh()
-    } catch {
+    } catch (e) {
+      logger.error("회원가입 실패", e)
       setError("회원가입에 실패했습니다")
     } finally {
       setIsLoading(false)

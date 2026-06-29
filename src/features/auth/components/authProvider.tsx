@@ -8,6 +8,7 @@ import { useEffect } from "react"
 import { fetchMe } from "../services/authService"
 import { useAuthStore } from "../store/authStore"
 import { documentService } from "@/features/documents/services/documentService"
+import { logger } from "@/lib/logger"
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser)
@@ -23,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         documentService
           .exists()
           .then(setDocExists)
-          .catch(() => {})
+          .catch((e) => logger.error("문서 존재 여부 조회 실패", e))
       })
       .catch(() => {
         if (active) clearUser()
