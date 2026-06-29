@@ -6,6 +6,7 @@ import { ChevronRight, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SearchBar } from "@/components/ui/searchBar"
 import { useSearchResults } from "../hooks/useSearchResults"
+import { SEARCH_UI_LIMITS } from "../constants/search"
 import type { CompanySearchResult, RelatedJobPosting } from "../types/search"
 
 function CompanyCard({ company }: { company: CompanySearchResult }) {
@@ -83,14 +84,13 @@ function SearchResultContent() {
     suggestions,
   } = useSearchResults()
 
-  // 연관 채용공고는 도배 방지로 기본 8개만, "더보기"로 전체 펼침
-  const JOBS_PREVIEW = 8
+  // 연관 채용공고는 도배 방지로 기본 N개만, "더보기"로 전체 펼침
   const [showAllJobs, setShowAllJobs] = useState(false)
-  const visibleJobs = showAllJobs ? relatedJobs : relatedJobs.slice(0, JOBS_PREVIEW)
+  const visibleJobs = showAllJobs ? relatedJobs : relatedJobs.slice(0, SEARCH_UI_LIMITS.jobsPreview)
 
   // 자동완성 드롭다운 열림 상태. 타이핑하면 열고, 선택/검색하면 닫는다.
   const [suggestOpen, setSuggestOpen] = useState(false)
-  const visibleSuggestions = suggestions.slice(0, 6)
+  const visibleSuggestions = suggestions.slice(0, SEARCH_UI_LIMITS.suggestions)
   const showSuggest = suggestOpen && inputValue.trim().length > 0 && visibleSuggestions.length > 0
 
   // 회사명 선택: 입력창을 채우고 그 이름으로 즉시 검색.
@@ -226,7 +226,7 @@ function SearchResultContent() {
                 <JobCard key={jobPosting.id} jobPosting={jobPosting} />
               ))}
             </div>
-            {relatedJobs.length > JOBS_PREVIEW && (
+            {relatedJobs.length > SEARCH_UI_LIMITS.jobsPreview && (
               <button
                 type="button"
                 onClick={() => setShowAllJobs((prev) => !prev)}
