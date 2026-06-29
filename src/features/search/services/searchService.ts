@@ -19,7 +19,7 @@ export async function searchCompanies(q: string): Promise<CompanySearchResult[]>
 }
 
 // dummyReport의 hiring.openings를 단일 출처로 사용
-const dummyReport = buildDummyReport("4c6a2dc35bec6d932b68")
+const dummyReport = buildDummyReport("6a3ca079d7da326c0781963c")
 
 export const companySearchResults: CompanySearchResult[] = [
   {

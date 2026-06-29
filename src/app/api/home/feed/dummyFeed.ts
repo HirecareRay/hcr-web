@@ -37,7 +37,7 @@ export function buildDummyFeed(generatedAt: string): HomeFeed {
     trending: [
       {
         rank: 1,
-        companyId: "cjenm",
+        companyId: "6a3ca079d7da326c0781963c",
         name: "CJ ENM",
         parentName: "CJ",
         logoText: "CJ",

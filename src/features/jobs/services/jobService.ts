@@ -26,8 +26,8 @@ export async function fetchJobDetail(id: string): Promise<JobDetail | undefined>
 
 export const jobListFixtures: JobListItem[] = [
   {
-    id: "a63f1ca8292ecdd80c30",
-    companyId: "4c6a2dc35bec6d932b68",
+    id: "5e9cabd040c307d7aa142e73",
+    companyId: "6a3ca079d7da326c0781963c",
     companyName: "CJ ENM",
     title: "Data Scientist 채용",
     jobName: "Data Scientist",
@@ -39,8 +39,8 @@ export const jobListFixtures: JobListItem[] = [
     tags: ["Python", "SQL", "LLM"],
   },
   {
-    id: "b07667cb3eb79ffd3139",
-    companyId: "4c6a2dc35bec6d932b68",
+    id: "6d5b7abda7cc9dab87f8b17c",
+    companyId: "6a3ca079d7da326c0781963c",
     companyName: "CJ ENM",
     title: "Mnet Plus Product Designer 경력채용",
     jobName: "Product Designer",
@@ -52,8 +52,8 @@ export const jobListFixtures: JobListItem[] = [
     tags: ["UI/UX", "디자인 시스템", "프로토타이핑"],
   },
   {
-    id: "62945315cd3b3c07da52",
-    companyId: "4c6a2dc35bec6d932b68",
+    id: "500116c9eb165c7a8f97fbd3",
+    companyId: "6a3ca079d7da326c0781963c",
     companyName: "CJ ENM",
     title: "[Mnet Plus] Web/App Lead 경력채용",
     jobName: "Web/App Lead",
@@ -65,8 +65,8 @@ export const jobListFixtures: JobListItem[] = [
     tags: ["React Native", "TypeScript", "Tech Lead"],
   },
   {
-    id: "4337b91b45eba194235b",
-    companyId: "4c6a2dc35bec6d932b68",
+    id: "e3b1bca75a26a4582ed16ec4",
+    companyId: "6a3ca079d7da326c0781963c",
     companyName: "CJ ENM",
     title: "커머스부문 추천 플랫폼 엔지니어",
     jobName: "추천 플랫폼 엔지니어",
@@ -78,8 +78,8 @@ export const jobListFixtures: JobListItem[] = [
     tags: ["Java", "Python", "AWS"],
   },
   {
-    id: "3c3fa750ba51bce320ea",
-    companyId: "4c6a2dc35bec6d932b68",
+    id: "3ea3bda4afbc1216081bd4c1",
+    companyId: "6a3ca079d7da326c0781963c",
     companyName: "CJ ENM",
     title: "커머스부문 개인정보보호 담당자",
     jobName: "개인정보보호 담당자",
@@ -94,8 +94,8 @@ export const jobListFixtures: JobListItem[] = [
 
 export const jobDetailFixtures: JobDetail[] = [
   {
-    id: "a63f1ca8292ecdd80c30",
-    companyId: "4c6a2dc35bec6d932b68",
+    id: "5e9cabd040c307d7aa142e73",
+    companyId: "6a3ca079d7da326c0781963c",
     companyName: "CJ ENM",
     title: "Data Scientist 채용",
     jobName: "Data Scientist",
@@ -131,8 +131,8 @@ export const jobDetailFixtures: JobDetail[] = [
     documents: ["이력서", "경력기술서", "포트폴리오 (선택)"],
   },
   {
-    id: "b07667cb3eb79ffd3139",
-    companyId: "4c6a2dc35bec6d932b68",
+    id: "6d5b7abda7cc9dab87f8b17c",
+    companyId: "6a3ca079d7da326c0781963c",
     companyName: "CJ ENM",
     title: "Mnet Plus Product Designer 경력채용",
     jobName: "Product Designer",
@@ -166,8 +166,8 @@ export const jobDetailFixtures: JobDetail[] = [
     documents: ["이력서", "포트폴리오 (필수)"],
   },
   {
-    id: "62945315cd3b3c07da52",
-    companyId: "4c6a2dc35bec6d932b68",
+    id: "500116c9eb165c7a8f97fbd3",
+    companyId: "6a3ca079d7da326c0781963c",
     companyName: "CJ ENM",
     title: "[Mnet Plus] Web/App Lead 경력채용",
     jobName: "Web/App Lead",
@@ -202,8 +202,8 @@ export const jobDetailFixtures: JobDetail[] = [
     documents: ["이력서", "경력기술서", "GitHub 링크 (선택)"],
   },
   {
-    id: "4337b91b45eba194235b",
-    companyId: "4c6a2dc35bec6d932b68",
+    id: "e3b1bca75a26a4582ed16ec4",
+    companyId: "6a3ca079d7da326c0781963c",
     companyName: "CJ ENM",
     title: "커머스부문 추천 플랫폼 엔지니어",
     jobName: "추천 플랫폼 엔지니어",
@@ -236,8 +236,8 @@ export const jobDetailFixtures: JobDetail[] = [
     documents: ["이력서", "경력기술서"],
   },
   {
-    id: "3c3fa750ba51bce320ea",
-    companyId: "4c6a2dc35bec6d932b68",
+    id: "3ea3bda4afbc1216081bd4c1",
+    companyId: "6a3ca079d7da326c0781963c",
     companyName: "CJ ENM",
     title: "커머스부문 개인정보보호 담당자",
     jobName: "개인정보보호 담당자",
