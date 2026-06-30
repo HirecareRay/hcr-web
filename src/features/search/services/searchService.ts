@@ -4,13 +4,13 @@ import type { ApiResponse } from "@/types/api"
 import type { CompanySearchResult, RelatedJobPosting } from "../types/search"
 
 /** 회사명/업종 검색 — 백엔드(Mongo) 실데이터. q 비면 빈 배열. */
-export async function searchCompanies(q: string): Promise<CompanySearchResult[]> {
+export async function searchCompanies(q: string, limit?: number): Promise<CompanySearchResult[]> {
   const trimmed = q.trim()
   if (!trimmed) return []
 
   const { data } = await axiosInstance.get<ApiResponse<CompanySearchResult[]>>(
     apiEndpoints.companies.search,
-    { params: { q: trimmed } }
+    { params: { q: trimmed, limit } }
   )
 
   if (!data.success || !data.data) {
