@@ -25,13 +25,6 @@
   --color-disabled: #a6a6a6; /* 비활성 텍스트 */
 }
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
-
 @layer base {
   * {
     outline: none;
@@ -65,11 +58,4 @@ select:focus {
   outline: none;
   box-shadow: none;
   border: none;
-}
-
-.text-good {
-  background: linear-gradient(180deg, #5046e5 50%, #9134eb 143.75%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
