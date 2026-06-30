@@ -21,9 +21,12 @@ export async function searchCompanies(q: string): Promise<CompanySearchResult[]>
 }
 
 export async function searchCompanyJobs(q: string): Promise<RelatedJobPosting[]> {
+  const trimmed = q.trim()
+  if (!trimmed) return []
+
   const { data } = await axiosInstance.get<ApiResponse<RelatedJobPosting[]>>(
     apiEndpoints.companies.jobs,
-    { params: { q: q.trim() } }
+    { params: { q: trimmed } }
   )
 
   if (!data.success || !data.data) {
