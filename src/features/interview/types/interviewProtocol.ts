@@ -52,16 +52,45 @@ export interface LandmarkFrameMessage {
   expression?: string | null
 }
 
-// 이벤트 발생 시 증거 스냅샷 (시선이탈·무표정 등)
+// 이벤트 발생 시 비언어 이벤트 (시선이탈·무표정 등) — 종류·메타만 전송한다.
+// ⚠️ 과거엔 증거 이미지(base64)를 함께 보냈으나, 백엔드가 이벤트 "횟수"만 집계에 쓰고
+// 이미지는 읽지도 저장하지도 않아 대역폭·프라이버시 부담만 됐으므로 image 필드를 제거했다.
+// (영상 원본도 전송하지 않음 — 숫자 지표만 전송)
 export interface EventSnapshotMessage {
   type: "event_snapshot"
   event: string
-  image: string // base64 data URL 또는 업로드 URL
   meta: Record<string, unknown>
 }
 
+// 텍스트 모드 답변 (타이핑) — 음성 대신 직접 입력한 답변 본문.
+// 백엔드는 answer_end 시 이 텍스트를 답변으로 사용한다(오디오 전사 대체).
+export interface TextAnswerMessage {
+  type: "text_answer"
+  text: string
+}
+
+// 음성 물리지표 (주기 ~1s) — 브라우저 Web Audio(FFT/autocorrelation)로 추출한 발화 "안정도" 지표.
+// 백엔드는 이를 누적·집계해 결과 feedback.voice(발화 안정도)·comparison(직전 세션 델타)으로 환산한다.
+// "감정" 라벨이 아니라 물리 측정값이며, 응답(다운스트림) 없는 단방향 누적 메시지다.
+//   - decibel: 음량 (dBFS, RMS 환산)      - pitch: 기본주파수 (Hz)
+//   - speech_rate: 발화 속도 (WPM)         - tremor: 떨림 정도 (0~1)
+// 4필드 모두 선택 — Web Audio 로 신뢰성 있게 뽑은 지표만 채워 보내고, 결측은 키를 생략한다
+// (서버가 집계에서 제외). v1 은 decibel·pitch 만 송신하고 speech_rate·tremor 는 생략한다.
+export interface VoiceMetricMessage {
+  type: "voice_metric"
+  decibel?: number
+  pitch?: number
+  speech_rate?: number
+  tremor?: number
+}
+
 // 업스트림 JSON 메시지 유니온 (audio_chunk binary 는 제외 — 파일 상단 주석 참고)
-export type UpstreamMessage = ControlMessage | LandmarkFrameMessage | EventSnapshotMessage
+export type UpstreamMessage =
+  | ControlMessage
+  | LandmarkFrameMessage
+  | EventSnapshotMessage
+  | TextAnswerMessage
+  | VoiceMetricMessage
 
 // ─── 다운스트림 (FastAPI → 브라우저, camelCase 페이로드) ──────────────────────
 
@@ -71,6 +100,8 @@ export interface QuestionEvent {
   questionId: string
   text: string
   ttsText?: string | null
+  // 메인(기본) 질문인지 직전 답변 기반 꼬리질문인지 — 배지·흐름 표시용
+  kind: "main" | "follow_up"
 }
 
 // 실시간 자막 토큰 (STT 부분 결과)

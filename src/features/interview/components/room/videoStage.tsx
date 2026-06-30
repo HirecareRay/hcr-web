@@ -7,20 +7,34 @@
 
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import { VideoOff } from "lucide-react"
 
 interface Props {
   stream: MediaStream | null
   label?: string
+  // 비언어 분석(MediaPipe)이 같은 <video> 픽셀을 읽도록 외부에서 ref 를 주입할 수 있습니다.
+  // 미전달 시 기존 동작 그대로(setup 미리보기 등) — 영상 디코드는 한 번만 일어납니다.
+  videoRef?: React.RefObject<HTMLVideoElement | null>
 }
 
-export function VideoStage({ stream, label = "나" }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null)
+export function VideoStage({ stream, label = "나", videoRef }: Props) {
+  const internalRef = useRef<HTMLVideoElement | null>(null)
+
+  // 내부 ref + (있으면) 외부 ref 를 동일 element 로 동기화합니다.
+  // 메모이즈하지 않으면 ref 콜백 신원이 매 렌더 바뀌어 element 가 null→재부착되며,
+  // 그 순간 MediaPipe tick 이 videoRef.current 를 null 로 읽을 수 있습니다.
+  const setVideoEl = useCallback(
+    (el: HTMLVideoElement | null) => {
+      internalRef.current = el
+      if (videoRef) videoRef.current = el
+    },
+    [videoRef]
+  )
 
   useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream
+    if (internalRef.current && stream) {
+      internalRef.current.srcObject = stream
     }
   }, [stream])
 
@@ -28,7 +42,7 @@ export function VideoStage({ stream, label = "나" }: Props) {
     <div className="bg-ink relative aspect-video w-full overflow-hidden rounded-2xl">
       {stream ? (
         <video
-          ref={videoRef}
+          ref={setVideoEl}
           autoPlay
           playsInline
           muted

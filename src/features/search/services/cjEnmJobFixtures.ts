@@ -2,7 +2,7 @@ import type { JobPostingFixture } from "../types/search"
 
 export const cjEnmJobFixtures: JobPostingFixture[] = [
   {
-    id: "4337b91b45eba194235b",
+    id: "e3b1bca75a26a4582ed16ec4",
     companyName: "(주)CJ ENM",
     title: "CJ ENM 커머스부문 [추천 플랫폼 엔지니어] 경력사원 채용",
     job: {
@@ -47,7 +47,7 @@ export const cjEnmJobFixtures: JobPostingFixture[] = [
     },
   },
   {
-    id: "a63f1ca8292ecdd80c30",
+    id: "5e9cabd040c307d7aa142e73",
     companyName: "CJ ENM",
     title: "Data Scientist 채용",
     job: {
@@ -101,7 +101,7 @@ export const cjEnmJobFixtures: JobPostingFixture[] = [
     },
   },
   {
-    id: "b07667cb3eb79ffd3139",
+    id: "6d5b7abda7cc9dab87f8b17c",
     companyName: "CJ ENM",
     title: "Mnet Plus Product Designer 경력채용",
     job: {
@@ -145,7 +145,7 @@ export const cjEnmJobFixtures: JobPostingFixture[] = [
     },
   },
   {
-    id: "62945315cd3b3c07da52",
+    id: "500116c9eb165c7a8f97fbd3",
     companyName: "CJ ENM",
     title: "[Mnet Plus] Web/App Lead 경력채용",
     job: {
@@ -186,7 +186,7 @@ export const cjEnmJobFixtures: JobPostingFixture[] = [
     },
   },
   {
-    id: "3c3fa750ba51bce320ea",
+    id: "3ea3bda4afbc1216081bd4c1",
     companyName: "CJ ENM",
     title: "커머스부문 [개인정보보호 담당자] 경력사원 채용",
     job: {

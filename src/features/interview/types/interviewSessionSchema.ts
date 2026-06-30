@@ -19,6 +19,7 @@ import type {
   InterviewSessionStart,
   LiveEvaluation,
   SttResult,
+  WsTicket,
 } from "./interviewSession"
 
 const interviewModeSchema = z.enum(["text", "voice"])
@@ -73,6 +74,12 @@ export const sttResultSchema = z.object({
   transcript: z.string(),
 })
 
+// ─── WS 접속 티켓 (BFF 가 백엔드 응답을 parse 할 때 사용) ──────────────────────
+export const wsTicketSchema = z.object({
+  ticket: z.string().min(1),
+  expiresIn: z.number(),
+})
+
 /**
  * 타입 동기화 단언.
  * 응답 계약 타입과 스키마 추론 타입이 양방향으로 일치하지 않으면 컴파일 에러가 납니다.
@@ -89,3 +96,5 @@ const _assertSubmission: AssertSync<z.infer<typeof answerSubmissionSchema>, Answ
 const _assertEvaluation: AssertSync<z.infer<typeof liveEvaluationSchema>, LiveEvaluation> = true
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _assertStt: AssertSync<z.infer<typeof sttResultSchema>, SttResult> = true
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _assertWsTicket: AssertSync<z.infer<typeof wsTicketSchema>, WsTicket> = true

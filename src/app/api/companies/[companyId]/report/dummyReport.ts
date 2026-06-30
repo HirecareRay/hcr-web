@@ -401,7 +401,7 @@ export function buildDummyReport(companyId: string): CompanyReport {
       // 팀 채용 크롤링 산출물(JobPostingFixture) 실데이터입니다.
       openings: [
         {
-          id: "4337b91b45eba194235b",
+          id: "e3b1bca75a26a4582ed16ec4",
           companyName: "(주)CJ ENM",
           title: "CJ ENM 커머스부문 [추천 플랫폼 엔지니어] 경력사원 채용",
           url: "https://job.incruit.com/jobdb_info/jobpost.asp?job=2606110000017",
@@ -447,7 +447,7 @@ export function buildDummyReport(companyId: string): CompanyReport {
           },
         },
         {
-          id: "a63f1ca8292ecdd80c30",
+          id: "5e9cabd040c307d7aa142e73",
           companyName: "CJ ENM",
           title: "Data Scientist 채용",
           url: "https://www.catch.co.kr/NCS/RecruitInfoDetails/549990",
@@ -502,7 +502,7 @@ export function buildDummyReport(companyId: string): CompanyReport {
           },
         },
         {
-          id: "b07667cb3eb79ffd3139",
+          id: "6d5b7abda7cc9dab87f8b17c",
           companyName: "CJ ENM",
           title: "Mnet Plus Product Designer 경력채용",
           url: "https://www.catch.co.kr/NCS/RecruitInfoDetails/549296",
@@ -547,7 +547,7 @@ export function buildDummyReport(companyId: string): CompanyReport {
           },
         },
         {
-          id: "62945315cd3b3c07da52",
+          id: "500116c9eb165c7a8f97fbd3",
           companyName: "CJ ENM",
           title: "[Mnet Plus] Web/App Lead 경력채용",
           url: "https://www.jobkorea.co.kr/Recruit/GI_Read_Comt_Ifrm?Gno=49016807",
@@ -589,7 +589,7 @@ export function buildDummyReport(companyId: string): CompanyReport {
           },
         },
         {
-          id: "3c3fa750ba51bce320ea",
+          id: "3ea3bda4afbc1216081bd4c1",
           companyName: "CJ ENM",
           title: "커머스부문 [개인정보보호 담당자] 경력사원 채용",
           url: "https://www.catch.co.kr/NCS/RecruitInfoDetails/555048",

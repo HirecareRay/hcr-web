@@ -6,7 +6,7 @@
  * 기반 산출원을 같은 자리에 끼웁니다. 이 훅이 하는 일:
  *
  *   rAF 루프(detect 주기 제한) → produceMetrics → 답변 구간 & throttle 통과 시 landmark_frame 송신
- *                              → 이벤트 감지(stepEventDetector) → 스냅샷 캡처 → event_snapshot 송신
+ *                              → 이벤트 감지(stepEventDetector) → event_snapshot(종류·메타) 송신
  *
  * 송신은 answering(답변 구간)에서만 일어납니다. 그 외에는 라이브 오버레이용으로 지표만 갱신합니다.
  */
@@ -17,7 +17,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { EventSnapshotMessage, LandmarkFrameMessage } from "../types/interviewProtocol"
 import { emptyFaceMetrics, type FaceMetrics, type NonverbalEvent } from "../types/nonverbal"
 import { metricsToFrame } from "../lib/metricsToFrame"
-import { captureSnapshot } from "../lib/snapshot"
 import { shouldEmit } from "../lib/throttle"
 import {
   defaultEventConfig,
@@ -121,21 +120,18 @@ export function useNonverbalCapture({
         if (sendLandmark(metricsToFrame(next))) setSentFrameCount((c) => c + 1)
       }
 
-      // 이벤트 감지 → 스냅샷 → event_snapshot 송신
+      // 이벤트 감지 → event_snapshot(종류·메타만) 송신.
+      // 화면 캡처(이미지)는 하지 않는다 — 백엔드가 이벤트 횟수만 집계에 쓰고 이미지는
+      // 읽지도 저장하지도 않으므로, 얼굴 사진을 전송하지 않는다(대역폭·프라이버시).
       const stepped = stepEventDetector(detectorStateRef.current, next, now, cfg.eventConfig)
       detectorStateRef.current = stepped.state
       if (stepped.events.length > 0) {
-        // 한 tick 에 여러 이벤트가 겹쳐도 스냅샷은 한 장만 찍어 재사용(대역폭 절감)
-        const image = captureSnapshot(video)
-        if (image) {
-          for (const event of stepped.events) {
-            sendEventSnapshot({
-              type: "event_snapshot",
-              event: event.kind,
-              image,
-              meta: event.meta,
-            })
-          }
+        for (const event of stepped.events) {
+          sendEventSnapshot({
+            type: "event_snapshot",
+            event: event.kind,
+            meta: event.meta,
+          })
         }
         setRecentEvents((prev) => [...stepped.events, ...prev].slice(0, maxRecentEvents))
       }

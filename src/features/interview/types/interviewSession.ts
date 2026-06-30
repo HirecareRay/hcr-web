@@ -22,14 +22,22 @@ import type { InterviewMode, QuestionCategory } from "./interviewResult"
 export type { InterviewMode } from "./interviewResult"
 
 // ─── 진행 단계 (상태머신) ─────────────────────────────────────────────────────
-//   setup      : 시작 전 — 장치 권한 · 모드 · 전체 시간 선택
-//   asking     : AI가 질문을 제시(+TTS로 읽음)
-//   answering  : 사용자가 답변 중(🔴 듣는 중) — 텍스트 입력 또는 음성 녹음
-//   finished   : 종료 — 결과 리포트로 이동
+//   setup       : 시작 전 — 장치 권한 · 모드 · 전체 시간 선택
+//   connecting  : WS 연결 후 백엔드의 첫 질문 도착 대기(WS 주도 흐름)
+//   asking      : AI가 질문을 제시(+TTS로 읽음)
+//   answering   : 사용자가 답변 중(🔴 듣는 중) — 텍스트 입력 또는 음성 녹음
+//   evaluating  : 답변 종료 후 평가(eval_delta)를 스트리밍으로 표시 → "다음 질문" 대기
+//   finished    : 종료 — 결과 리포트로 이동
 //
-// 질문별 피드백으로 흐름을 끊지 않는다: 답변 제출 → 즉시 다음 질문 → 끝까지 본 뒤 결과만.
-// 채점은 백그라운드(논블로킹)로 호출해 평가를 누적만 하고 UI는 막지 않는다.
-export type InterviewPhase = "setup" | "asking" | "answering" | "finished"
+// WS 주도: 질문·자막·평가·요약을 백엔드 WS 이벤트로 받아 진행한다. 평가는 결과로 끊지 않고
+// 답변 직후 가볍게 스트리밍으로 보여준 뒤(evaluating) 다음 질문으로 넘어간다.
+export type InterviewPhase =
+  | "setup"
+  | "connecting"
+  | "asking"
+  | "answering"
+  | "evaluating"
+  | "finished"
 
 // ─── 시작 화면에서 고른 설정 ──────────────────────────────────────────────────
 export interface InterviewConfig {
@@ -87,4 +95,13 @@ export interface LiveEvaluation {
 // ─── 음성 모드: 오디오 → 전사 ─────────────────────────────────────────────────
 export interface SttResult {
   transcript: string
+}
+
+// ─── WS 접속용 단기 티켓 (BFF 발급) ───────────────────────────────────────────
+// 브라우저 WebSocket 은 Authorization 헤더를 못 붙이고, JWT 는 httpOnly 쿠키라 JS 가
+// 못 읽는다. 그래서 입장 직전 BFF(쿠키→Bearer)로 백엔드에서 1회용·단기 티켓을 받아
+// WS URL 쿼리(?ticket=)로만 전달한다(JWT 를 URL 에 노출하지 않는 표준 패턴).
+export interface WsTicket {
+  ticket: string // 불투명 1회용 문자열
+  expiresIn: number // 만료까지 남은 초(예: 60) — 발급 직후 즉시 연결할 것
 }

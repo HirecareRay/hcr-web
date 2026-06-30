@@ -24,8 +24,10 @@ import type {
   LandmarkFrameMessage,
   QuestionEvent,
   SummaryEvent,
+  TextAnswerMessage,
   TranscriptDeltaEvent,
   UpstreamMessage,
+  VoiceMetricMessage,
 } from "./interviewProtocol"
 
 // ─── 상태머신 ─────────────────────────────────────────────────────────────────
@@ -56,17 +58,34 @@ export const landmarkFrameMessageSchema = z.object({
   expression: z.string().nullish(),
 })
 
+// 이미지(증거 스냅샷)는 더 이상 전송하지 않는다 — 이벤트 종류·메타만 계약에 둔다.
 export const eventSnapshotMessageSchema = z.object({
   type: z.literal("event_snapshot"),
   event: z.string(),
-  image: z.string(),
   meta: z.record(z.string(), z.unknown()),
+})
+
+export const textAnswerMessageSchema = z.object({
+  type: z.literal("text_answer"),
+  text: z.string(),
+})
+
+// 4필드 모두 optional — 결측은 키를 생략해 보내므로(.optional), 타입의 `?: number` 와 일치시킨다.
+// (null 을 보내지 않으므로 nullish 가 아니라 optional. 동기화 단언이 이를 강제한다.)
+export const voiceMetricMessageSchema = z.object({
+  type: z.literal("voice_metric"),
+  decibel: z.number().optional(),
+  pitch: z.number().optional(),
+  speech_rate: z.number().optional(),
+  tremor: z.number().optional(),
 })
 
 export const upstreamMessageSchema = z.discriminatedUnion("type", [
   controlMessageSchema,
   landmarkFrameMessageSchema,
   eventSnapshotMessageSchema,
+  textAnswerMessageSchema,
+  voiceMetricMessageSchema,
 ])
 
 // ─── 다운스트림 (camelCase 페이로드 / snake type 값) ──────────────────────────
@@ -75,6 +94,7 @@ export const questionEventSchema = z.object({
   questionId: z.string(),
   text: z.string(),
   ttsText: z.string().nullish(),
+  kind: z.enum(["main", "follow_up"]),
 })
 
 export const transcriptDeltaEventSchema = z.object({
@@ -120,6 +140,14 @@ const _assertLandmark: AssertSync<
 const _assertSnapshot: AssertSync<
   z.infer<typeof eventSnapshotMessageSchema>,
   EventSnapshotMessage
+> = true
+const _assertTextAnswer: AssertSync<
+  z.infer<typeof textAnswerMessageSchema>,
+  TextAnswerMessage
+> = true
+const _assertVoiceMetric: AssertSync<
+  z.infer<typeof voiceMetricMessageSchema>,
+  VoiceMetricMessage
 > = true
 const _assertUpstream: AssertSync<z.infer<typeof upstreamMessageSchema>, UpstreamMessage> = true
 
