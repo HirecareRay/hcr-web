@@ -23,6 +23,7 @@ import { useInterviewSocket } from "./useInterviewSocket"
 import { useFaceLandmarker } from "./useFaceLandmarker"
 import { useNonverbalCapture } from "./useNonverbalCapture"
 import { useAudioStreamer } from "./useAudioStreamer"
+import { useVoiceMetric } from "./useVoiceMetric"
 import type { InterviewMode, InterviewPhase } from "../types/interviewSession"
 import type { FaceMetrics, NonverbalEvent } from "../types/nonverbal"
 import type { QuestionEvent, SummaryEvent } from "../types/interviewProtocol"
@@ -34,6 +35,9 @@ interface UseLiveStreamingParams {
   jobTitle?: string | null // 지원 직무 — 질문 생성 컨텍스트(WS 쿼리, 선택)
   phase: InterviewPhase
   mode: InterviewMode
+  // 음성 모드 하위 단계 — listening(말하는 중)에만 캡처·송신하고 review(검토·수정)에선 멈춘다.
+  // 텍스트 모드와 무관(기본 true). answering 게이팅에 곱해진다.
+  voiceListening?: boolean
   videoRef: React.RefObject<HTMLVideoElement | null> // VideoStage 가 노출한 분석용 영상 element
   stream: MediaStream | null
   consented: boolean // 카메라 비언어 분석 동의
@@ -66,6 +70,7 @@ export function useLiveStreaming({
   jobTitle,
   phase,
   mode,
+  voiceListening = true,
   videoRef,
   stream,
   consented,
@@ -74,7 +79,8 @@ export function useLiveStreaming({
   const socket = useInterviewSocket(sessionId, { companyId, jobTitle, onAuthExpired })
 
   const hasVideoTrack = !!stream && stream.getVideoTracks().length > 0
-  const answering = phase === "answering"
+  // 음성 모드 review 단계에선 인식을 멈추므로 캡처·송신도 함께 정지한다.
+  const answering = phase === "answering" && (mode !== "voice" || voiceListening)
 
   // 동의 + 카메라가 있을 때만 무거운 모델을 로드합니다.
   const faceEnabled = consented && hasVideoTrack
@@ -94,6 +100,14 @@ export function useLiveStreaming({
   useAudioStreamer({
     stream,
     sendAudio: socket.sendAudio,
+    active: answering && mode === "voice",
+  })
+
+  // 음성 물리지표(voice_metric) — 음성 모드 & 답변 구간(말하는 중)에만 ~1s 송신.
+  // answering 은 이미 voiceListening 으로 게이팅돼 있어 review 단계에선 자동 정지한다.
+  useVoiceMetric({
+    stream,
+    sendVoiceMetric: socket.sendVoiceMetric,
     active: answering && mode === "voice",
   })
 
