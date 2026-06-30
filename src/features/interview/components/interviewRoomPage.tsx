@@ -27,7 +27,7 @@ import { InterviewSetup } from "./room/interviewSetup"
 import { SessionTimerBar } from "./room/sessionTimerBar"
 import { VideoStage } from "./room/videoStage"
 import { InterviewerPanel } from "./room/interviewerPanel"
-import { AnswerPanel } from "./room/answerPanel"
+import { AnswerPanel, type VoiceStep } from "./room/answerPanel"
 import { EvaluationPanel } from "./room/evaluationPanel"
 import { ListeningIndicator } from "./room/listeningIndicator"
 import type { InterviewConfig, InterviewMode } from "../types/interviewSession"
@@ -61,9 +61,14 @@ export function InterviewRoomPage({ companyId }: Props) {
   const tts = useTts()
 
   const [answerText, setAnswerText] = useState("")
-  // 음성 모드 자막(편집 가능). STT 자막을 사용자가 교정한 값이며, 제출 시 text_answer 로 보낸다.
+  // 음성 모드 교정 텍스트(review 단계 편집값). 인식이 끝난 자막을 사용자가 고친 값이며,
+  // 제출 시 text_answer 로 보낸다.
   const [voiceAnswer, setVoiceAnswer] = useState("")
-  const [voiceAnswerDirty, setVoiceAnswerDirty] = useState(false) // 사용자가 손대면 자동 동기화 중단
+  // 음성 모드 answering 하위 단계 — listening(읽기 전용 인식 중) → review(편집·제출).
+  const [voiceStep, setVoiceStep] = useState<VoiceStep>("listening")
+  // review 단계에서 사용자가 자막을 직접 고쳤는지. 고치기 전까지는 늦게 도착한 STT delta 를
+  // 편집칸에 계속 흡수해(끝문장 유실 방지), 손대면 흡수를 멈춰 교정 내용을 덮지 않는다.
+  const voiceReviewDirtyRef = useRef(false)
   // 제출한 답변 본문 — evaluating 단계의 "내 답변" 표시 출처. WS 자막 echo(중복 위험) 대신
   // 실제 백엔드에 보낸 텍스트를 그대로 보여줘 WYSIWYG 를 보장한다.
   const [submittedAnswer, setSubmittedAnswer] = useState("")
@@ -85,6 +90,8 @@ export function InterviewRoomPage({ companyId }: Props) {
     jobTitle: config?.jobTitle ?? null,
     phase,
     mode,
+    // 음성 모드는 listening(말하는 중)에만 캡처·송신하고, review(검토·수정)에선 멈춘다.
+    voiceListening: voiceStep === "listening",
     videoRef: analysisVideoRef,
     stream: media.stream,
     consented: cameraConsented,
@@ -116,7 +123,8 @@ export function InterviewRoomPage({ companyId }: Props) {
     lastPresentedRef.current = liveQuestion.questionId
     setAnswerText("")
     setVoiceAnswer("")
-    setVoiceAnswerDirty(false)
+    setVoiceStep("listening")
+    voiceReviewDirtyRef.current = false
     setSubmittedAnswer("")
     setNextRequested(false)
     presentQuestion()
@@ -124,13 +132,15 @@ export function InterviewRoomPage({ companyId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveQuestion?.questionId])
 
-  // 음성 모드: 사용자가 자막을 직접 고치기 전까지는 들어오는 STT 자막을 편집칸에 반영한다.
-  // 한 번이라도 손대면(dirty) 자동 동기화를 멈춰, 교정 내용이 새 delta 로 덮이지 않게 한다.
+  // 음성 자막은 listening 단계에선 읽기 전용으로만 보여주고(LiveTranscriptView), 편집칸에는
+  // 넣지 않는다. review 진입 후에도 "사용자가 직접 고치기 전까지는" 늦게 도착한 STT delta 를
+  // 계속 편집칸에 반영한다 — STT 지연(0.5~2s)으로 클릭 직후 도착하는 끝문장이 답변에서
+  // 유실되지 않도록. 사용자가 손대면(dirty) 흡수를 멈춰 교정 내용을 덮지 않는다.
   useEffect(() => {
-    if (mode !== "voice" || phase !== "answering") return
-    if (voiceAnswerDirty) return
+    if (mode !== "voice" || voiceStep !== "review") return
+    if (voiceReviewDirtyRef.current) return
     setVoiceAnswer(live.transcript)
-  }, [mode, phase, voiceAnswerDirty, live.transcript])
+  }, [mode, voiceStep, live.transcript])
 
   // 최종 요약 도착 → 결과 페이지로 넘길 핸드오프 스토어에 담고 종료 전이
   useEffect(() => {
@@ -165,21 +175,30 @@ export function InterviewRoomPage({ companyId }: Props) {
 
   const handleBeginAnswering = useCallback(() => {
     tts.cancel()
-    setVoiceAnswer("") // 이전 답변 자막 비우고
-    setVoiceAnswerDirty(false) // 새 답변은 다시 STT 자동 동기화부터
+    setVoiceAnswer("") // 이전 답변 교정 텍스트 비우고
+    setVoiceStep("listening") // 새 답변은 인식(listening) 단계부터
+    voiceReviewDirtyRef.current = false // 새 답변은 다시 자막 흡수부터
     setSubmittedAnswer("") // 이전 답변 본문이 새 답변에 새지 않게(재답변 흐름 방어)
     wsAnswerStart() // WS control: 답변 시작
     beginAnswering()
   }, [tts, wsAnswerStart, beginAnswering])
 
-  // 음성 자막 편집 — 사용자가 손대면 dirty 로 표시해 자동 동기화를 멈춘다.
+  // 음성: "답변 입력 완료" — 인식(오디오/지표 송신)을 멈추고 review 단계로.
+  // 진입 시 누적 자막을 seed 하고, 위 effect 가 늦은 delta 를 손대기 전까지 계속 흡수한다.
+  const handleFinishSpeaking = useCallback(() => {
+    voiceReviewDirtyRef.current = false
+    setVoiceAnswer(live.transcript)
+    setVoiceStep("review")
+  }, [live.transcript])
+
+  // 음성 자막 편집 — 사용자가 손대면 dirty 로 표시해 늦은 delta 흡수를 멈춘다.
   const handleVoiceAnswerChange = useCallback((value: string) => {
+    voiceReviewDirtyRef.current = true
     setVoiceAnswer(value)
-    setVoiceAnswerDirty(true)
   }, [])
 
-  // 답변 종료 — 입력/교정 텍스트를 text_answer 로 송신(백엔드가 STT 대신 이 텍스트를 답변으로 채택)
-  // 후 종료 신호, 평가 단계로(평가 토큰 스트림 표시).
+  // 답변 종료(텍스트 종료 / 음성 review 제출) — 입력/교정 텍스트를 text_answer 로 송신
+  // (백엔드가 STT 대신 이 텍스트를 답변으로 채택) 후 종료 신호, 평가 단계로(평가 토큰 스트림 표시).
   const handleEndAnswer = useCallback(() => {
     const answer = mode === "voice" ? voiceAnswer.trim() : answerText.trim()
     if (answer) wsSendTextAnswer(answer)
@@ -291,11 +310,14 @@ export function InterviewRoomPage({ companyId }: Props) {
         <AnswerPanel
           mode={mode}
           phase={phase}
+          voiceStep={voiceStep}
           answerText={answerText}
+          liveTranscript={live.transcript}
           voiceAnswer={voiceAnswer}
           onAnswerTextChange={setAnswerText}
           onVoiceAnswerChange={handleVoiceAnswerChange}
           onBeginAnswering={handleBeginAnswering}
+          onFinishSpeaking={handleFinishSpeaking}
           onEndAnswer={handleEndAnswer}
         />
       )}
