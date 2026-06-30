@@ -12,6 +12,7 @@ export const apiEndpoints = {
   },
   companies: {
     search: "/api/companies/search",
+    jobs: "/api/companies/jobs",
     report: (id: string) => `/api/companies/${id}/report`,
   },
   interview: {
