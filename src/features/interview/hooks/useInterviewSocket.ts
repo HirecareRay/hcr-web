@@ -16,6 +16,7 @@ import {
   downstreamEventSchema,
   eventSnapshotMessageSchema,
   landmarkFrameMessageSchema,
+  voiceMetricMessageSchema,
 } from "../types/interviewProtocolSchema"
 import type {
   ControlAction,
@@ -23,6 +24,7 @@ import type {
   LandmarkFrameMessage,
   QuestionEvent,
   SummaryEvent,
+  VoiceMetricMessage,
 } from "../types/interviewProtocol"
 import { getWsTicket, WsTicketError } from "../services/interviewService"
 import { buildInterviewWsUrl } from "../lib/wsUrl"
@@ -210,6 +212,18 @@ export function useInterviewSocket(sessionId: string | null, options: InterviewS
     [safeSend]
   )
 
+  // 음성 물리지표(voice_metric) 송신 — 답변 중 ~1s 주기. landmark 와 동일하게 송신 직전
+  // Zod 로 1차 검증한 뒤 raw snake_case JSON 으로 보낸다. parse 결과(키 생략 그대로)를
+  // 보내 결측 필드가 null 로 새지 않게 한다(서버가 집계에서 제외).
+  const sendVoiceMetric = useCallback(
+    (metric: VoiceMetricMessage): boolean => {
+      const parsed = voiceMetricMessageSchema.safeParse(metric)
+      if (!parsed.success) return false
+      return safeSend(JSON.stringify(parsed.data))
+    },
+    [safeSend]
+  )
+
   return {
     ...view,
     answerStart: useCallback(() => sendControl("answer_start"), [sendControl]),
@@ -219,5 +233,6 @@ export function useInterviewSocket(sessionId: string | null, options: InterviewS
     sendTextAnswer,
     sendLandmark,
     sendEventSnapshot,
+    sendVoiceMetric,
   }
 }
