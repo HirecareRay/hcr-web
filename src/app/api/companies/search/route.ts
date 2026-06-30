@@ -7,10 +7,15 @@ import { NextRequest, NextResponse } from "next/server"
 import backendApi from "@/lib/backendAxiosInstance"
 
 export async function GET(req: NextRequest) {
+  const q = req.nextUrl.searchParams.get("q") ?? ""
+  const limit = req.nextUrl.searchParams.get("limit") ?? undefined
+  const parsedLimit = Number(limit)
+  const limitData = <T,>(data: T[]) =>
+    Number.isFinite(parsedLimit) && parsedLimit > 0 ? data.slice(0, parsedLimit) : data
+
   try {
-    const q = req.nextUrl.searchParams.get("q") ?? ""
-    const { data } = await backendApi.get("/companies/search", { params: { q } })
-    return NextResponse.json({ success: true, data })
+    const { data } = await backendApi.get("/companies/search", { params: { q, limit } })
+    return NextResponse.json({ success: true, data: Array.isArray(data) ? limitData(data) : data })
   } catch (error) {
     if (isAxiosError(error) && error.response) {
       return NextResponse.json(

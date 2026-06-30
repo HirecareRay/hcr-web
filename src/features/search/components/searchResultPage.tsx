@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
 import { ChevronRight, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -87,6 +87,14 @@ function SearchResultContent() {
   // 연관 채용공고는 도배 방지로 기본 N개만, "더보기"로 전체 펼침
   const [showAllJobs, setShowAllJobs] = useState(false)
   const visibleJobs = showAllJobs ? relatedJobs : relatedJobs.slice(0, SEARCH_UI_LIMITS.jobsPreview)
+  const [showAllCompanies, setShowAllCompanies] = useState(false)
+  const visibleCompanies = showAllCompanies
+    ? filteredCompanies
+    : filteredCompanies.slice(0, SEARCH_UI_LIMITS.companiesPreview)
+
+  useEffect(() => {
+    setShowAllCompanies(false)
+  }, [query, selectedCategory])
 
   // 자동완성 드롭다운 열림 상태. 타이핑하면 열고, 선택/검색하면 닫는다.
   const [suggestOpen, setSuggestOpen] = useState(false)
@@ -187,11 +195,22 @@ function SearchResultContent() {
         )}
 
         {filteredCompanies.length > 0 ? (
-          <div className="mt-3 space-y-3">
-            {filteredCompanies.map((company) => (
-              <CompanyCard key={company.id} company={company} />
-            ))}
-          </div>
+          <>
+            <div className="mt-3 space-y-3">
+              {visibleCompanies.map((company) => (
+                <CompanyCard key={company.id} company={company} />
+              ))}
+            </div>
+            {filteredCompanies.length > SEARCH_UI_LIMITS.companiesPreview && (
+              <button
+                type="button"
+                onClick={() => setShowAllCompanies((prev) => !prev)}
+                className="border-warm-border text-muted hover:bg-warm-bg mt-3 w-full rounded-2xl border bg-white py-3 text-sm font-semibold transition-colors"
+              >
+                {showAllCompanies ? "접기" : `전체 ${filteredCompanies.length}개 보기`}
+              </button>
+            )}
+          </>
         ) : (
           <div className="border-warm-border mt-3 rounded-2xl border border-dashed bg-white px-5 py-12 text-center">
             {query.length === 0 ? (
