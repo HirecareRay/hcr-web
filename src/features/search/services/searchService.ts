@@ -20,9 +20,10 @@ export async function searchCompanies(q: string): Promise<CompanySearchResult[]>
   return data.data
 }
 
-export async function searchCompanyJobs(companyId: string): Promise<RelatedJobPosting[]> {
+export async function searchCompanyJobs(q: string): Promise<RelatedJobPosting[]> {
   const { data } = await axiosInstance.get<ApiResponse<RelatedJobPosting[]>>(
-    `/companies/${companyId}/jobs`
+    apiEndpoints.companies.jobs,
+    { params: { q: q.trim() } }
   )
 
   if (!data.success || !data.data) {
