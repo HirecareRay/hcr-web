@@ -58,10 +58,10 @@ export const landmarkFrameMessageSchema = z.object({
   expression: z.string().nullish(),
 })
 
+// 이미지(증거 스냅샷)는 더 이상 전송하지 않는다 — 이벤트 종류·메타만 계약에 둔다.
 export const eventSnapshotMessageSchema = z.object({
   type: z.literal("event_snapshot"),
   event: z.string(),
-  image: z.string(),
   meta: z.record(z.string(), z.unknown()),
 })
 
