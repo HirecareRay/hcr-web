@@ -84,20 +84,6 @@ export const recommendedQuestionsSchema = z.object({
   job: z.array(z.string()),
 })
 
-// ─── 면접 다시 보기 ───────────────────────────────────────────────────────────
-export const replayMarkerSchema = z.object({
-  atSec: z.number(),
-  no: z.number(),
-  label: z.string(),
-})
-
-export const interviewReplaySchema = z.object({
-  available: z.boolean(),
-  mediaUrl: z.string().nullable(),
-  durationSec: z.number(),
-  markers: z.array(replayMarkerSchema),
-})
-
 // ─── 이전 면접 연습과의 차이 ──────────────────────────────────────────────────
 export const metricDeltaSchema = z.object({
   label: z.string(),
@@ -125,7 +111,6 @@ export const interviewResultSchema = z.object({
   improvements: z.array(improvementItemSchema),
   script: z.array(scriptItemSchema),
   recommendedQuestions: recommendedQuestionsSchema,
-  replay: interviewReplaySchema,
   comparison: interviewComparisonSchema.nullable(),
 })
 

@@ -25,8 +25,10 @@ export function useLogin() {
         .then(setDocExists)
         .catch((e) => logger.error("문서 존재 여부 조회 실패", e))
       // 보호 페이지에서 튕겨와 로그인했다면 원래 가려던 곳으로, 아니면 홈으로.
+      // open redirect 방지: 단일 슬래시로 시작하는 내부 경로만 허용(`//`·`/\` 등 외부 URL 거부).
       const redirect = new URLSearchParams(window.location.search).get("redirect")
-      router.push(redirect ?? "/")
+      const safeRedirect = redirect && /^\/(?![/\\])/.test(redirect) ? redirect : "/"
+      router.push(safeRedirect)
       router.refresh() // 미들웨어·서버 컴포넌트가 새 로그인 상태를 다시 읽도록
     } catch (e) {
       logger.error("로그인 실패", e)

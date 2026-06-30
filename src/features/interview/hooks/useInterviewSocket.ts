@@ -16,6 +16,7 @@ import {
   downstreamEventSchema,
   eventSnapshotMessageSchema,
   landmarkFrameMessageSchema,
+  voiceMetricMessageSchema,
 } from "../types/interviewProtocolSchema"
 import type {
   ControlAction,
@@ -23,9 +24,19 @@ import type {
   LandmarkFrameMessage,
   QuestionEvent,
   SummaryEvent,
+  VoiceMetricMessage,
 } from "../types/interviewProtocol"
+import { getWsTicket, WsTicketError } from "../services/interviewService"
+import { buildInterviewWsUrl } from "../lib/wsUrl"
+import { logger } from "@/lib/logger"
 
 const WS_BASE = process.env.NEXT_PUBLIC_INTERVIEW_WS_URL ?? "ws://localhost:8000"
+
+export interface InterviewSocketOptions {
+  companyId?: string | null // 기업 분석 컨텍스트 주입용(선택)
+  jobTitle?: string | null // 지원 직무 — 질문 생성 컨텍스트(선택)
+  onAuthExpired?: () => void // 티켓 401(세션 만료) 시 호출 — 보통 로그인 페이지로 보냄
+}
 
 export type SocketState = "idle" | "connecting" | "open" | "closed"
 
@@ -45,9 +56,14 @@ const EMPTY_VIEW: InterviewSocketView = {
   summary: null,
 }
 
-export function useInterviewSocket(sessionId: string | null) {
+export function useInterviewSocket(sessionId: string | null, options: InterviewSocketOptions = {}) {
+  const { companyId, jobTitle, onAuthExpired } = options
   const socketRef = useRef<WebSocket | null>(null)
   const [view, setView] = useState<InterviewSocketView>(EMPTY_VIEW)
+
+  // 콜백을 ref 로 고정해, onAuthExpired 의 신원이 바뀌어도 연결 effect 가 재실행되지 않게 한다.
+  const onAuthExpiredRef = useRef(onAuthExpired)
+  onAuthExpiredRef.current = onAuthExpired
 
   // 수신 메시지 1건을 검증 후 뷰 상태에 반영합니다.
   const applyMessage = useCallback((raw: unknown) => {
@@ -70,29 +86,77 @@ export function useInterviewSocket(sessionId: string | null) {
     })
   }, [])
 
-  // sessionId 가 정해지면 연결하고, 언마운트/변경 시 정리합니다.
+  // sessionId 가 정해지면 ① 단기 티켓을 발급받고 ② 그 티켓으로 WS 를 연다.
+  // 티켓은 1회용·60초 만료라 발급 직후 바로 연결한다(재연결 시 이 effect 가 다시 돌며
+  // 매번 새 티켓을 받는다). 발급은 비동기라, 그 사이 언마운트/세션 변경되면 cancelled 로 차단한다.
+  //
+  // ⚠️ TODO(Phase 6 · 배포 전 필수): 이 채널로 얼굴 스냅샷(event_snapshot)·음성(audio_chunk)이
+  //   흐른다. 인증은 단기 WS 티켓으로 해결됐으나, 평문(ws://)이라 로컬 데모 한정으로만 안전하다.
+  //   배포 전: wss:// 강제(프라이버시 데이터 평문 전송 금지) + origin 검증.
   useEffect(() => {
     if (!sessionId) return
 
-    const socket = new WebSocket(`${WS_BASE}/interviews/ws/${sessionId}`)
-    socketRef.current = socket
+    let cancelled = false
     setView({ ...EMPTY_VIEW, state: "connecting" })
 
-    socket.onopen = () => setView((prev) => ({ ...prev, state: "open" }))
-    socket.onclose = () => setView((prev) => ({ ...prev, state: "closed" }))
-    socket.onmessage = (e) => {
+    async function connect(sid: string) {
+      let ticket: string
       try {
-        applyMessage(JSON.parse(e.data))
-      } catch {
-        // JSON 이 아닌 프레임은 무시
+        const issued = await getWsTicket()
+        ticket = issued.ticket
+      } catch (err) {
+        if (cancelled) return
+        // 401(세션 만료) → 로그인으로. 그 외 실패 → 연결 포기(익명 폴백 없음).
+        if (err instanceof WsTicketError && err.isAuthError) {
+          onAuthExpiredRef.current?.()
+        } else {
+          logger.error("WS 티켓 발급 실패", err)
+        }
+        setView((prev) => ({ ...prev, state: "closed" }))
+        return
+      }
+
+      // 발급 도중 언마운트/세션 변경됐으면 연결하지 않는다.
+      if (cancelled) return
+
+      const url = buildInterviewWsUrl({
+        base: WS_BASE,
+        sessionId: sid,
+        ticket,
+        companyId,
+        jobTitle,
+      })
+      const socket = new WebSocket(url)
+      socketRef.current = socket
+
+      // cancelled 가드: cleanup 으로 닫힌 옛 소켓의 onclose 가 뒤늦게 발화해, 새 실행이
+      // 세팅한 "connecting" 상태를 "closed" 로 덮거나 언마운트 후 setView 하지 않도록 막는다.
+      socket.onopen = () => {
+        if (cancelled) return
+        setView((prev) => ({ ...prev, state: "open" }))
+      }
+      socket.onclose = () => {
+        if (cancelled) return
+        setView((prev) => ({ ...prev, state: "closed" }))
+      }
+      socket.onmessage = (e) => {
+        if (cancelled) return
+        try {
+          applyMessage(JSON.parse(e.data))
+        } catch {
+          // JSON 이 아닌 프레임은 무시
+        }
       }
     }
 
+    void connect(sessionId)
+
     return () => {
-      socket.close()
+      cancelled = true
+      socketRef.current?.close()
       socketRef.current = null
     }
-  }, [sessionId, applyMessage])
+  }, [sessionId, companyId, jobTitle, applyMessage])
 
   // ── 업스트림 송신 액션 ──────────────────────────────────────────────────────
 
@@ -108,7 +172,7 @@ export function useInterviewSocket(sessionId: string | null) {
       socket.send(data)
       return true
     } catch (err) {
-      console.error("WS 송신 실패:", err)
+      logger.error("WS 송신 실패", err)
       return false
     }
   }, [])
@@ -120,6 +184,12 @@ export function useInterviewSocket(sessionId: string | null) {
 
   // 오디오 청크(binary)는 JSON 이 아니라 바이너리 프레임으로 보냅니다.
   const sendAudio = useCallback((chunk: ArrayBuffer | Blob) => safeSend(chunk), [safeSend])
+
+  // 텍스트 모드 답변(타이핑) 송신 — 백엔드가 answer_end 시 오디오 전사 대신 이 텍스트를 쓴다.
+  const sendTextAnswer = useCallback(
+    (text: string) => safeSend(JSON.stringify({ type: "text_answer", text })),
+    [safeSend]
+  )
 
   // 비언어 지표 프레임(landmark_frame) 송신 — 계약 위반 프레임이 서버로 새지 않도록
   // 송신 직전 Zod 로 1차 검증한 뒤 raw snake_case JSON 으로 보냅니다.
@@ -142,13 +212,27 @@ export function useInterviewSocket(sessionId: string | null) {
     [safeSend]
   )
 
+  // 음성 물리지표(voice_metric) 송신 — 답변 중 ~1s 주기. landmark 와 동일하게 송신 직전
+  // Zod 로 1차 검증한 뒤 raw snake_case JSON 으로 보낸다. parse 결과(키 생략 그대로)를
+  // 보내 결측 필드가 null 로 새지 않게 한다(서버가 집계에서 제외).
+  const sendVoiceMetric = useCallback(
+    (metric: VoiceMetricMessage): boolean => {
+      const parsed = voiceMetricMessageSchema.safeParse(metric)
+      if (!parsed.success) return false
+      return safeSend(JSON.stringify(parsed.data))
+    },
+    [safeSend]
+  )
+
   return {
     ...view,
     answerStart: useCallback(() => sendControl("answer_start"), [sendControl]),
     answerEnd: useCallback(() => sendControl("answer_end"), [sendControl]),
     next: useCallback(() => sendControl("next"), [sendControl]),
     sendAudio,
+    sendTextAnswer,
     sendLandmark,
     sendEventSnapshot,
+    sendVoiceMetric,
   }
 }

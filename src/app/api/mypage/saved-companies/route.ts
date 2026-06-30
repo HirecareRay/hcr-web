@@ -42,7 +42,7 @@ export async function GET() {
         success: true,
         data: [
           {
-            id: "4c6a2dc35bec6d932b68",
+            id: "6a3ca079d7da326c0781963c",
             name: "CJ ENM",
             category: "엔터테인먼트·커머스",
             openJobs: 3,
