@@ -7,26 +7,31 @@ import type { CompanySearchResult, RelatedJobPosting } from "../types/search"
 export async function searchCompanies(q: string): Promise<CompanySearchResult[]> {
   const trimmed = q.trim()
   if (!trimmed) return []
+
   const { data } = await axiosInstance.get<ApiResponse<CompanySearchResult[]>>(
     apiEndpoints.companies.search,
     { params: { q: trimmed } }
   )
+
   if (!data.success || !data.data) {
     throw new Error(data.error ?? "검색에 실패했습니다")
   }
+
   return data.data
 }
 
-/** 연관 채용공고 — 검색 결과 회사들의 공고. q 비면 빈 배열. */
 export async function searchCompanyJobs(q: string): Promise<RelatedJobPosting[]> {
   const trimmed = q.trim()
   if (!trimmed) return []
+
   const { data } = await axiosInstance.get<ApiResponse<RelatedJobPosting[]>>(
     apiEndpoints.companies.jobs,
     { params: { q: trimmed } }
   )
+
   if (!data.success || !data.data) {
     throw new Error(data.error ?? "채용공고 조회에 실패했습니다")
   }
+
   return data.data
 }
