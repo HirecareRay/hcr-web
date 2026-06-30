@@ -27,6 +27,7 @@ import type {
   TextAnswerMessage,
   TranscriptDeltaEvent,
   UpstreamMessage,
+  VoiceMetricMessage,
 } from "./interviewProtocol"
 
 // ─── 상태머신 ─────────────────────────────────────────────────────────────────
@@ -69,11 +70,22 @@ export const textAnswerMessageSchema = z.object({
   text: z.string(),
 })
 
+// 4필드 모두 optional — 결측은 키를 생략해 보내므로(.optional), 타입의 `?: number` 와 일치시킨다.
+// (null 을 보내지 않으므로 nullish 가 아니라 optional. 동기화 단언이 이를 강제한다.)
+export const voiceMetricMessageSchema = z.object({
+  type: z.literal("voice_metric"),
+  decibel: z.number().optional(),
+  pitch: z.number().optional(),
+  speech_rate: z.number().optional(),
+  tremor: z.number().optional(),
+})
+
 export const upstreamMessageSchema = z.discriminatedUnion("type", [
   controlMessageSchema,
   landmarkFrameMessageSchema,
   eventSnapshotMessageSchema,
   textAnswerMessageSchema,
+  voiceMetricMessageSchema,
 ])
 
 // ─── 다운스트림 (camelCase 페이로드 / snake type 값) ──────────────────────────
@@ -132,6 +144,10 @@ const _assertSnapshot: AssertSync<
 const _assertTextAnswer: AssertSync<
   z.infer<typeof textAnswerMessageSchema>,
   TextAnswerMessage
+> = true
+const _assertVoiceMetric: AssertSync<
+  z.infer<typeof voiceMetricMessageSchema>,
+  VoiceMetricMessage
 > = true
 const _assertUpstream: AssertSync<z.infer<typeof upstreamMessageSchema>, UpstreamMessage> = true
 
