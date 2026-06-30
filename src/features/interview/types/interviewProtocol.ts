@@ -67,12 +67,28 @@ export interface TextAnswerMessage {
   text: string
 }
 
+// 음성 물리지표 (주기 ~1s) — 브라우저 Web Audio(FFT/autocorrelation)로 추출한 발화 "안정도" 지표.
+// 백엔드는 이를 누적·집계해 결과 feedback.voice(발화 안정도)·comparison(직전 세션 델타)으로 환산한다.
+// "감정" 라벨이 아니라 물리 측정값이며, 응답(다운스트림) 없는 단방향 누적 메시지다.
+//   - decibel: 음량 (dBFS, RMS 환산)      - pitch: 기본주파수 (Hz)
+//   - speech_rate: 발화 속도 (WPM)         - tremor: 떨림 정도 (0~1)
+// 4필드 모두 선택 — Web Audio 로 신뢰성 있게 뽑은 지표만 채워 보내고, 결측은 키를 생략한다
+// (서버가 집계에서 제외). v1 은 decibel·pitch 만 송신하고 speech_rate·tremor 는 생략한다.
+export interface VoiceMetricMessage {
+  type: "voice_metric"
+  decibel?: number
+  pitch?: number
+  speech_rate?: number
+  tremor?: number
+}
+
 // 업스트림 JSON 메시지 유니온 (audio_chunk binary 는 제외 — 파일 상단 주석 참고)
 export type UpstreamMessage =
   | ControlMessage
   | LandmarkFrameMessage
   | EventSnapshotMessage
   | TextAnswerMessage
+  | VoiceMetricMessage
 
 // ─── 다운스트림 (FastAPI → 브라우저, camelCase 페이로드) ──────────────────────
 
