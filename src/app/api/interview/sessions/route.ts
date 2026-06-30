@@ -6,12 +6,6 @@ import { buildDummySession } from "./dummyQuestions"
 import { interviewSessionStartSchema } from "@/features/interview/types/interviewSessionSchema"
 import { durationOptionsSec } from "@/features/interview/lib/sessionPlan"
 
-// 실제 LLM 질문 생성 대기를 흉내내기 위한 인위적 지연(ms).
-// TODO: 실제 질문 생성 파이프라인 연결 시 이 지연은 제거하세요.
-const dummyQuestionDelayMs = 1200
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
 // 요청 바디 검증 — 사용자가 시작 화면에서 고른 설정.
 const startRequestSchema = z.object({
   companyId: z.string().min(1),
@@ -52,9 +46,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
-
-    // 실제 질문 생성 대기를 흉내내기 위한 지연 (로딩 UX 확인용).
-    await delay(dummyQuestionDelayMs)
 
     // TODO: 백엔드 연결 시 이 줄을 실제 질문 생성 로직으로 교체하세요.
     const session = buildDummySession(parsed.data)

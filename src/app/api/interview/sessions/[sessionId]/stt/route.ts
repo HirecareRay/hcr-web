@@ -3,12 +3,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sttResultSchema } from "@/features/interview/types/interviewSessionSchema"
 
-// 실제 Whisper STT 대기를 흉내내기 위한 인위적 지연(ms).
-// TODO: 실연결 시 제거하고, 받은 오디오를 FastAPI(Whisper)로 보내 전사 결과를 받으세요.
-const dummySttDelayMs = 900
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
 // 더미 전사문 — 음성 모드 데모용. 사용자가 제출 전 답변 박스에서 수정할 수 있습니다.
 // TODO: 실연결 시 실제 전사 결과로 교체하세요.
 const dummyTranscript =
@@ -54,8 +48,6 @@ export async function POST(
     if (!audio || typeof audio === "string") {
       return NextResponse.json({ success: false, error: "오디오가 필요합니다" }, { status: 400 })
     }
-
-    await delay(dummySttDelayMs)
 
     // TODO: 백엔드 연결 시 이 줄을 실제 STT 결과로 교체하세요.
     const validated = sttResultSchema.parse({ transcript: dummyTranscript })

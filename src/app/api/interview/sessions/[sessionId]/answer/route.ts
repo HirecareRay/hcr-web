@@ -7,13 +7,6 @@ import {
   liveEvaluationSchema,
 } from "@/features/interview/types/interviewSessionSchema"
 
-// 실제 멀티모달 채점(영상·음성·LLM) 대기를 흉내내기 위한 인위적 지연(ms).
-// TODO: 실제 채점 파이프라인 연결 시 이 지연은 제거하세요.
-//       (확장: 일괄 응답 대신 SSE 스트리밍으로 바꿀 수 있음 — CLAUDE.md 확장 포인트 참고)
-const dummyEvaluationDelayMs = 1500
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
 /**
  * @swagger
  * /api/interview/sessions/{sessionId}/answer:
@@ -56,9 +49,6 @@ export async function POST(
         { status: 400 }
       )
     }
-
-    // 실제 채점 대기를 흉내내기 위한 지연 (채점 중 오버레이 UX 확인용).
-    await delay(dummyEvaluationDelayMs)
 
     // TODO: 백엔드 연결 시 이 줄을 실제 채점 로직으로 교체하세요.
     const evaluation = buildDummyEvaluation(parsed.data)
