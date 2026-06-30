@@ -25,6 +25,7 @@ export const trendingCompanySchema = z.object({
   parentName: z.string(),
   logoText: z.string().min(1),
   logoColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "hex 색상이어야 합니다"),
+  logoUrl: z.string().url().nullable(),
 })
 
 // ─── 기술 스택 랭킹 ──────────────────────────────────────────────────────────
