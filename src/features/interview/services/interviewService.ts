@@ -8,6 +8,7 @@
  *   내부 전송만 SSE 스트리밍으로 바꿀 수 있게 격리돼 있습니다(CLAUDE.md 확장 포인트).
  */
 
+import axios from "axios"
 import axiosInstance from "@/lib/axiosInstance"
 import { apiEndpoints } from "@/constants/api"
 import type { ApiResponse } from "@/types/api"
@@ -17,7 +18,21 @@ import type {
   InterviewSessionStart,
   LiveEvaluation,
   SttResult,
+  WsTicket,
 } from "../types/interviewSession"
+
+/**
+ * WS 티켓 발급 실패를 나타내는 에러. `isAuthError` 가 true 면 세션 만료(401)로,
+ * 호출 측은 로그인 페이지로 보낸다(면접은 로그인 필수).
+ */
+export class WsTicketError extends Error {
+  readonly isAuthError: boolean
+  constructor(message: string, isAuthError: boolean) {
+    super(message)
+    this.name = "WsTicketError"
+    this.isAuthError = isAuthError
+  }
+}
 
 /** 면접 세션을 시작하고 질문 목록을 받습니다. */
 export async function startSession(config: InterviewConfig): Promise<InterviewSessionStart> {
@@ -48,6 +63,33 @@ export async function submitAnswer(
   }
 
   return data.data
+}
+
+/**
+ * WS 접속용 단기 티켓을 발급받습니다(BFF 경유 — 쿠키 JWT 를 Bearer 로 중계).
+ * 발급 직후 바로 연결하세요(만료까지 `expiresIn`초, 1회용). 재연결 시 매번 새로 받아야 합니다.
+ * 실패 시 WsTicketError 를 throw 합니다(익명 폴백 없음 — 면접은 로그인 필수).
+ */
+export async function getWsTicket(): Promise<WsTicket> {
+  try {
+    const { data } = await axiosInstance.post<ApiResponse<WsTicket>>(
+      apiEndpoints.interview.wsTicket
+    )
+
+    if (!data.success || !data.data) {
+      throw new WsTicketError(data.error ?? "WS 티켓을 발급하지 못했습니다", false)
+    }
+
+    return data.data
+  } catch (error) {
+    if (error instanceof WsTicketError) throw error
+    // 401 = 비로그인·세션 만료 → 로그인으로 보내야 함.
+    const isAuthError = axios.isAxiosError(error) && error.response?.status === 401
+    throw new WsTicketError(
+      isAuthError ? "세션이 만료되었습니다" : "WS 티켓을 발급하지 못했습니다",
+      isAuthError
+    )
+  }
 }
 
 /** (음성 모드) 녹음된 오디오를 전사 텍스트로 변환합니다. */

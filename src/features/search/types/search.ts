@@ -1,4 +1,5 @@
-export type CompanyCategory = "전체" | "미디어"
+// 업종(industry)을 묶은 큰 분류. "전체"는 필터 해제용. 실제 값은 industryToCategory가 만든다.
+export type CompanyCategory = string
 
 export type CompanySearchResult = {
   id: string
@@ -9,13 +10,15 @@ export type CompanySearchResult = {
   companyType: string
   founded: string
   employeeCount: string
-  category: Exclude<CompanyCategory, "전체">
+  category: string
   logoText: string
 }
 
 export type RelatedJobPosting = {
   id: string
+  companyName: string
   title: string
+  url: string
   employmentType: string
   deadline: string
 }

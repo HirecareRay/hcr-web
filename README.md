@@ -83,8 +83,8 @@ app/page.tsx            ← import + return만 (코드 작성 금지)
 
 **`app/` 규칙:**
 
-- 로직, 상태, API 호출 작성 금지
-- `features/`에서 만든 컴포넌트를 import해서 return만 할 것
+- `app/**/page.tsx`: 로직, 상태, API 호출 작성 금지 — `features/`에서 만든 컴포넌트를 import해서 return만 할 것
+- `app/api/**/route.ts`: BFF 라우트는 예외로 허용. 단 요청을 FastAPI로 넘기는 **얇은 proxy**만 두고, 데이터 가공·비즈니스 로직은 두지 않는다
 
 ```tsx
 // ✅ 올바른 예

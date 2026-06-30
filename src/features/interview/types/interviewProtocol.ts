@@ -82,6 +82,8 @@ export interface QuestionEvent {
   questionId: string
   text: string
   ttsText?: string | null
+  // 메인(기본) 질문인지 직전 답변 기반 꼬리질문인지 — 배지·흐름 표시용
+  kind: "main" | "follow_up"
 }
 
 // 실시간 자막 토큰 (STT 부분 결과)

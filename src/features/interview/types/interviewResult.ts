@@ -11,8 +11,10 @@
  *   - strengths/weaknesses/improvements ← LLM 종합 추론       [AI 추론]
  *   - script              ← STT 전사 + 질문별 LLM 평가        [사실(전사) + 추론(평가)]
  *   - recommendedQuestions ← 기업/직무 컨텍스트 기반 LLM 생성  [AI 생성]
- *   - replay              ← 녹화 영상/오디오                   [녹화 인프라 미존재]
  *   - comparison          ← 세션 히스토리 비교                 [세션 영속화 필요]
+ *
+ * ⚠️ replay(다시보기)는 계약에서 제외됐습니다 — 녹화 인프라가 없어 가짜로 채우지
+ *    않습니다(백엔드 result_schemas.py 와 동기화). 추후 녹화 도입 시 재추가합니다.
  *
  * 현재 백엔드는 DB/LLM 대신 더미 데이터를 응답합니다(company 리포트와 동일 패턴).
  * resultId는 1급 필드입니다 — 면접 결과는 회사가 아니라 "세션" 단위이므로,
@@ -93,20 +95,6 @@ export interface RecommendedQuestions {
   job: string[] // 직무 관련 예상 질문
 }
 
-// ─── 면접 다시 보기 (녹화 미디어) ─────────────────────────────────────────────
-export interface ReplayMarker {
-  atSec: number // 타임라인 위치(초)
-  no: number // 대응 질문 번호
-  label: string // 마커 라벨 (예: "Q3 자기소개")
-}
-
-export interface InterviewReplay {
-  available: boolean // 녹화 인프라 준비 여부 (현재 false)
-  mediaUrl: string | null // 녹화본 URL (미존재 시 null)
-  durationSec: number
-  markers: ReplayMarker[] // 질문별 타임스탬프
-}
-
 // ─── 이전 면접 연습과의 차이 ──────────────────────────────────────────────────
 export interface MetricDelta {
   label: string // 비교 지표명
@@ -134,6 +122,5 @@ export interface InterviewResult {
   improvements: ImprovementItem[] // 보완점 및 보완 방법
   script: ScriptItem[] // 질답 스크립트
   recommendedQuestions: RecommendedQuestions
-  replay: InterviewReplay
   comparison: InterviewComparison | null // 첫 면접이면 null
 }

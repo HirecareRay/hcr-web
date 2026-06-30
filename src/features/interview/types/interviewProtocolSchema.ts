@@ -82,6 +82,7 @@ export const questionEventSchema = z.object({
   questionId: z.string(),
   text: z.string(),
   ttsText: z.string().nullish(),
+  kind: z.enum(["main", "follow_up"]),
 })
 
 export const transcriptDeltaEventSchema = z.object({
