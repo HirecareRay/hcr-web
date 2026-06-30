@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import axiosInstance from "@/lib/axiosInstance"
 import DocumentForm from "@/features/documents/components/DocumentForm"
+import { documentService } from "@/features/documents/services/documentService"
+import { useAuthStore } from "@/features/auth/store/authStore"
 
 const DOC_LABELS: Record<string, string> = {
   resume: "이력서",
@@ -19,6 +21,7 @@ export default function DocumentEditPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
+  const setDocExists = useAuthStore((s) => s.setDocExists)
 
   useEffect(() => {
     axiosInstance
@@ -53,6 +56,7 @@ export default function DocumentEditPage() {
     if (!confirm(`${DOC_LABELS[docType] ?? docType} 문서를 삭제하시겠습니까?`)) return
     try {
       await axiosInstance.delete(`/api/mypage/documents/${docType}`)
+      setDocExists(await documentService.exists())
       router.replace("/mypage/documents")
     } catch {
       setError("삭제에 실패했습니다.")

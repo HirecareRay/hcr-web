@@ -7,7 +7,7 @@ import { UPLOAD_TYPE_TO_SLUG } from "../hooks/useUpload"
 
 interface Props {
   item: UploadItem
-  onUpload: (file: File) => void
+  onUpload: (file: File) => Promise<boolean>
 }
 
 export default function UploadStepCard({ item, onUpload }: Props) {
@@ -19,8 +19,10 @@ export default function UploadStepCard({ item, onUpload }: Props) {
     if (file) setSelectedFile(file)
   }
 
-  const handleUploadClick = () => {
-    if (selectedFile) onUpload(selectedFile)
+  const handleUploadClick = async () => {
+    if (!selectedFile) return
+    const ok = await onUpload(selectedFile)
+    if (ok) setSelectedFile(null)
   }
 
   return (
