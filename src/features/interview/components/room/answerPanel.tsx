@@ -18,6 +18,7 @@
 import { Send } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LiveTranscriptView } from "./liveTranscriptView"
+import { MicLevelMeter } from "./micLevelMeter"
 import type { InterviewMode, InterviewPhase } from "../../types/interviewSession"
 
 // 음성 모드 answering 하위 단계 — 말하는 중(인식) vs 검토·수정
@@ -27,6 +28,7 @@ interface Props {
   mode: InterviewMode
   phase: InterviewPhase
   voiceStep: VoiceStep // 음성 모드일 때만 의미 있음
+  stream: MediaStream | null // 마이크 음량 미터용(음성 listening 단계)
   answerText: string // 텍스트 모드 입력값
   liveTranscript: string // 음성 모드 실시간 자막(읽기 전용, listening 단계 표시용)
   voiceAnswer: string // 음성 모드 교정 텍스트(review 단계 편집값)
@@ -44,6 +46,7 @@ export function AnswerPanel({
   mode,
   phase,
   voiceStep,
+  stream,
   answerText,
   liveTranscript,
   voiceAnswer,
@@ -73,9 +76,11 @@ export function AnswerPanel({
   if (mode === "voice" && voiceStep === "listening") {
     return (
       <section className="border-warm-border bg-background space-y-3 rounded-2xl border p-4 shadow-sm">
+        {/* "잡히고 있다" presence 피드백 — 항상 동작(비용 0). 실시간 자막은 백엔드 ON 일 때만 채워짐. */}
+        <MicLevelMeter stream={stream} active />
         <LiveTranscriptView transcript={liveTranscript} />
         <p className="text-muted text-xs">
-          말씀이 끝나면 “답변 입력 완료”를 눌러 인식을 멈추고 내용을 확인·수정하세요.
+          말씀이 끝나면 “답변 입력 완료”를 눌러 내용을 확인·수정하세요.
         </p>
         <button type="button" onClick={onFinishSpeaking} className={cn(primaryButton, "w-full")}>
           답변 입력 완료
