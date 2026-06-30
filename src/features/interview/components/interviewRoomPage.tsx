@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, WifiOff } from "lucide-react"
-import { routes } from "@/constants/routes"
+import { generalInterviewId, routes } from "@/constants/routes"
 import { useInterview } from "../hooks/useInterview"
 import { useMediaStream } from "../hooks/useMediaStream"
 import { useTts } from "../hooks/useTts"
@@ -38,6 +38,10 @@ interface Props {
 
 export function InterviewRoomPage({ companyId }: Props) {
   const router = useRouter()
+
+  // 기업 없이 보는 "일반 면접"이면 WS 에 기업 컨텍스트를 보내지 않는다(약속값 general 은 ObjectId 가 아님).
+  // 라우트용(로그인 복귀·결과 이동)에는 companyId("general")를 그대로 쓴다 — URL 은 안 깨진다.
+  const wsCompanyId = companyId === generalInterviewId ? null : companyId
 
   // ─── 상태머신 ───
   const phase = useInterviewSessionStore((s) => s.phase)
@@ -86,7 +90,7 @@ export function InterviewRoomPage({ companyId }: Props) {
 
   const live = useLiveStreaming({
     sessionId: session?.sessionId ?? null,
-    companyId,
+    companyId: wsCompanyId,
     jobTitle: config?.jobTitle ?? null,
     phase,
     mode,
