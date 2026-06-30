@@ -5,7 +5,7 @@ import { Bookmark, BriefcaseBusiness, CalendarDays, ChevronLeft, MapPin } from "
 
 const savedJobs = [
   {
-    id: "a63f1ca8292ecdd80c30",
+    id: "5e9cabd040c307d7aa142e73",
     companyName: "CJ ENM",
     title: "Data Scientist 채용",
     location: "서울",
@@ -14,7 +14,7 @@ const savedJobs = [
     status: "open" as const,
   },
   {
-    id: "62945315cd3b3c07da52",
+    id: "500116c9eb165c7a8f97fbd3",
     companyName: "CJ ENM",
     title: "[Mnet Plus] Web/App Lead 경력채용",
     location: "서울 마포구",
