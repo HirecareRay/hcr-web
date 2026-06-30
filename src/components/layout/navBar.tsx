@@ -17,7 +17,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: "홈", href: routes.home, icon: Home },
   { label: "탐색", href: "#", icon: Compass }, // TODO: 기업 탐색 목록 라우트 연결
-  { label: "AI면접", href: "#", icon: Mic }, // TODO: 면접 목록 라우트 연결
+  { label: "AI면접", href: routes.interviewEntry, icon: Mic },
   { label: "마이", href: routes.mypage, icon: User }, // 비로그인 시 미들웨어가 /login 으로 보냄
 ]
 
@@ -28,7 +28,10 @@ export function NavBar() {
     <nav className="border-warm-border w-full shrink-0 border-t bg-white">
       <ul className="flex">
         {navItems.map(({ label, href, icon: Icon }) => {
-          const isActive = href !== "#" && pathname === href
+          // 면접 진입점은 면접 흐름(/interview/*) 전체에서 활성으로 본다(홈 "/"은 제외돼 안전).
+          const isActive =
+            href !== "#" &&
+            (pathname === href || (href !== routes.home && pathname.startsWith(`${href}/`)))
 
           return (
             <li key={label} className="relative flex-1">

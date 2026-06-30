@@ -42,7 +42,7 @@ interface Props {
 
 const optionButton = (selected: boolean) =>
   cn(
-    "flex-1 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors",
+    "inline-flex flex-1 items-center justify-center gap-1 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors",
     selected ? "border-primary bg-coral-light text-primary" : "border-warm-border text-muted"
   )
 
@@ -96,7 +96,7 @@ export function InterviewSetup({
             onClick={() => setMode("voice")}
             className={optionButton(mode === "voice")}
           >
-            <Mic className="mr-1 inline h-4 w-4" />
+            <Mic className="h-4 w-4" />
             음성
           </button>
           <button
@@ -104,7 +104,7 @@ export function InterviewSetup({
             onClick={() => setMode("text")}
             className={optionButton(mode === "text")}
           >
-            <Type className="mr-1 inline h-4 w-4" />
+            <Type className="h-4 w-4" />
             텍스트
           </button>
         </div>
@@ -134,25 +134,26 @@ export function InterviewSetup({
       <div className="space-y-2">
         <span className="text-ink text-sm font-semibold">카메라 · 마이크</span>
         <VideoStage stream={stream} />
+        {/* 동의 카드는 setup 동안 항상 노출한다. 동의해도 사라지지 않아 내용을 다시 볼 수 있고
+            (투명성), 권한이 캐시된 재방문자도 동의 없이 통과하지 못한다(프라이버시). 동의해야
+            비언어 캡처 전송이 켜진다. */}
+        <CaptureConsentNotice agreed={cameraConsented} onAgreedChange={onCameraConsentChange} />
+        {/* 권한이 아직 없을 때만 켜기 버튼 노출 — 동의 전에는 비활성. */}
         {permission !== "granted" && (
-          <>
-            {/* 동의 전에는 카메라를 켤 수 없게 게이트합니다(프라이버시). */}
-            <CaptureConsentNotice agreed={cameraConsented} onAgreedChange={onCameraConsentChange} />
-            <button
-              type="button"
-              onClick={onRequestDevices}
-              disabled={permission === "requesting" || !cameraConsented}
-              title={!cameraConsented ? "먼저 카메라 분석에 동의해 주세요" : undefined}
-              className="border-warm-border text-ink inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
-            >
-              <Camera className="h-4 w-4" />
-              {permission === "requesting"
-                ? "권한 요청 중…"
-                : !cameraConsented
-                  ? "동의 후 카메라를 켤 수 있어요"
-                  : "카메라·마이크 켜기"}
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={onRequestDevices}
+            disabled={permission === "requesting" || !cameraConsented}
+            title={!cameraConsented ? "먼저 카메라 분석에 동의해 주세요" : undefined}
+            className="border-warm-border text-ink inline-flex w-full items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+          >
+            <Camera className="h-4 w-4" />
+            {permission === "requesting"
+              ? "권한 요청 중…"
+              : !cameraConsented
+                ? "동의 후 카메라를 켤 수 있어요"
+                : "카메라·마이크 켜기"}
+          </button>
         )}
         {deviceError && <p className="text-error text-xs">{deviceError}</p>}
       </div>
