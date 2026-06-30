@@ -38,8 +38,12 @@ export function TrendingCompanyCard({ company }: { company: TrendingCompany }) {
         {company.logoText}
       </div>
 
-      <h3 className="text-ink mt-3 text-center text-base font-bold">{company.name}</h3>
-      <p className="text-disabled text-center text-xs">{company.parentName}</p>
+      <h3 className="text-ink mt-3 line-clamp-1 text-center text-base font-bold">{company.name}</h3>
+      {/* 업종명 길이가 0·1·2줄로 제각각이라 항상 2줄 높이를 확보해 카드 높이를 통일한다.
+          한글 단어가 어색하게 끊기지 않도록 break-keep, 2줄 초과는 말줄임 처리. */}
+      <p className="text-disabled line-clamp-2 min-h-8 text-center text-xs break-keep">
+        {company.parentName}
+      </p>
 
       <Link
         href={routes.company(company.companyId)}
