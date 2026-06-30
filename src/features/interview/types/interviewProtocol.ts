@@ -52,11 +52,13 @@ export interface LandmarkFrameMessage {
   expression?: string | null
 }
 
-// 이벤트 발생 시 증거 스냅샷 (시선이탈·무표정 등)
+// 이벤트 발생 시 비언어 이벤트 (시선이탈·무표정 등) — 종류·메타만 전송한다.
+// ⚠️ 과거엔 증거 이미지(base64)를 함께 보냈으나, 백엔드가 이벤트 "횟수"만 집계에 쓰고
+// 이미지는 읽지도 저장하지도 않아 대역폭·프라이버시 부담만 됐으므로 image 필드를 제거했다.
+// (영상 원본도 전송하지 않음 — 숫자 지표만 전송)
 export interface EventSnapshotMessage {
   type: "event_snapshot"
   event: string
-  image: string // base64 data URL 또는 업로드 URL
   meta: Record<string, unknown>
 }
 
