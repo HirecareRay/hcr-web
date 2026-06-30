@@ -7,12 +7,27 @@ import type { CompanySearchResult, RelatedJobPosting } from "../types/search"
 export async function searchCompanies(q: string): Promise<CompanySearchResult[]> {
   const trimmed = q.trim()
   if (!trimmed) return []
+
   const { data } = await axiosInstance.get<ApiResponse<CompanySearchResult[]>>(
     apiEndpoints.companies.search,
     { params: { q: trimmed } }
   )
+
   if (!data.success || !data.data) {
     throw new Error(data.error ?? "검색에 실패했습니다")
   }
+
+  return data.data
+}
+
+export async function searchCompanyJobs(companyId: string): Promise<RelatedJobPosting[]> {
+  const { data } = await axiosInstance.get<ApiResponse<RelatedJobPosting[]>>(
+    `/companies/${companyId}/jobs`
+  )
+
+  if (!data.success || !data.data) {
+    throw new Error(data.error ?? "채용공고 조회에 실패했습니다")
+  }
+
   return data.data
 }
