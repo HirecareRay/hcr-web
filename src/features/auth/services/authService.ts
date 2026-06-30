@@ -1,6 +1,7 @@
 // 인증 API 호출 — 프론트는 BFF(/api/auth/*)만 부르고 백엔드를 직접 보지 않는다.
 // 토큰은 BFF 가 httpOnly 쿠키로 관리하므로, 여기선 토큰을 손대지 않고 유저 정보만 다룬다.
 import axiosInstance from "@/lib/axiosInstance"
+import { AxiosError } from "axios"
 import type { AuthUser, LoginResponse, SignupResponse } from "../types/auth"
 
 export async function loginUser(email: string, password: string): Promise<LoginResponse> {
