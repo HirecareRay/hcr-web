@@ -17,8 +17,8 @@ export function useUploadFiles() {
   useEffect(() => {
     items.forEach(({ id }) => {
       documentService
-        .get(UPLOAD_TYPE_TO_SLUG[id])
-        .then(() => setExists(id, true))
+        .exists(UPLOAD_TYPE_TO_SLUG[id])
+        .then((exists) => setExists(id, exists))
         .catch(() => {})
     })
     // ponytail: 마운트 1회만 조회
