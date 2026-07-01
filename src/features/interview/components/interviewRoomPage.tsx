@@ -14,7 +14,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, WifiOff } from "lucide-react"
+import { WifiOff } from "lucide-react"
+import { AiAnalyzingLoader } from "@/components/ui/aiAnalyzingLoader"
 import { routes } from "@/constants/routes"
 import { useInterview } from "../hooks/useInterview"
 import { useMediaStream } from "../hooks/useMediaStream"
@@ -237,31 +238,41 @@ export function InterviewRoomPage({ companyId }: Props) {
 
   if (!session) return null
 
-  // 첫 질문 도착 전 — 연결 게이트(연결 중 / 끊김 재시도)
+  // 첫 질문 도착 전 — 연결 게이트(끊김 재시도 / 첫 질문 생성 중)
   if (!liveQuestion) {
-    const closed = live.socketState === "closed"
+    if (live.socketState === "closed") {
+      return (
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
+          <WifiOff className="text-error h-8 w-8" />
+          <p className="text-ink text-sm font-semibold">면접관과 연결이 끊어졌어요</p>
+          <p className="text-muted text-xs">네트워크를 확인하고 다시 시도해 주세요.</p>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="bg-primary mt-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            다시 시도
+          </button>
+        </div>
+      )
+    }
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
-        {closed ? (
-          <>
-            <WifiOff className="text-error h-8 w-8" />
-            <p className="text-ink text-sm font-semibold">면접관과 연결이 끊어졌어요</p>
-            <p className="text-muted text-xs">네트워크를 확인하고 다시 시도해 주세요.</p>
-            <button
-              type="button"
-              onClick={handleRetry}
-              className="bg-primary mt-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
-            >
-              다시 시도
-            </button>
-          </>
-        ) : (
-          <>
-            <Loader2 className="text-primary h-8 w-8 animate-spin" />
-            <p className="text-muted text-sm">면접관과 연결 중…</p>
-          </>
-        )}
-      </div>
+      <AiAnalyzingLoader
+        title="AI 면접관이 첫 질문을 준비하고 있어요"
+        steps={["기업·직무 정보 반영", "면접 질문 구성", "면접관 준비"]}
+        skeletonCount={0}
+      />
+    )
+  }
+
+  // 마지막 답변 제출 후 "결과 보기"를 누른 상태 — summary 도착 전까지 전체 화면 결과 정리 로더.
+  // summary 가 오면 finishNow → 결과 페이지로 이동한다.
+  if (phase === "evaluating" && nextRequested && liveQuestion.isLast) {
+    return (
+      <AiAnalyzingLoader
+        title="면접 결과를 정리하고 있어요"
+        steps={["답변 내용 종합", "표정·시선 분석", "음성 안정도 분석", "강점·보완점 도출"]}
+      />
     )
   }
 
@@ -304,11 +315,21 @@ export function InterviewRoomPage({ companyId }: Props) {
       />
 
       {phase === "evaluating" ? (
-        <EvaluationPanel
-          transcript={submittedAnswer || live.transcript}
-          nextRequested={nextRequested}
-          onNext={handleNext}
-        />
+        nextRequested ? (
+          // 다음 질문 생성 대기(마지막 질문 요약 대기는 위에서 전체 화면으로 처리)
+          <AiAnalyzingLoader
+            title="AI가 다음 질문을 준비하고 있어요"
+            steps={["직전 답변 분석", "다음 질문 구성"]}
+            skeletonCount={0}
+            className="px-0 py-2"
+          />
+        ) : (
+          <EvaluationPanel
+            transcript={submittedAnswer || live.transcript}
+            isLast={liveQuestion.isLast ?? false}
+            onNext={handleNext}
+          />
+        )
       ) : (
         <AnswerPanel
           mode={mode}

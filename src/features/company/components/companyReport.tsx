@@ -14,6 +14,7 @@ import {
   Star,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AiAnalyzingLoader } from "@/components/ui/aiAnalyzingLoader"
 import { routes } from "@/constants/routes"
 import { useCompanyReport } from "../hooks/useCompanyReport"
 import { formatKrwShort } from "../lib/formatters"
@@ -334,39 +335,12 @@ function formatDday(
   return { label: `D-${days}`, urgent: days <= 7 }
 }
 
-const loadingSteps = ["재무 지표 분석", "최근 뉴스 읽는 중", "채용공고 정리", "면접 포인트 도출"]
-
 function ReportLoading() {
   return (
-    <div className="px-4 py-6">
-      <div className="from-coral-deep to-coral-beam overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-white shadow-sm">
-        <div className="flex items-center gap-1.5 text-sm font-semibold">
-          <Sparkles className="h-4 w-4 animate-pulse" />
-          AI가 기업을 분석하고 있어요
-        </div>
-        <ul className="mt-3 space-y-1.5">
-          {loadingSteps.map((step, index) => (
-            <li
-              key={step}
-              className="flex items-center gap-2 text-sm text-white/90"
-              style={{
-                animation: "pulse 1.5s ease-in-out infinite",
-                animationDelay: `${index * 0.3}s`,
-              }}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
-              {step}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="mt-4 space-y-4">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="bg-warm-bg h-40 animate-pulse rounded-2xl" />
-        ))}
-      </div>
-    </div>
+    <AiAnalyzingLoader
+      title="AI가 기업을 분석하고 있어요"
+      steps={["재무 지표 분석", "최근 뉴스 읽는 중", "채용공고 정리", "면접 포인트 도출"]}
+    />
   )
 }
 
