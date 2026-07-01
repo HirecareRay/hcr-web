@@ -1,7 +1,7 @@
 /**
  * trendingCompanyCard.tsx
  *
- * "오늘 많이 분석된 채용공고" 한 장의 카드.
+ * "가장 많이 분석한 기업 TOP 5" 한 장의 카드.
  * 랭킹 뱃지 + 로고 원 + 회사명/모회사 + 리포트 보기 링크로 구성됩니다.
  */
 
@@ -11,11 +11,11 @@ import { cn } from "@/lib/utils"
 import { routes } from "@/constants/routes"
 import type { TrendingCompany } from "../types/home"
 
-// 랭킹 뱃지 색 — 금/은/동, 4위 이하는 중립
+// 랭킹 뱃지 배경/글자색 — 상위 3위는 금·은·동 메달색, 4위부터는 중립 톤.
 function rankBadgeClass(rank: number): string {
-  if (rank === 1) return "bg-[#f4b400] text-white" // 금
-  if (rank === 2) return "bg-[#b4bcc8] text-white" // 은
-  if (rank === 3) return "bg-[#cd7f32] text-white" // 동
+  if (rank === 1) return "bg-amber-400 text-white" // 금
+  if (rank === 2) return "bg-slate-300 text-slate-700" // 은
+  if (rank === 3) return "bg-amber-700 text-white" // 동
   return "bg-warm-bg text-muted"
 }
 
@@ -24,7 +24,7 @@ export function TrendingCompanyCard({ company }: { company: TrendingCompany }) {
     <article className="border-warm-border relative flex w-44 shrink-0 snap-start flex-col items-center rounded-2xl border bg-white p-4 shadow-sm md:w-auto">
       <span
         className={cn(
-          "absolute top-3 left-3 flex size-6 items-center justify-center rounded-full text-xs font-bold",
+          "absolute top-2.5 left-2.5 inline-flex size-6 items-center justify-center rounded-full text-xs font-bold tabular-nums shadow-sm ring-2 ring-white",
           rankBadgeClass(company.rank)
         )}
       >
@@ -38,8 +38,12 @@ export function TrendingCompanyCard({ company }: { company: TrendingCompany }) {
         {company.logoText}
       </div>
 
-      <h3 className="text-ink mt-3 text-center text-base font-bold">{company.name}</h3>
-      <p className="text-disabled text-center text-xs">{company.parentName}</p>
+      <h3 className="text-ink mt-3 line-clamp-1 text-center text-base font-bold">{company.name}</h3>
+      {/* 업종명 길이가 0·1·2줄로 제각각이라 항상 2줄 높이를 확보해 카드 높이를 통일한다.
+          한글 단어가 어색하게 끊기지 않도록 break-keep, 2줄 초과는 말줄임 처리. */}
+      <p className="text-disabled line-clamp-2 min-h-8 text-center text-xs break-keep">
+        {company.parentName}
+      </p>
 
       <Link
         href={routes.company(company.companyId)}
