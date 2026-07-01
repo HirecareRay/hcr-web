@@ -1,19 +1,10 @@
-import Link from "next/link"
-import { ChevronLeft } from "lucide-react"
+import { PageTopBar } from "@/components/ui/pageTopBar"
 import UploadList from "@/features/documents/components/UploadList"
 
 export default function UploadPage() {
   return (
     <section className="bg-background min-h-full pb-24">
-      {/* 상단 바 — 앱 공통 뒤로가기+제목 패턴 (다른 마이페이지 하위 화면과 동일) */}
-      <header className="border-warm-border border-b bg-white px-5 pt-5 pb-4">
-        <div className="flex items-center gap-2">
-          <Link href="/mypage" aria-label="뒤로가기">
-            <ChevronLeft className="text-muted size-5" />
-          </Link>
-          <h1 className="text-ink text-base font-bold">서류 등록</h1>
-        </div>
-      </header>
+      <PageTopBar title="서류 등록" backTo="/mypage" />
 
       <div className="p-5">
         {/* 스텝 안내 */}

@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react"
+import { ChevronRight, Sparkles } from "lucide-react"
+import { PageTopBar } from "@/components/ui/pageTopBar"
 
 const interviews = [
   {
@@ -25,14 +26,7 @@ const interviews = [
 export function InterviewListPage() {
   return (
     <section className="bg-background min-h-full pb-10">
-      <header className="border-warm-border border-b bg-white px-5 pt-5 pb-4">
-        <div className="flex items-center gap-2">
-          <Link href="/mypage" aria-label="뒤로가기">
-            <ChevronLeft className="text-muted size-5" />
-          </Link>
-          <h1 className="text-ink text-base font-bold">AI 면접 기록</h1>
-        </div>
-      </header>
+      <PageTopBar title="AI 면접 기록" backTo="/mypage" />
 
       {interviews.length === 0 ? (
         <div className="flex flex-col items-center justify-center px-5 pt-24 text-center">

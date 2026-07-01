@@ -27,7 +27,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="bg-gutter flex h-dvh w-full justify-center overflow-hidden">
-      <div className="bg-background flex h-full w-full max-w-4xl flex-col overflow-hidden shadow-[0_0_1.5rem_rgba(0,0,0,0.06)]">
+      {/* pt-[env(safe-area-inset-top)] — 모바일 노치·상태바만큼 상단을 비운다.
+          노치 없는 기기·데스크탑에서는 0이라 영향 없음(layout.tsx의 viewportFit: "cover"와 짝). */}
+      <div className="bg-background flex h-full w-full max-w-4xl flex-col overflow-hidden pt-[env(safe-area-inset-top)] shadow-[0_0_1.5rem_rgba(0,0,0,0.06)]">
         <main className="flex-1 overflow-y-auto">{children}</main>
         <NavBar />
       </div>
