@@ -1,12 +1,13 @@
 /**
  * micLevelMeter.tsx
  *
- * 음성 모드 "말하는 중" 단계의 실시간 마이크 음량 미터(이퀄라이저형 막대)입니다.
+ * 음성 모드 "말하는 중" 단계의 실시간 마이크 음량 미터(작은 인라인 이퀄라이저)입니다.
  * 마이크 입력의 실제 음량을 Web Audio(AnalyserNode)로 읽어 막대 높이로 그립니다 —
  * "내 목소리가 잡히고 있다"는 presence 피드백을 STT 없이 비용 0으로 주기 위함.
  * 실시간 자막(LiveTranscriptView)이 비싸고(누적 재전사) 배포에선 꺼지는 것과 달리,
  * 이 미터는 항상 동작하고 STT 지연·오인식에도 안 깨집니다.
  *
+ * 크게 차지하던 박스형 미터는 없애고, "녹음 중" 라벨 옆에 작게 붙는 인라인 막대로 둔다.
  * 정직성: 가짜 애니메이션이 아니라 실제 주파수 스펙트럼을 막대에 반영합니다.
  * 성능: 막대 높이는 프레임마다 setState 하지 않고 ref 로 DOM transform 만 직접 바꿉니다
  * (60fps 리렌더 폭주 방지). 부모 리렌더에도 안 흔들리게 memo 로 감쌉니다.
@@ -104,27 +105,25 @@ function MicLevelMeterBase({ stream, active }: Props) {
   }, [active, stream])
 
   return (
-    <div className="space-y-2">
-      {/* presence 라벨 — STT 여부와 무관하게 정직한 문구(인식 단정 X) */}
-      <div className="text-primary flex items-center gap-1.5 text-xs font-medium">
-        <Mic className="h-4 w-4 animate-pulse" />
-        <span>녹음 중 · 잘 들리고 있어요</span>
-      </div>
+    // presence 배지 — 알약형 배경으로 "듣는 중"을 또렷하게, 옆에 실시간 음량 막대.
+    // 실제 파일 녹음/녹화는 하지 않으므로 "녹음"이 아니라 "듣는 중"으로 정직하게 표기.
+    <div className="bg-primary/10 text-primary inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-semibold">
+      <Mic className="h-4 w-4 animate-pulse" />
+      <span>듣는 중</span>
 
       {/* 실시간 음량 막대 — 높이는 rAF 가 transform 으로 직접 갱신(여기 style 은 무음 기본값) */}
-      <div className="border-warm-border bg-background flex h-16 items-center justify-center gap-1.5 rounded-xl border">
+      <span className="flex h-6 items-center gap-1" aria-hidden>
         {Array.from({ length: barCount }).map((_, i) => (
           <span
             key={i}
             ref={(el) => {
               barRefs.current[i] = el
             }}
-            className="bg-primary h-8 w-1.5 origin-center rounded-full"
+            className="bg-primary h-6 w-1 origin-center rounded-full"
             style={{ transform: `scaleY(${minScaleY})` }}
-            aria-hidden
           />
         ))}
-      </div>
+      </span>
     </div>
   )
 }

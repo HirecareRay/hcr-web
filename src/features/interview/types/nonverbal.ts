@@ -27,6 +27,20 @@ export const emptyFaceMetrics: FaceMetrics = {
   expression: null,
 }
 
+// 얼굴이 실제로 검출됐는지 — 신호가 하나라도 있으면 true.
+// 카메라 가림·미검출 프레임은 모든 필드가 null 이라 false. 이런 프레임을 백엔드로 보내면
+// "데이터 있음"으로 오판해 표정 점수가 가짜로(시선이탈 0% → 만점) 채워지므로, 송신 게이팅에 쓴다.
+export function hasFaceSignal(m: FaceMetrics): boolean {
+  return (
+    m.gazeX !== null ||
+    m.gazeY !== null ||
+    m.headYaw !== null ||
+    m.headPitch !== null ||
+    m.headRoll !== null ||
+    m.expression !== null
+  )
+}
+
 // 감지하는 비언어 이벤트 종류
 export type NonverbalEventKind = "gaze_away" | "flat_expression"
 

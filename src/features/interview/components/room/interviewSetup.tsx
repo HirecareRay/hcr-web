@@ -14,11 +14,11 @@
 "use client"
 
 import { useState } from "react"
-import { Camera, Mic, Type } from "lucide-react"
+import { Camera, Mic, ScanFace, Type } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { deriveQuestionCount, durationLabel, durationOptionsSec } from "../../lib/sessionPlan"
 import type { InterviewMode } from "../../types/interviewSession"
-import type { MediaPermission } from "../../hooks/useMediaStream"
+import type { MediaPermission, RequestOptions } from "../../hooks/useMediaStream"
 import { VideoStage } from "./videoStage"
 import { CaptureConsentNotice } from "../captureConsentNotice"
 
@@ -36,7 +36,7 @@ interface Props {
   startError: boolean
   cameraConsented: boolean
   onCameraConsentChange: (consented: boolean) => void
-  onRequestDevices: () => void
+  onRequestDevices: (options: RequestOptions) => void
   onStart: (payload: StartPayload) => void
 }
 
@@ -60,10 +60,44 @@ export function InterviewSetup({
   const [jobTitle, setJobTitle] = useState("")
   const [mode, setMode] = useState<InterviewMode>("voice")
   const [totalDurationSec, setTotalDurationSec] = useState<number>(durationOptionsSec[1])
+  // 텍스트 모드에서 표정·태도(비언어) 분석을 받을지 여부(선택). 음성 모드는 항상 켜진다.
+  const [textNonverbalOn, setTextNonverbalOn] = useState(true)
 
   const questionCount = deriveQuestionCount(totalDurationSec)
-  // 카메라 권한이 있으면 가장 좋지만, 텍스트 모드는 장치 없이도 시작 가능하게 둡니다.
-  const canStart = !isStarting && (permission === "granted" || mode === "text")
+
+  // 실제로 필요한 장치만 켠다 — 카메라는 표정 분석용, 마이크는 음성 답변(STT)용.
+  //   음성 모드: 실제 면접처럼 화상(표정 분석)을 항상 함께 진행한다.
+  //   텍스트 모드: 타이핑 중 얼굴 유지가 어려울 수 있어 표정 분석을 선택으로 둔다.
+  // 텍스트 모드는 마이크를 절대 열지 않아, 말이 인식돼 답변에 섞이는 일이 없다.
+  const cameraFor = (m: InterviewMode) => m === "voice" || textNonverbalOn
+  const needsCamera = cameraFor(mode)
+  const needsMic = mode === "voice"
+  const needsDevices = needsCamera || needsMic
+
+  // 카메라를 쓸 때만 동의가 필요하고, 장치가 필요하면 권한이 있어야 시작할 수 있다.
+  const consentOk = !needsCamera || cameraConsented
+  const devicesOk = !needsDevices || permission === "granted"
+  const canStart = !isStarting && consentOk && devicesOk
+
+  const requestWith = (nextMode: InterviewMode, nextTextNonverbal: boolean) =>
+    onRequestDevices({
+      video: nextMode === "voice" || nextTextNonverbal,
+      audio: nextMode === "voice",
+    })
+
+  // 모드/표정 토글이 바뀌면 필요한 장치 구성이 달라진다. 이미 장치를 켠 상태라면
+  // 새 제약으로 다시 요청해, 안 쓰는 트랙(예: 텍스트 전환 후 마이크)이 남지 않게 한다.
+  const handleModeChange = (nextMode: InterviewMode) => {
+    setMode(nextMode)
+    if (permission === "granted") requestWith(nextMode, textNonverbalOn)
+  }
+
+  const handleTextNonverbalChange = (next: boolean) => {
+    setTextNonverbalOn(next)
+    // 끄면 동의도 함께 해제해, 남은 영상 트랙으로 캡처가 계속되지 않게 한다.
+    if (!next) onCameraConsentChange(false)
+    if (permission === "granted") requestWith(mode, next)
+  }
 
   const handleStart = () => {
     onStart({ mode, totalDurationSec, jobTitle: jobTitle.trim() || "일반 직무" })
@@ -93,7 +127,7 @@ export function InterviewSetup({
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setMode("voice")}
+            onClick={() => handleModeChange("voice")}
             className={optionButton(mode === "voice")}
           >
             <Mic className="h-4 w-4" />
@@ -101,7 +135,7 @@ export function InterviewSetup({
           </button>
           <button
             type="button"
-            onClick={() => setMode("text")}
+            onClick={() => handleModeChange("text")}
             className={optionButton(mode === "text")}
           >
             <Type className="h-4 w-4" />
@@ -130,29 +164,80 @@ export function InterviewSetup({
         </p>
       </div>
 
-      {/* 카메라·마이크 */}
+      {/* 화상·표정 분석 — 음성 모드는 항상 켬, 텍스트 모드는 선택. */}
       <div className="space-y-2">
-        <span className="text-ink text-sm font-semibold">카메라 · 마이크</span>
-        <VideoStage stream={stream} />
-        {/* 동의 카드는 setup 동안 항상 노출한다. 동의해도 사라지지 않아 내용을 다시 볼 수 있고
-            (투명성), 권한이 캐시된 재방문자도 동의 없이 통과하지 못한다(프라이버시). 동의해야
-            비언어 캡처 전송이 켜진다. */}
-        <CaptureConsentNotice agreed={cameraConsented} onAgreedChange={onCameraConsentChange} />
-        {/* 권한이 아직 없을 때만 켜기 버튼 노출 — 동의 전에는 비활성. */}
-        {permission !== "granted" && (
+        <span className="text-ink text-sm font-semibold">화상·표정 분석</span>
+
+        {mode === "voice" ? (
+          // 음성 모드 — 실제 면접처럼 화상(표정 분석)을 항상 함께 진행한다.
+          <div className="border-warm-border flex items-start gap-3 rounded-xl border px-3.5 py-3">
+            <span className="bg-coral-light text-primary mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+              <ScanFace className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="text-ink block text-sm font-semibold">화상 면접으로 진행돼요</span>
+              <span className="text-muted mt-0.5 block text-xs">
+                음성 면접은 실제 면접처럼 카메라로 표정·시선·자세까지 함께 분석해요.
+              </span>
+            </span>
+          </div>
+        ) : (
+          // 텍스트 모드 — 타이핑 중 얼굴 유지가 어려울 수 있어 선택으로 둔다.
+          <label className="border-warm-border flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3">
+            <span className="bg-coral-light text-primary mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+              <ScanFace className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="text-ink block text-sm font-semibold">
+                표정·태도 분석 받기 <span className="text-muted font-normal">(선택)</span>
+              </span>
+              <span className="text-muted mt-0.5 block text-xs">
+                카메라로 비언어 태도까지 분석해 피드백에 반영해요. 타이핑에 집중하고 싶으면 꺼도
+                돼요.
+              </span>
+            </span>
+            <Toggle checked={textNonverbalOn} onChange={handleTextNonverbalChange} />
+          </label>
+        )}
+
+        {/* 음성 모드는 답변 전사를 위해 마이크가 필요하다는 안내. */}
+        {needsMic && (
+          <p className="text-muted flex items-center gap-1.5 text-xs">
+            <Mic className="h-3.5 w-3.5" />
+            답변 전사를 위해 마이크도 함께 사용해요.
+          </p>
+        )}
+        {/* 텍스트 + 표정 분석 끔 = 어떤 장치도 켜지 않는 순수 텍스트 면접. */}
+        {!needsDevices && (
+          <p className="text-muted flex items-center gap-1.5 text-xs">
+            <Type className="h-3.5 w-3.5" />
+            카메라·마이크 없이 텍스트로만 진행해요.
+          </p>
+        )}
+
+        {/* 카메라를 쓸 때만 미리보기 + 프라이버시 동의를 노출한다. */}
+        {needsCamera && (
+          <>
+            <VideoStage stream={stream} />
+            <CaptureConsentNotice agreed={cameraConsented} onAgreedChange={onCameraConsentChange} />
+          </>
+        )}
+
+        {/* 장치가 필요하고 아직 권한이 없을 때만 켜기 버튼 노출. 카메라를 쓰면 동의 전 비활성. */}
+        {needsDevices && permission !== "granted" && (
           <button
             type="button"
-            onClick={onRequestDevices}
-            disabled={permission === "requesting" || !cameraConsented}
-            title={!cameraConsented ? "먼저 카메라 분석에 동의해 주세요" : undefined}
+            onClick={() => requestWith(mode, textNonverbalOn)}
+            disabled={permission === "requesting" || (needsCamera && !cameraConsented)}
+            title={needsCamera && !cameraConsented ? "먼저 카메라 분석에 동의해 주세요" : undefined}
             className="border-warm-border text-ink inline-flex w-full items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
           >
-            <Camera className="h-4 w-4" />
+            {needsCamera ? <Camera className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             {permission === "requesting"
               ? "권한 요청 중…"
-              : !cameraConsented
-                ? "동의 후 카메라를 켤 수 있어요"
-                : "카메라·마이크 켜기"}
+              : needsCamera && !cameraConsented
+                ? "동의 후 켤 수 있어요"
+                : deviceButtonLabel(needsCamera, needsMic)}
           </button>
         )}
         {deviceError && <p className="text-error text-xs">{deviceError}</p>}
@@ -171,5 +256,34 @@ export function InterviewSetup({
         {isStarting ? "질문 준비 중…" : "면접 시작"}
       </button>
     </div>
+  )
+}
+
+function deviceButtonLabel(camera: boolean, mic: boolean): string {
+  if (camera && mic) return "카메라·마이크 켜기"
+  if (camera) return "카메라 켜기"
+  return "마이크 켜기"
+}
+
+// 작은 on/off 스위치 — 표정·태도 분석 토글용.
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (next: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors",
+        checked ? "bg-primary" : "bg-warm-border"
+      )}
+    >
+      <span
+        className={cn(
+          "inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform",
+          checked ? "translate-x-5" : "translate-x-0.5"
+        )}
+      />
+    </button>
   )
 }

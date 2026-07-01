@@ -14,6 +14,7 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { useHomeFeed } from "@/features/home/hooks/useHomeFeed"
+import { CompanyLogo } from "@/features/home/components/companyLogo"
 import { routes } from "@/constants/routes"
 import type { TrendingCompany } from "@/features/home/types/home"
 
@@ -72,12 +73,12 @@ function CompanyPickCard({ company }: { company: TrendingCompany }) {
       href={routes.interview(company.companyId)}
       className="border-warm-border hover:border-primary group flex w-36 shrink-0 snap-start flex-col items-center rounded-2xl border bg-white p-4 shadow-sm transition-colors md:w-auto"
     >
-      <div
-        className="flex size-16 items-center justify-center rounded-full text-sm font-bold text-white"
-        style={{ backgroundColor: company.logoColor }}
-      >
-        {company.logoText}
-      </div>
+      <CompanyLogo
+        logoUrl={company.logoUrl}
+        logoText={company.logoText}
+        logoColor={company.logoColor}
+        sizeClass="size-16"
+      />
       <h3 className="text-ink mt-2.5 line-clamp-1 text-center text-sm font-bold">{company.name}</h3>
       <p className="text-disabled line-clamp-1 text-center text-xs">{company.parentName}</p>
       <span className="text-primary mt-2.5 inline-flex items-center gap-0.5 text-xs font-semibold">
