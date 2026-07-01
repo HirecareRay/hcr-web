@@ -15,14 +15,13 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, WifiOff } from "lucide-react"
-import { generalInterviewId, routes } from "@/constants/routes"
+import { routes } from "@/constants/routes"
 import { useInterview } from "../hooks/useInterview"
 import { useMediaStream } from "../hooks/useMediaStream"
 import { useTts } from "../hooks/useTts"
 import { useInterviewTimer } from "../hooks/useInterviewTimer"
 import { useLiveStreaming } from "../hooks/useLiveStreaming"
 import { useInterviewSessionStore } from "../store/interviewSessionStore"
-import { useInterviewSummaryStore } from "../store/interviewSummaryStore"
 import { InterviewSetup } from "./room/interviewSetup"
 import { SessionTimerBar } from "./room/sessionTimerBar"
 import { VideoStage } from "./room/videoStage"
@@ -39,9 +38,13 @@ interface Props {
 export function InterviewRoomPage({ companyId }: Props) {
   const router = useRouter()
 
-  // 기업 없이 보는 "일반 면접"이면 WS 에 기업 컨텍스트를 보내지 않는다(약속값 general 은 ObjectId 가 아님).
-  // 라우트용(로그인 복귀·결과 이동)에는 companyId("general")를 그대로 쓴다 — URL 은 안 깨진다.
-  const wsCompanyId = companyId === generalInterviewId ? null : companyId
+  // 일반 면접(general)도 companyId 를 그대로 WS 로 실어 보낸다. 백엔드는 이 값을 두 곳에 쓰는데,
+  //   ① 기업 컨텍스트 조회 — general 은 ObjectId 가 아니라 조회에 실패하지만 백엔드가 안전하게
+  //      무시한다(get_company_context 가 예외를 흡수 → 컨텍스트만 비고 면접은 그대로 진행).
+  //   ② 결과 저장 키 — 세션은 이 company_id 로 저장되고, 결과 페이지는 /results/{companyId} 로
+  //      조회한다. general 을 null 로 비우면 백엔드가 ''(빈 문자열)로 저장해 'general' 조회와
+  //      키가 어긋나 404 가 난다. 저장 키 == 조회 키를 맞추려면 여기서 general 을 반드시 실어야 한다.
+  const wsCompanyId = companyId
 
   // ─── 상태머신 ───
   const phase = useInterviewSessionStore((s) => s.phase)
@@ -56,8 +59,6 @@ export function InterviewRoomPage({ companyId }: Props) {
   const reset = useInterviewSessionStore((s) => s.reset)
   const cameraConsented = useInterviewSessionStore((s) => s.cameraConsented)
   const setCameraConsent = useInterviewSessionStore((s) => s.setCameraConsent)
-  const setLiveSummary = useInterviewSummaryStore((s) => s.setSummary)
-  const clearLiveSummary = useInterviewSummaryStore((s) => s.clearSummary)
 
   // ─── 미디어 · 음성 · 세션 ───
   const { start, isStarting, startError } = useInterview()
@@ -146,10 +147,10 @@ export function InterviewRoomPage({ companyId }: Props) {
     setVoiceAnswer(live.transcript)
   }, [mode, voiceStep, live.transcript])
 
-  // 최종 요약 도착 → 결과 페이지로 넘길 핸드오프 스토어에 담고 종료 전이
+  // 최종 요약(WS summary) 도착 → 종료 전이. 결과 자체는 백엔드가 저장하므로 결과 페이지가
+  // /results/{companyId} 로 조회한다(요약을 프론트로 들고 넘기지 않는다).
   useEffect(() => {
     if (!live.summary) return
-    setLiveSummary(live.summary)
     finishNow()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live.summary])
@@ -169,12 +170,10 @@ export function InterviewRoomPage({ companyId }: Props) {
 
   const handleStart = useCallback(
     (payload: { mode: InterviewMode; totalDurationSec: number; jobTitle: string }) => {
-      // 새 면접 시작 → 직전 세션의 요약 핸드오프를 비워 옛 결과가 새 면접에 섞이지 않게 한다.
-      clearLiveSummary()
       const cfg: InterviewConfig = { companyId, ...payload }
       start(cfg)
     },
-    [companyId, start, clearLiveSummary]
+    [companyId, start]
   )
 
   const handleBeginAnswering = useCallback(() => {
