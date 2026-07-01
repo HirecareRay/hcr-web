@@ -33,6 +33,7 @@ interface UseLiveStreamingParams {
   sessionId: string | null // WS 연결 키(REST 세션과 동일 ID — 백엔드 상관용)
   companyId?: string | null // 기업 분석 컨텍스트 주입용(WS 쿼리, 선택)
   jobTitle?: string | null // 지원 직무 — 질문 생성 컨텍스트(WS 쿼리, 선택)
+  questionCount?: number | null // 메인 질문(주제) 개수 — 시간 선택 반영(WS 쿼리, 선택)
   phase: InterviewPhase
   mode: InterviewMode
   // 음성 모드 하위 단계 — listening(말하는 중)에만 캡처·송신하고 review(검토·수정)에선 멈춘다.
@@ -68,6 +69,7 @@ export function useLiveStreaming({
   sessionId,
   companyId,
   jobTitle,
+  questionCount,
   phase,
   mode,
   voiceListening = true,
@@ -76,7 +78,12 @@ export function useLiveStreaming({
   consented,
   onAuthExpired,
 }: UseLiveStreamingParams): LiveStreamingView {
-  const socket = useInterviewSocket(sessionId, { companyId, jobTitle, onAuthExpired })
+  const socket = useInterviewSocket(sessionId, {
+    companyId,
+    jobTitle,
+    questionCount,
+    onAuthExpired,
+  })
 
   const hasVideoTrack = !!stream && stream.getVideoTracks().length > 0
   // 음성 모드 review 단계에선 인식을 멈추므로 캡처·송신도 함께 정지한다.

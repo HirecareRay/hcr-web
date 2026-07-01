@@ -35,6 +35,7 @@ const WS_BASE = process.env.NEXT_PUBLIC_INTERVIEW_WS_URL ?? "ws://localhost:8000
 export interface InterviewSocketOptions {
   companyId?: string | null // 기업 분석 컨텍스트 주입용(선택)
   jobTitle?: string | null // 지원 직무 — 질문 생성 컨텍스트(선택)
+  questionCount?: number | null // 메인 질문(주제) 개수 — 사용자의 시간 선택 반영(선택)
   onAuthExpired?: () => void // 티켓 401(세션 만료) 시 호출 — 보통 로그인 페이지로 보냄
 }
 
@@ -57,7 +58,7 @@ const EMPTY_VIEW: InterviewSocketView = {
 }
 
 export function useInterviewSocket(sessionId: string | null, options: InterviewSocketOptions = {}) {
-  const { companyId, jobTitle, onAuthExpired } = options
+  const { companyId, jobTitle, questionCount, onAuthExpired } = options
   const socketRef = useRef<WebSocket | null>(null)
   const [view, setView] = useState<InterviewSocketView>(EMPTY_VIEW)
 
@@ -125,6 +126,7 @@ export function useInterviewSocket(sessionId: string | null, options: InterviewS
         ticket,
         companyId,
         jobTitle,
+        questionCount,
       })
       const socket = new WebSocket(url)
       socketRef.current = socket
@@ -156,7 +158,7 @@ export function useInterviewSocket(sessionId: string | null, options: InterviewS
       socketRef.current?.close()
       socketRef.current = null
     }
-  }, [sessionId, companyId, jobTitle, applyMessage])
+  }, [sessionId, companyId, jobTitle, questionCount, applyMessage])
 
   // ── 업스트림 송신 액션 ──────────────────────────────────────────────────────
 

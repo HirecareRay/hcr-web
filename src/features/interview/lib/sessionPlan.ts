@@ -9,12 +9,22 @@
 export const durationOptionsSec = [600, 900, 1200] as const
 
 /**
- * 전체 면접 시간(초) → 질문 수.
- * 한 질문당 질문 제시 + 답변 + 채점에 대략 ~200초가 든다고 보고 환산하며, 3~8문항으로 클램프합니다.
+ * 전체 면접 시간(초) → "메인 질문(주제) 개수".
+ *
+ * 면접 길이는 시간이 아니라 메인 질문 수가 정한다(백엔드에 시간 제한 로직 없음 — 질문을 다 풀면
+ * 종료). 이 값은 WS 접속 시 questionCount 로 백엔드에 전달돼 "생성할 메인 주제 수"가 된다.
+ * 답변에 따라 꼬리질문이 그 위에 적응형으로 얹히므로 총 질문 수는 이보다 많고 유동적이다 —
+ * 이 값으로 총량을 못 박지 않는다. 그래서 꼬리질문 여유를 감안해 시간 대비 보수적으로 매핑한다.
+ * (백엔드가 1~10 clamp + 결측 시 기본값 우회를 하므로 표에 없는 값이 와도 안전하다.)
  */
+const mainQuestionByDurationSec: Record<number, number> = {
+  600: 3, // 10분 → 메인 주제 3개
+  900: 4, // 15분 → 메인 주제 4개
+  1200: 5, // 20분 → 메인 주제 5개
+}
+
 export function deriveQuestionCount(totalDurationSec: number): number {
-  const raw = Math.round(totalDurationSec / 200)
-  return Math.max(3, Math.min(8, raw))
+  return mainQuestionByDurationSec[totalDurationSec] ?? 4
 }
 
 /**

@@ -4,7 +4,7 @@
  * 면접 시작 전 준비 화면입니다.
  *   - 지원 직무 입력
  *   - 응답 모드 선택(텍스트/음성)
- *   - 전체 면접 시간 선택(10/15/20분) → 예상 질문 수 자동 표시
+ *   - 전체 면접 시간 선택(10/15/20분) → 예상 소요 시간·주제 수 안내(꼬리질문이 얹혀 총 질문은 유동적)
  *   - 카메라·마이크 권한 요청 + 미리보기
  *   - "면접 시작"
  *
@@ -63,7 +63,9 @@ export function InterviewSetup({
   // 텍스트 모드에서 표정·태도(비언어) 분석을 받을지 여부(선택). 음성 모드는 항상 켜진다.
   const [textNonverbalOn, setTextNonverbalOn] = useState(true)
 
-  const questionCount = deriveQuestionCount(totalDurationSec)
+  // 시간 선택 → "메인 주제 수". 답변에 따라 꼬리질문이 얹혀 실제 총 질문은 더 많고 유동적이라,
+  // 사용자에겐 딱 떨어지는 "N개 질문" 대신 "약 N개 주제 · 예상 N분"처럼 부드럽게 표현한다.
+  const topicCount = deriveQuestionCount(totalDurationSec)
 
   // 실제로 필요한 장치만 켠다 — 카메라는 표정 분석용, 마이크는 음성 답변(STT)용.
   //   음성 모드: 실제 면접처럼 화상(표정 분석)을 항상 함께 진행한다.
@@ -160,7 +162,8 @@ export function InterviewSetup({
           ))}
         </div>
         <p className="text-disabled text-xs">
-          예상 질문 {questionCount}개 · 전체 시간이 끝나면 면접이 종료됩니다
+          약 {topicCount}개 주제 · 예상 {durationLabel(totalDurationSec)} 소요 · 답변에 따라
+          꼬리질문이 더해져요
         </p>
       </div>
 

@@ -94,6 +94,8 @@ export function InterviewRoomPage({ companyId }: Props) {
     sessionId: session?.sessionId ?? null,
     companyId: wsCompanyId,
     jobTitle: config?.jobTitle ?? null,
+    // 시간 선택으로 환산된 메인 질문 수 — WS 쿼리로 실려 백엔드가 그만큼 메인 주제를 만든다.
+    questionCount: session?.questionCount ?? null,
     phase,
     mode,
     // 음성 모드는 listening(말하는 중)에만 캡처·송신하고, review(검토·수정)에선 멈춘다.
@@ -112,9 +114,10 @@ export function InterviewRoomPage({ companyId }: Props) {
   } = live
   const liveQuestion = live.question
 
-  // 전체 시간 카운트다운 — setup/finished를 제외한 단계에서 작동, 0이면 즉시 종료
+  // 경과 시간 — setup/finished를 제외한 단계에서만 흐른다. "마감 시계"가 아니라 진행 참고용이라
+  // 만료·강제 종료가 없다(면접은 질문을 다 풀면 종료). 세션이 바뀌면 0으로 리셋한다.
   const running = phase !== "setup" && phase !== "finished"
-  const remainingSec = useInterviewTimer(session?.totalDurationSec ?? 0, running, finishNow)
+  const elapsedSec = useInterviewTimer(running, session?.sessionId)
 
   // 세션이 바뀌면(새 면접·재시도) 질문 가드를 비워, 같은 id(m0)로 다시 시작해도 막히지 않게.
   const lastPresentedRef = useRef<string | null>(null)
@@ -300,8 +303,8 @@ export function InterviewRoomPage({ companyId }: Props) {
       )}
 
       <SessionTimerBar
-        remainingSec={remainingSec}
-        totalSec={session.totalDurationSec}
+        elapsedSec={elapsedSec}
+        estimatedSec={session.totalDurationSec}
         questionNo={liveQuestionNo}
       />
 
