@@ -18,11 +18,11 @@ export async function POST(request: Request) {
     const separatorIndex = originalName.indexOf("__")
 
     let documentType = "resume" // 기본값 방어 코드
-    let realFileName = originalName
+    // const realFileName = originalName
 
     if (separatorIndex !== -1) {
       documentType = originalName.substring(0, separatorIndex) // "resume" 추출
-      realFileName = originalName.substring(separatorIndex + 2) // "my_resume.pdf" 추출
+      // realFileName = originalName.substring(separatorIndex + 2) // "my_resume.pdf" 추출
     }
 
     // 2. FastAPI로 보낼 새로운 FormData 객체 생성
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 
     // 5. 클라이언트에 최종 성공 응답 반환
     return NextResponse.json({ ok: true, ...data })
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 💡 [변경 구간] FastAPI 서버에서 에러 상태 코드(4xx, 5xx)를 반환한 경우 처리
     if (axios.isAxiosError(error) && error.response) {
       const errorText =
@@ -86,12 +86,13 @@ export async function POST(request: Request) {
         { status: error.response.status }
       )
     }
-
-    // 일반 네트워크 에러 또는 기타 BFF 내부 오류 처리
-    console.error("BFF Upload Error:", error)
-    return NextResponse.json(
-      { error: error.message || "BFF 내부 서버 오류가 발생했습니다." },
-      { status: 500 }
-    )
+    if (axios.isAxiosError(error)) {
+      // 일반 네트워크 에러 또는 기타 BFF 내부 오류 처리
+      console.error("BFF Upload Error:", error)
+      return NextResponse.json(
+        { error: error.message || "BFF 내부 서버 오류가 발생했습니다." },
+        { status: 500 }
+      )
+    }
   }
 }

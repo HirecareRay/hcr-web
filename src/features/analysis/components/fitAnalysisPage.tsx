@@ -47,11 +47,11 @@ function MatchItem({ text, matched, sourceText, sourceLabel, excerpt, reasoning 
       <p className="text-ink text-sm leading-snug">{text}</p>
       {sourceText && (
         <p className="text-muted border-warm-border mt-1.5 border-l pl-2 text-xs leading-relaxed italic">
-          {sourceLabel}: "{sourceText}"
+          {`${sourceLabel}: "${sourceText}"`}
         </p>
       )}
       {matched && excerpt && (
-        <p className="text-muted mt-1.5 text-xs leading-relaxed italic">"{excerpt}"</p>
+        <p className="text-muted mt-1.5 text-xs leading-relaxed italic">{`"${excerpt}"`}</p>
       )}
       {reasoning && <p className="text-disabled mt-1 text-xs leading-relaxed">{reasoning}</p>}
     </div>
