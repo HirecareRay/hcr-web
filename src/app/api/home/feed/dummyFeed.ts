@@ -42,6 +42,7 @@ export function buildDummyFeed(generatedAt: string): HomeFeed {
         parentName: "CJ",
         logoText: "CJ",
         logoColor: "#e2402a",
+        logoUrl: "https://www.google.com/s2/favicons?domain=cjenm.com&sz=128",
       },
       {
         rank: 2,
@@ -50,6 +51,7 @@ export function buildDummyFeed(generatedAt: string): HomeFeed {
         parentName: "카카오",
         logoText: "pay",
         logoColor: "#ffcd00",
+        logoUrl: "https://www.google.com/s2/favicons?domain=kakaopay.com&sz=128",
       },
       {
         rank: 3,
@@ -58,6 +60,7 @@ export function buildDummyFeed(generatedAt: string): HomeFeed {
         parentName: "네이버",
         logoText: "N",
         logoColor: "#03c75a",
+        logoUrl: "https://www.google.com/s2/favicons?domain=navercorp.com&sz=128",
       },
       {
         rank: 4,
@@ -66,6 +69,7 @@ export function buildDummyFeed(generatedAt: string): HomeFeed {
         parentName: "비바리퍼블리카",
         logoText: "toss",
         logoColor: "#3182f6",
+        logoUrl: "https://www.google.com/s2/favicons?domain=toss.im&sz=128",
       },
       {
         rank: 5,
@@ -74,6 +78,7 @@ export function buildDummyFeed(generatedAt: string): HomeFeed {
         parentName: "우아한형제들",
         logoText: "배민",
         logoColor: "#2ac1bc",
+        logoUrl: "https://www.google.com/s2/favicons?domain=baemin.com&sz=128",
       },
     ],
 
