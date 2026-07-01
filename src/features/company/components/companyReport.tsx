@@ -30,7 +30,7 @@ interface Props {
   companyId: string
 }
 
-const RESUME_UPLOAD_PATH = "/mypage/resume"
+const RESUME_UPLOAD_PATH = "/mypage/documents"
 
 const reportTabs = [
   { key: "summary", label: "요약" },
