@@ -1,7 +1,7 @@
 "use client"
 
-import Link from "next/link"
-import { ChevronLeft, Sparkles } from "lucide-react"
+import { Sparkles } from "lucide-react"
+import { PageTopBar } from "@/components/ui/pageTopBar"
 
 const interviewDetails: Record<
   string,
@@ -77,14 +77,7 @@ export function InterviewDetailPage({ interviewId }: { interviewId: string }) {
   if (!detail) {
     return (
       <section className="bg-background min-h-full pb-10">
-        <header className="border-warm-border border-b bg-white px-5 pt-5 pb-4">
-          <div className="flex items-center gap-2">
-            <Link href="/mypage/interview" aria-label="뒤로가기">
-              <ChevronLeft className="text-muted size-5" />
-            </Link>
-            <h1 className="text-ink text-base font-bold">면접 상세</h1>
-          </div>
-        </header>
+        <PageTopBar title="면접 상세" backTo="/mypage/interview" />
         <div className="flex flex-col items-center justify-center px-5 pt-24 text-center">
           <p className="text-muted text-sm">면접 기록을 찾을 수 없어요.</p>
         </div>
@@ -94,14 +87,7 @@ export function InterviewDetailPage({ interviewId }: { interviewId: string }) {
 
   return (
     <section className="bg-background min-h-full pb-10">
-      <header className="border-warm-border border-b bg-white px-5 pt-5 pb-4">
-        <div className="flex items-center gap-2">
-          <Link href="/mypage/interview" aria-label="뒤로가기">
-            <ChevronLeft className="text-muted size-5" />
-          </Link>
-          <h1 className="text-ink text-base font-bold">면접 상세</h1>
-        </div>
-      </header>
+      <PageTopBar title="면접 상세" backTo="/mypage/interview" />
 
       <div className="space-y-4 px-5 pt-5 pb-8">
         {/* 요약 카드 */}

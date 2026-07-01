@@ -6,12 +6,12 @@ import {
   Bookmark,
   BriefcaseBusiness,
   CalendarDays,
-  ChevronLeft,
   ExternalLink,
   MapPin,
   Sparkles,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PageTopBar } from "@/components/ui/pageTopBar"
 import { fetchJobDetail, jobDetailFixtures } from "../services/jobService"
 import type { JobDetail } from "../types/job"
 
@@ -125,14 +125,7 @@ export function JobDetailPage({ jobId }: { jobId: string }) {
   if (!job) {
     return (
       <section className="bg-background min-h-full pb-10">
-        <header className="border-warm-border border-b bg-white px-5 py-4">
-          <div className="flex items-center gap-2">
-            <Link href="/jobs" aria-label="뒤로가기">
-              <ChevronLeft className="text-muted size-5" />
-            </Link>
-            <h1 className="text-ink text-base font-bold">채용공고</h1>
-          </div>
-        </header>
+        <PageTopBar title="채용공고" backTo="/jobs" />
         <div className="flex flex-col items-center justify-center px-5 pt-24 text-center">
           <p className="text-ink text-sm font-bold">공고를 찾을 수 없어요</p>
           <Link href="/jobs" className="text-primary mt-3 text-sm font-semibold">
@@ -149,14 +142,7 @@ export function JobDetailPage({ jobId }: { jobId: string }) {
 
   return (
     <section className="bg-background min-h-full pb-10">
-      <header className="border-warm-border border-b bg-white px-5 py-4">
-        <div className="flex items-center gap-2">
-          <Link href="/jobs" aria-label="뒤로가기">
-            <ChevronLeft className="text-muted size-5" />
-          </Link>
-          <h1 className="text-ink text-base font-bold">채용공고</h1>
-        </div>
-      </header>
+      <PageTopBar title="채용공고" backTo="/jobs" />
 
       <div className="bg-white px-5 pt-5 pb-6">
         <div className="flex items-start gap-3">
