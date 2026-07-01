@@ -16,6 +16,7 @@
 import { useState } from "react"
 import { Camera, Mic, ScanFace, Type } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PageTopBar } from "@/components/ui/pageTopBar"
 import { deriveQuestionCount, durationLabel, durationOptionsSec } from "../../lib/sessionPlan"
 import type { InterviewMode } from "../../types/interviewSession"
 import type { MediaPermission, RequestOptions } from "../../hooks/useMediaStream"
@@ -104,158 +105,167 @@ export function InterviewSetup({
   }
 
   return (
-    <div className="space-y-5 px-4 py-5">
-      <header>
-        <h1 className="text-ink text-xl font-bold">AI 모의 면접 준비</h1>
-        <p className="text-muted mt-1 text-sm">설정을 고르고 면접을 시작하세요.</p>
-      </header>
+    <>
+      {/* 시작 전 화면에서만 이탈 허용 — 진입했던 곳(진입 화면·기업 리포트)으로 복귀 */}
+      <PageTopBar title="AI 모의 면접" />
+      <div className="space-y-5 px-4 py-5">
+        <header>
+          <h2 className="text-ink text-xl font-bold">AI 모의 면접 준비</h2>
+          <p className="text-muted mt-1 text-sm">설정을 고르고 면접을 시작하세요.</p>
+        </header>
 
-      {/* 지원 직무 */}
-      <div className="space-y-1.5">
-        <label className="text-ink text-sm font-semibold">지원 직무</label>
-        <input
-          value={jobTitle}
-          onChange={(event) => setJobTitle(event.target.value)}
-          placeholder="예: 콘텐츠 마케팅"
-          className="border-warm-border text-ink placeholder:text-disabled focus:border-primary w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-        />
-      </div>
-
-      {/* 응답 모드 */}
-      <div className="space-y-1.5">
-        <span className="text-ink text-sm font-semibold">응답 방식</span>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => handleModeChange("voice")}
-            className={optionButton(mode === "voice")}
-          >
-            <Mic className="h-4 w-4" />
-            음성
-          </button>
-          <button
-            type="button"
-            onClick={() => handleModeChange("text")}
-            className={optionButton(mode === "text")}
-          >
-            <Type className="h-4 w-4" />
-            텍스트
-          </button>
+        {/* 지원 직무 */}
+        <div className="space-y-1.5">
+          <label className="text-ink text-sm font-semibold">지원 직무</label>
+          <input
+            value={jobTitle}
+            onChange={(event) => setJobTitle(event.target.value)}
+            placeholder="예: 콘텐츠 마케팅"
+            className="border-warm-border text-ink placeholder:text-disabled focus:border-primary w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+          />
         </div>
-      </div>
 
-      {/* 전체 면접 시간 */}
-      <div className="space-y-1.5">
-        <span className="text-ink text-sm font-semibold">면접 시간</span>
-        <div className="flex gap-2">
-          {durationOptionsSec.map((sec) => (
+        {/* 응답 모드 */}
+        <div className="space-y-1.5">
+          <span className="text-ink text-sm font-semibold">응답 방식</span>
+          <div className="flex gap-2">
             <button
-              key={sec}
               type="button"
-              onClick={() => setTotalDurationSec(sec)}
-              className={optionButton(totalDurationSec === sec)}
+              onClick={() => handleModeChange("voice")}
+              className={optionButton(mode === "voice")}
             >
-              {durationLabel(sec)}
+              <Mic className="h-4 w-4" />
+              음성
             </button>
-          ))}
-        </div>
-        <p className="text-disabled text-xs">
-          예상 질문 {questionCount}개 · 전체 시간이 끝나면 면접이 종료됩니다
-        </p>
-      </div>
-
-      {/* 화상·표정 분석 — 음성 모드는 항상 켬, 텍스트 모드는 선택. */}
-      <div className="space-y-2">
-        <span className="text-ink text-sm font-semibold">화상·표정 분석</span>
-
-        {mode === "voice" ? (
-          // 음성 모드 — 실제 면접처럼 화상(표정 분석)을 항상 함께 진행한다.
-          <div className="border-warm-border flex items-start gap-3 rounded-xl border px-3.5 py-3">
-            <span className="bg-coral-light text-primary mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
-              <ScanFace className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="text-ink block text-sm font-semibold">화상 면접으로 진행돼요</span>
-              <span className="text-muted mt-0.5 block text-xs">
-                음성 면접은 실제 면접처럼 카메라로 표정·시선·자세까지 함께 분석해요.
-              </span>
-            </span>
+            <button
+              type="button"
+              onClick={() => handleModeChange("text")}
+              className={optionButton(mode === "text")}
+            >
+              <Type className="h-4 w-4" />
+              텍스트
+            </button>
           </div>
-        ) : (
-          // 텍스트 모드 — 타이핑 중 얼굴 유지가 어려울 수 있어 선택으로 둔다.
-          <label className="border-warm-border flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3">
-            <span className="bg-coral-light text-primary mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
-              <ScanFace className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="text-ink block text-sm font-semibold">
-                표정·태도 분석 받기 <span className="text-muted font-normal">(선택)</span>
-              </span>
-              <span className="text-muted mt-0.5 block text-xs">
-                카메라로 비언어 태도까지 분석해 피드백에 반영해요. 타이핑에 집중하고 싶으면 꺼도
-                돼요.
-              </span>
-            </span>
-            <Toggle checked={textNonverbalOn} onChange={handleTextNonverbalChange} />
-          </label>
-        )}
+        </div>
 
-        {/* 음성 모드는 답변 전사를 위해 마이크가 필요하다는 안내. */}
-        {needsMic && (
-          <p className="text-muted flex items-center gap-1.5 text-xs">
-            <Mic className="h-3.5 w-3.5" />
-            답변 전사를 위해 마이크도 함께 사용해요.
+        {/* 전체 면접 시간 */}
+        <div className="space-y-1.5">
+          <span className="text-ink text-sm font-semibold">면접 시간</span>
+          <div className="flex gap-2">
+            {durationOptionsSec.map((sec) => (
+              <button
+                key={sec}
+                type="button"
+                onClick={() => setTotalDurationSec(sec)}
+                className={optionButton(totalDurationSec === sec)}
+              >
+                {durationLabel(sec)}
+              </button>
+            ))}
+          </div>
+          <p className="text-disabled text-xs">
+            예상 질문 {questionCount}개 · 전체 시간이 끝나면 면접이 종료됩니다
           </p>
-        )}
-        {/* 텍스트 + 표정 분석 끔 = 어떤 장치도 켜지 않는 순수 텍스트 면접. */}
-        {!needsDevices && (
-          <p className="text-muted flex items-center gap-1.5 text-xs">
-            <Type className="h-3.5 w-3.5" />
-            카메라·마이크 없이 텍스트로만 진행해요.
-          </p>
+        </div>
+
+        {/* 화상·표정 분석 — 음성 모드는 항상 켬, 텍스트 모드는 선택. */}
+        <div className="space-y-2">
+          <span className="text-ink text-sm font-semibold">화상·표정 분석</span>
+
+          {mode === "voice" ? (
+            // 음성 모드 — 실제 면접처럼 화상(표정 분석)을 항상 함께 진행한다.
+            <div className="border-warm-border flex items-start gap-3 rounded-xl border px-3.5 py-3">
+              <span className="bg-coral-light text-primary mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+                <ScanFace className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="text-ink block text-sm font-semibold">화상 면접으로 진행돼요</span>
+                <span className="text-muted mt-0.5 block text-xs">
+                  음성 면접은 실제 면접처럼 카메라로 표정·시선·자세까지 함께 분석해요.
+                </span>
+              </span>
+            </div>
+          ) : (
+            // 텍스트 모드 — 타이핑 중 얼굴 유지가 어려울 수 있어 선택으로 둔다.
+            <label className="border-warm-border flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3">
+              <span className="bg-coral-light text-primary mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+                <ScanFace className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="text-ink block text-sm font-semibold">
+                  표정·태도 분석 받기 <span className="text-muted font-normal">(선택)</span>
+                </span>
+                <span className="text-muted mt-0.5 block text-xs">
+                  카메라로 비언어 태도까지 분석해 피드백에 반영해요. 타이핑에 집중하고 싶으면 꺼도
+                  돼요.
+                </span>
+              </span>
+              <Toggle checked={textNonverbalOn} onChange={handleTextNonverbalChange} />
+            </label>
+          )}
+
+          {/* 음성 모드는 답변 전사를 위해 마이크가 필요하다는 안내. */}
+          {needsMic && (
+            <p className="text-muted flex items-center gap-1.5 text-xs">
+              <Mic className="h-3.5 w-3.5" />
+              답변 전사를 위해 마이크도 함께 사용해요.
+            </p>
+          )}
+          {/* 텍스트 + 표정 분석 끔 = 어떤 장치도 켜지 않는 순수 텍스트 면접. */}
+          {!needsDevices && (
+            <p className="text-muted flex items-center gap-1.5 text-xs">
+              <Type className="h-3.5 w-3.5" />
+              카메라·마이크 없이 텍스트로만 진행해요.
+            </p>
+          )}
+
+          {/* 카메라를 쓸 때만 미리보기 + 프라이버시 동의를 노출한다. */}
+          {needsCamera && (
+            <>
+              <VideoStage stream={stream} />
+              <CaptureConsentNotice
+                agreed={cameraConsented}
+                onAgreedChange={onCameraConsentChange}
+              />
+            </>
+          )}
+
+          {/* 장치가 필요하고 아직 권한이 없을 때만 켜기 버튼 노출. 카메라를 쓰면 동의 전 비활성. */}
+          {needsDevices && permission !== "granted" && (
+            <button
+              type="button"
+              onClick={() => requestWith(mode, textNonverbalOn)}
+              disabled={permission === "requesting" || (needsCamera && !cameraConsented)}
+              title={
+                needsCamera && !cameraConsented ? "먼저 카메라 분석에 동의해 주세요" : undefined
+              }
+              className="border-warm-border text-ink inline-flex w-full items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+            >
+              {needsCamera ? <Camera className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              {permission === "requesting"
+                ? "권한 요청 중…"
+                : needsCamera && !cameraConsented
+                  ? "동의 후 켤 수 있어요"
+                  : deviceButtonLabel(needsCamera, needsMic)}
+            </button>
+          )}
+          {deviceError && <p className="text-error text-xs">{deviceError}</p>}
+        </div>
+
+        {startError && (
+          <p className="text-error text-sm">면접을 시작하지 못했습니다. 다시 시도해 주세요.</p>
         )}
 
-        {/* 카메라를 쓸 때만 미리보기 + 프라이버시 동의를 노출한다. */}
-        {needsCamera && (
-          <>
-            <VideoStage stream={stream} />
-            <CaptureConsentNotice agreed={cameraConsented} onAgreedChange={onCameraConsentChange} />
-          </>
-        )}
-
-        {/* 장치가 필요하고 아직 권한이 없을 때만 켜기 버튼 노출. 카메라를 쓰면 동의 전 비활성. */}
-        {needsDevices && permission !== "granted" && (
-          <button
-            type="button"
-            onClick={() => requestWith(mode, textNonverbalOn)}
-            disabled={permission === "requesting" || (needsCamera && !cameraConsented)}
-            title={needsCamera && !cameraConsented ? "먼저 카메라 분석에 동의해 주세요" : undefined}
-            className="border-warm-border text-ink inline-flex w-full items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
-          >
-            {needsCamera ? <Camera className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            {permission === "requesting"
-              ? "권한 요청 중…"
-              : needsCamera && !cameraConsented
-                ? "동의 후 켤 수 있어요"
-                : deviceButtonLabel(needsCamera, needsMic)}
-          </button>
-        )}
-        {deviceError && <p className="text-error text-xs">{deviceError}</p>}
+        <button
+          type="button"
+          onClick={handleStart}
+          disabled={!canStart}
+          className="bg-primary w-full rounded-xl px-4 py-3 text-base font-semibold text-white transition-opacity disabled:opacity-50"
+        >
+          {isStarting ? "질문 준비 중…" : "면접 시작"}
+        </button>
       </div>
-
-      {startError && (
-        <p className="text-error text-sm">면접을 시작하지 못했습니다. 다시 시도해 주세요.</p>
-      )}
-
-      <button
-        type="button"
-        onClick={handleStart}
-        disabled={!canStart}
-        className="bg-primary w-full rounded-xl px-4 py-3 text-base font-semibold text-white transition-opacity disabled:opacity-50"
-      >
-        {isStarting ? "질문 준비 중…" : "면접 시작"}
-      </button>
-    </div>
+    </>
   )
 }
 

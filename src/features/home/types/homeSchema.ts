@@ -11,9 +11,9 @@
 import { z } from "zod"
 import type {
   HomeFeed,
+  HomeJobPosting,
   IssueBriefingItem,
-  TechStackRankItem,
-  TechStackRanking,
+  JobRoleGroup,
   TrendingCompany,
 } from "./home"
 
@@ -28,16 +28,29 @@ export const trendingCompanySchema = z.object({
   logoUrl: z.string().url().nullable(),
 })
 
-// ─── 기술 스택 랭킹 ──────────────────────────────────────────────────────────
-export const techStackRankItemSchema = z.object({
-  rank: z.number().int().positive(),
-  name: z.string(),
-  locked: z.boolean(),
+// ─── 직군별 채용공고 ─────────────────────────────────────────────────────────
+export const jobRoleSchema = z.enum(["backend", "frontend", "ai"])
+
+export const homeJobPostingSchema = z.object({
+  id: z.string().min(1),
+  companyId: z.string().min(1),
+  companyName: z.string().min(1),
+  title: z.string().min(1),
+  jobRole: jobRoleSchema,
+  jobRoleLabel: z.string().min(1),
+  location: z.string(),
+  employmentType: z.string(),
+  deadline: z.string().nullable(),
+  deadlineType: z.string(),
+  // url 은 원본 공고 링크가 없으면 "" 이므로 .url() 검증은 걸지 않습니다.
+  url: z.string(),
+  tags: z.array(z.string()),
 })
 
-export const techStackRankingSchema = z.object({
-  question: z.string().min(1),
-  items: z.array(techStackRankItemSchema),
+export const jobRoleGroupSchema = z.object({
+  role: jobRoleSchema,
+  label: z.string().min(1),
+  jobs: z.array(homeJobPostingSchema),
 })
 
 // ─── 기업 이슈 브리핑 ────────────────────────────────────────────────────────
@@ -52,7 +65,7 @@ export const issueBriefingItemSchema = z.object({
 // ─── 홈 피드 전체 ────────────────────────────────────────────────────────────
 export const homeFeedSchema = z.object({
   trending: z.array(trendingCompanySchema),
-  techStack: techStackRankingSchema,
+  jobsByRole: z.array(jobRoleGroupSchema),
   issues: z.array(issueBriefingItemSchema),
   generatedAt: z.string(),
 })
@@ -67,13 +80,13 @@ type _AssertTrending = [z.infer<typeof trendingCompanySchema>] extends [Trending
     ? true
     : never
   : never
-type _AssertTechItem = [z.infer<typeof techStackRankItemSchema>] extends [TechStackRankItem]
-  ? [TechStackRankItem] extends [z.infer<typeof techStackRankItemSchema>]
+type _AssertJobPosting = [z.infer<typeof homeJobPostingSchema>] extends [HomeJobPosting]
+  ? [HomeJobPosting] extends [z.infer<typeof homeJobPostingSchema>]
     ? true
     : never
   : never
-type _AssertTechRanking = [z.infer<typeof techStackRankingSchema>] extends [TechStackRanking]
-  ? [TechStackRanking] extends [z.infer<typeof techStackRankingSchema>]
+type _AssertJobGroup = [z.infer<typeof jobRoleGroupSchema>] extends [JobRoleGroup]
+  ? [JobRoleGroup] extends [z.infer<typeof jobRoleGroupSchema>]
     ? true
     : never
   : never
@@ -91,8 +104,8 @@ type _AssertFeed = [z.infer<typeof homeFeedSchema>] extends [HomeFeed]
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _assertSync: [
   _AssertTrending,
-  _AssertTechItem,
-  _AssertTechRanking,
+  _AssertJobPosting,
+  _AssertJobGroup,
   _AssertIssue,
   _AssertFeed,
 ] = [true, true, true, true, true]

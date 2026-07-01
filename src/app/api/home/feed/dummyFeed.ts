@@ -1,18 +1,14 @@
 /**
  * dummyFeed.ts
  *
- * 홈 피드 더미데이터. 프론트가 아니라 BFF 옆에 격리합니다.
+ * 홈 피드 "폴백" 더미데이터. 프론트가 아니라 BFF 옆에 격리합니다.
  *
- * 데이터 출처:
- * - trending : CJ ENM 1건은 팀 보유 실데이터(검색/리포트와 동일 회사). 나머지는 더미.
- * - techStack: 분석 리포트 집계 가정 — 더미.
- * - issues   : 팀 뉴스 파이프라인(ChromaDB) 실데이터(cjEnmNewsFixtures)를 그대로 변환.
- *              기업 리포트(growth.news)와 동일한 단일 출처를 참조합니다.
- *
- * TODO: 백엔드(DB/AI) 연결 시 buildDummyFeed를 실제 집계 조회로 교체하세요.
+ * 세 섹션(trending·jobsByRole·issues) 모두 route.ts가 AI 백엔드 실데이터로 조회하며,
+ * 이 더미는 각 섹션 호출이 실패/타임아웃/검증 실패했을 때만 "그 섹션만" 대체하는
+ * 폴백으로 쓰입니다(섹션별 graceful degrade). 정상 시에는 사용되지 않습니다.
  */
 
-import type { HomeFeed, IssueBriefingItem } from "@/features/home/types/home"
+import type { HomeFeed, IssueBriefingItem, JobRoleGroup } from "@/features/home/types/home"
 import { cjEnmNewsFixtures } from "@/features/company/services/cjEnmNewsFixtures"
 
 // 뉴스 실데이터(NewsItem)를 이슈 브리핑 항목으로 변환합니다.
@@ -26,6 +22,114 @@ function toIssueBriefingItem(news: (typeof cjEnmNewsFixtures)[number]): IssueBri
     publishedAt: news.date,
   }
 }
+
+// 직군별 채용공고 더미 — 백엔드 `GET /home/jobs-by-role` 응답 모양 그대로.
+// companyId 는 실연결 시 실제 ObjectId 로 교체되며, 지금은 리포트 링크가 동작하는
+// CJ ENM(실데이터) 위주로 채워 클릭 흐름을 확인할 수 있게 합니다.
+const dummyJobsByRole: JobRoleGroup[] = [
+  {
+    role: "backend",
+    label: "백엔드",
+    jobs: [
+      {
+        id: "e3b1bca75a26a4582ed16ec4",
+        companyId: "6a3ca079d7da326c0781963c",
+        companyName: "CJ ENM",
+        title: "커머스부문 추천 플랫폼 엔지니어",
+        jobRole: "backend",
+        jobRoleLabel: "백엔드",
+        location: "서울",
+        employmentType: "정규직",
+        deadline: "2026-07-21",
+        deadlineType: "fixed_date",
+        url: "",
+        tags: ["Java", "Python", "AWS"],
+      },
+      {
+        id: "dummy-be-toss",
+        companyId: "toss",
+        companyName: "토스",
+        title: "Server Developer (Core Banking)",
+        jobRole: "backend",
+        jobRoleLabel: "백엔드",
+        location: "서울 강남구",
+        employmentType: "정규직",
+        deadline: null,
+        deadlineType: "rolling",
+        url: "",
+        tags: ["Kotlin", "Spring Boot", "MySQL"],
+      },
+    ],
+  },
+  {
+    role: "frontend",
+    label: "프론트엔드",
+    jobs: [
+      {
+        id: "500116c9eb165c7a8f97fbd3",
+        companyId: "6a3ca079d7da326c0781963c",
+        companyName: "CJ ENM",
+        title: "[Mnet Plus] Web/App Lead 경력채용",
+        jobRole: "frontend",
+        jobRoleLabel: "프론트엔드",
+        location: "서울 마포구",
+        employmentType: "정규직 (협의)",
+        deadline: null,
+        deadlineType: "rolling",
+        url: "",
+        tags: ["React", "Next.js", "TypeScript"],
+      },
+      {
+        id: "dummy-fe-baemin",
+        companyId: "baemin",
+        companyName: "배달의민족",
+        title: "프론트엔드 개발자 (주문 플랫폼)",
+        jobRole: "frontend",
+        jobRoleLabel: "프론트엔드",
+        location: "서울 송파구",
+        employmentType: "정규직",
+        deadline: "2026-07-15",
+        deadlineType: "fixed_date",
+        url: "",
+        tags: ["React", "TypeScript", "Next.js"],
+      },
+    ],
+  },
+  {
+    role: "ai",
+    label: "AI",
+    jobs: [
+      {
+        id: "5e9cabd040c307d7aa142e73",
+        companyId: "6a3ca079d7da326c0781963c",
+        companyName: "CJ ENM",
+        title: "Data Scientist 채용",
+        jobRole: "ai",
+        jobRoleLabel: "AI",
+        location: "서울",
+        employmentType: "정규직",
+        deadline: "2026-07-03",
+        deadlineType: "fixed_date",
+        url: "",
+        tags: ["Python", "LLM", "PyTorch"],
+      },
+      {
+        id: "dummy-ai-navercloud",
+        companyId: "navercloud",
+        companyName: "네이버클라우드",
+        title: "MLOps Engineer (HyperCLOVA)",
+        jobRole: "ai",
+        jobRoleLabel: "AI",
+        location: "성남 분당구",
+        employmentType: "정규직",
+        deadline: "2026-07-28",
+        deadlineType: "fixed_date",
+        url: "",
+        tags: ["Kubernetes", "MLOps", "Python"],
+      },
+    ],
+  },
+]
 
 /**
  * 홈 피드를 생성합니다.
@@ -82,17 +186,8 @@ export function buildDummyFeed(generatedAt: string): HomeFeed {
       },
     ],
 
-    // 채용담당자가 기대하는 기술 스택 — 1위는 잠금(로그인 유도)
-    techStack: {
-      question: "채용담당자가 지원자에게 기대하는\n백엔드 기술 스택은?",
-      items: [
-        { rank: 1, name: "", locked: true },
-        { rank: 2, name: "Spring Boot", locked: false },
-        { rank: 3, name: "MySQL", locked: false },
-        { rank: 4, name: "Redis", locked: false },
-        { rank: 5, name: "Docker", locked: false },
-      ],
-    },
+    // 직군별 채용공고 — 백엔드/프론트엔드/AI 탭 (백엔드 GET /home/jobs-by-role 가정)
+    jobsByRole: dummyJobsByRole,
 
     // 기업 이슈 브리핑 — 팀 뉴스 파이프라인 실데이터(최신순)
     issues: [...cjEnmNewsFixtures]

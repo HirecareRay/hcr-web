@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { BookOpen, ChevronLeft, Sparkles } from "lucide-react"
+import { BookOpen, Sparkles } from "lucide-react"
+import { PageTopBar } from "@/components/ui/pageTopBar"
 
 const savedCompanies = [
   {
@@ -17,14 +18,7 @@ export function SavedCompaniesPage() {
   const router = useRouter()
   return (
     <section className="bg-background min-h-full pb-10">
-      <header className="border-warm-border border-b bg-white px-5 pt-5 pb-4">
-        <div className="flex items-center gap-2">
-          <Link href="/mypage" aria-label="뒤로가기">
-            <ChevronLeft className="text-muted size-5" />
-          </Link>
-          <h1 className="text-ink text-base font-bold">관심 기업</h1>
-        </div>
-      </header>
+      <PageTopBar title="관심 기업" backTo="/mypage" />
 
       {savedCompanies.length === 0 ? (
         <div className="flex flex-col items-center justify-center px-5 pt-24 text-center">
