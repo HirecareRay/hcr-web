@@ -7,29 +7,9 @@ import { cn } from "@/lib/utils"
 import { useFitAnalysis } from "../hooks/useFitAnalysis"
 import type { FitAnalysis, JobMatch, CompanyMatch, CategorySummary } from "../types/analysis"
 
-// ── 자격요건 통합 카드 서브섹션 정의 ─────────────────────────────────
-// types: 해당 서브섹션에 포함할 matchTargetType 목록 (tech_tool은 자격요건에 병합)
+// ── 자격요건 카드: required·career·tech_tool을 하위 구분 없이 병합 ───
 
-const QUAL_SUBS: Array<{ key: string; label: string; emptyMsg: string; types: string[] }> = [
-  {
-    key: "required",
-    label: "자격요건",
-    emptyMsg: "채용공고에 별도 자격요건이 명시되지 않았습니다.",
-    types: ["required", "tech_tool"],
-  },
-  {
-    key: "career",
-    label: "경력사항",
-    emptyMsg: "채용공고에 경력 요건이 명시되지 않았습니다.",
-    types: ["career"],
-  },
-  {
-    key: "education",
-    label: "학력사항",
-    emptyMsg: "채용공고에 학력 요건이 명시되지 않았습니다.",
-    types: ["education"],
-  },
-]
+const QUALIFICATION_TYPES = ["required", "tech_tool", "career"]
 
 const COMPANY_SUBS = [
   { key: "industry_domain", label: "산업 및 사업 분야", emptyMsg: undefined },
@@ -103,20 +83,14 @@ function companyToItemData(m: CompanyMatch): MatchItemData {
 // ── 자격요건 통합 카드 (required · career · education · tech_tool) ───
 
 function QualificationCard({ jobMatches }: { jobMatches: JobMatch[] }) {
-  const grouped = Object.fromEntries(
-    QUAL_SUBS.map(({ key, types }) => [
-      key,
-      jobMatches
-        .filter((m) => types.includes(m.matchTargetType))
-        .map(jobToItemData)
-        .filter((item) => !!item.text?.trim())
-        .sort((a, b) => Number(b.matched) - Number(a.matched)),
-    ])
-  )
+  const items = jobMatches
+    .filter((m) => QUALIFICATION_TYPES.includes(m.matchTargetType))
+    .map(jobToItemData)
+    .filter((item) => !!item.text?.trim())
+    .sort((a, b) => Number(b.matched) - Number(a.matched))
 
-  const allItems = QUAL_SUBS.flatMap(({ key }) => grouped[key])
-  const total = allItems.length
-  const matched = allItems.filter((i) => i.matched).length
+  const total = items.length
+  const matched = items.filter((i) => i.matched).length
 
   return (
     <div className="border-warm-border rounded-3xl border bg-white p-4">
@@ -134,18 +108,15 @@ function QualificationCard({ jobMatches }: { jobMatches: JobMatch[] }) {
             </span>
           ))}
       </div>
-      <div className="divide-warm-border divide-y">
-        {QUAL_SUBS.map(({ key, label, emptyMsg }) => (
-          <div key={key} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
-            <p className="text-disabled text-[0.625rem] font-semibold tracking-wide">{label}</p>
-            {grouped[key].length > 0 ? (
-              grouped[key].map((item, i) => <MatchItem key={i} {...item} />)
-            ) : (
-              <p className="text-disabled text-xs">{emptyMsg}</p>
-            )}
-          </div>
-        ))}
-      </div>
+      {items.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          {items.map((item, i) => (
+            <MatchItem key={i} {...item} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-disabled text-xs">채용공고에 별도 자격요건이 명시되지 않았습니다.</p>
+      )}
     </div>
   )
 }
@@ -197,6 +168,10 @@ function JobTab({ jobMatches }: { jobMatches: JobMatch[] }) {
     .filter((m) => m.matchTargetType === "responsibility")
     .map(jobToItemData)
     .filter((i) => !!i.text?.trim())
+  const education = jobMatches
+    .filter((m) => m.matchTargetType === "education")
+    .map(jobToItemData)
+    .filter((i) => !!i.text?.trim())
   const preferred = jobMatches
     .filter((m) => m.matchTargetType === "preferred")
     .map(jobToItemData)
@@ -206,6 +181,11 @@ function JobTab({ jobMatches }: { jobMatches: JobMatch[] }) {
     <div className="flex flex-col gap-3">
       <QualificationCard jobMatches={jobMatches} />
       <div className="flex flex-col gap-3">
+        <MatchGroup
+          label="학력사항"
+          items={education}
+          emptyMessage="채용공고에 학력 요건이 명시되지 않았습니다."
+        />
         <MatchGroup
           label="주요업무"
           items={responsibility}
