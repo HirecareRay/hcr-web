@@ -71,45 +71,60 @@ function deadlineLabel(job: HomeJobPosting): string {
 }
 
 function JobRow({ job }: { job: HomeJobPosting }) {
+  // 클릭 시 원본 채용공고로 이동(새 탭). url 이 없으면 그 기업 분석 리포트로 폴백한다.
+  const hasUrl = job.url.length > 0
+
+  const rowClassName =
+    "border-warm-border hover:border-primary group block rounded-xl border p-3 transition-colors"
+
+  const body = (
+    <>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-ink group-hover:text-primary min-w-0 flex-1 truncate text-sm font-semibold">
+          {job.title}
+        </p>
+        <span className="text-primary shrink-0 text-xs font-medium">{deadlineLabel(job)}</span>
+      </div>
+
+      <div className="text-muted mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+        <span className="font-medium">{job.companyName}</span>
+        {job.employmentType && (
+          <>
+            <span>·</span>
+            <span>{job.employmentType}</span>
+          </>
+        )}
+        {job.location && (
+          <>
+            <span>·</span>
+            <span>{job.location}</span>
+          </>
+        )}
+      </div>
+
+      {job.tags.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {job.tags.slice(0, 3).map((tag) => (
+            <span key={tag} className="bg-warm-bg text-muted rounded-full px-2 py-0.5 text-xs">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </>
+  )
+
   return (
     <li>
-      <Link
-        href={routes.company(job.companyId)}
-        className="border-warm-border hover:border-primary group block rounded-xl border p-3 transition-colors"
-      >
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-ink group-hover:text-primary min-w-0 flex-1 truncate text-sm font-semibold">
-            {job.title}
-          </p>
-          <span className="text-primary shrink-0 text-xs font-medium">{deadlineLabel(job)}</span>
-        </div>
-
-        <div className="text-muted mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-          <span className="font-medium">{job.companyName}</span>
-          {job.employmentType && (
-            <>
-              <span>·</span>
-              <span>{job.employmentType}</span>
-            </>
-          )}
-          {job.location && (
-            <>
-              <span>·</span>
-              <span>{job.location}</span>
-            </>
-          )}
-        </div>
-
-        {job.tags.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {job.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="bg-warm-bg text-muted rounded-full px-2 py-0.5 text-xs">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </Link>
+      {hasUrl ? (
+        <a href={job.url} target="_blank" rel="noopener noreferrer" className={rowClassName}>
+          {body}
+        </a>
+      ) : (
+        <Link href={routes.company(job.companyId)} className={rowClassName}>
+          {body}
+        </Link>
+      )}
     </li>
   )
 }
