@@ -102,6 +102,10 @@ export interface QuestionEvent {
   ttsText?: string | null
   // 메인(기본) 질문인지 직전 답변 기반 꼬리질문인지 — 배지·흐름 표시용
   kind: "main" | "follow_up"
+  // 이 질문이 면접의 마지막 질문인지 — 답변 종료 후 버튼을 "결과 보기"로 바꾸고
+  // "다음"을 누르면 백엔드가 summary 를 보낸다. 백엔드가 마지막 질문에 true 를 실어 준다.
+  // (미지정 시 마지막 아님으로 간주 — 하위호환)
+  isLast?: boolean
 }
 
 // 실시간 자막 토큰 (STT 부분 결과)

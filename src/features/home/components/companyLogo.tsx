@@ -18,14 +18,23 @@
 "use client"
 
 import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 type CompanyLogoProps = {
   logoUrl: string | null
   logoText: string
   logoColor: string
+  // 로고 원 크기(Tailwind size-* 클래스). 기본은 홈 트렌딩 카드 크기(size-20).
+  // 면접 진입 기업칩 등 더 작은 자리에서는 size-16 처럼 넘겨 재사용한다.
+  sizeClass?: string
 }
 
-export function CompanyLogo({ logoUrl, logoText, logoColor }: CompanyLogoProps) {
+export function CompanyLogo({
+  logoUrl,
+  logoText,
+  logoColor,
+  sizeClass = "size-20",
+}: CompanyLogoProps) {
   const [errored, setErrored] = useState(false)
 
   if (logoUrl && !errored) {
@@ -38,14 +47,17 @@ export function CompanyLogo({ logoUrl, logoText, logoColor }: CompanyLogoProps) 
           // 16px급 이하로 로드된 건 Google 파비콘의 "없음" 지구본 → 이니셜 원으로 폴백
           if (e.currentTarget.naturalWidth <= 16) setErrored(true)
         }}
-        className="size-20 rounded-full bg-white object-contain"
+        className={cn(sizeClass, "rounded-full bg-white object-contain")}
       />
     )
   }
 
   return (
     <div
-      className="flex size-20 items-center justify-center rounded-full text-sm font-bold text-white"
+      className={cn(
+        sizeClass,
+        "flex items-center justify-center rounded-full text-sm font-bold text-white"
+      )}
       style={{ backgroundColor: logoColor }}
     >
       {logoText}

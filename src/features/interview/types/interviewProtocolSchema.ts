@@ -95,6 +95,8 @@ export const questionEventSchema = z.object({
   text: z.string(),
   ttsText: z.string().nullish(),
   kind: z.enum(["main", "follow_up"]),
+  // 마지막 질문 표식(백엔드가 마지막 질문에만 true) — 미지정 허용(하위호환)
+  isLast: z.boolean().optional(),
 })
 
 export const transcriptDeltaEventSchema = z.object({
