@@ -220,7 +220,7 @@ export function JobDetailPage({ jobId }: { jobId: string }) {
 
         <div className="mt-4 flex flex-col gap-2">
           <Link
-            href={`/jobs/${job.id}/fit`}
+            href={`/jobs/${job.id}/fit?companyId=${job.companyId}`}
             className="bg-primary flex items-center justify-center gap-1.5 rounded-2xl py-3 text-sm font-bold text-white"
           >
             <ClipboardCheck className="size-4" />내 서류 적합도 분석

@@ -1,9 +1,14 @@
 import { FitAnalysisPage } from "@/features/analysis/components/fitAnalysisPage"
-import { getJobDetail } from "@/features/jobs/services/jobService"
 
-export default async function Page({ params }: { params: Promise<{ jobId: string }> }) {
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ jobId: string }>
+  searchParams: Promise<{ companyId?: string }>
+}) {
   const { jobId } = await params
-  const job = getJobDetail(jobId)
+  const { companyId = "" } = await searchParams
 
-  return <FitAnalysisPage jobId={jobId} companyId={job?.companyId ?? ""} jobTitle={job?.title} />
+  return <FitAnalysisPage jobId={jobId} companyId={companyId} />
 }
