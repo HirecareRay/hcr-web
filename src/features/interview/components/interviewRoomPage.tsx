@@ -258,9 +258,10 @@ export function InterviewRoomPage({ companyId }: Props) {
     }
     return (
       <AiAnalyzingLoader
-        title="AI 면접관이 첫 질문을 준비하고 있어요"
+        center
+        title="첫 질문을 준비하고 있어요"
+        subtitle="AI 면접관이 곧 면접을 시작합니다"
         steps={["기업·직무 정보 반영", "면접 질문 구성", "면접관 준비"]}
-        skeletonCount={0}
       />
     )
   }
@@ -270,7 +271,9 @@ export function InterviewRoomPage({ companyId }: Props) {
   if (phase === "evaluating" && nextRequested && liveQuestion.isLast) {
     return (
       <AiAnalyzingLoader
+        center
         title="면접 결과를 정리하고 있어요"
+        subtitle="답변과 표정·음성을 종합해 리포트를 만들고 있어요"
         steps={["답변 내용 종합", "표정·시선 분석", "음성 안정도 분석", "강점·보완점 도출"]}
       />
     )
