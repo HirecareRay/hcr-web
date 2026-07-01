@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 export type MediaPermission = "idle" | "requesting" | "granted" | "denied"
 
-interface RequestOptions {
+export interface RequestOptions {
   video: boolean
   audio: boolean
 }
