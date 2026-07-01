@@ -9,7 +9,8 @@ export async function uploadFile(file: File, documentType: UploadType): Promise<
 
   const { data } = await axiosInstance.post("/api/mypage/documents/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
-    timeout: 90000,
+    // BFF→백엔드 LLM 파싱 타임아웃(120s)보다 짧으면 안 되므로 여유를 둔다.
+    timeout: 360000,
   })
 
   if (!data.ok) throw new Error(data.error ?? "upload failed")

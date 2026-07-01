@@ -21,19 +21,12 @@ export interface DocExists {
 const base = (docType: DocSlug) => `/api/mypage/documents/${docType}`
 
 export const documentService = {
-  // 전체 문서 등록 여부 맵(로그인 직후 등 전역 상태 동기화용). 특정 1건 여부는 exists(docType) 참고.
+  // 전체 문서 등록 여부 + 마지막 업데이트(created_datetime) 맵. 개별 조회 없이 이걸로 충분하다.
   existsAll: (): Promise<DocExists> =>
     axiosInstance.get("/api/mypage/documents/exists").then((r) => r.data),
 
   get: (docType: DocSlug): Promise<DocumentData> =>
     axiosInstance.get(base(docType)).then((r) => r.data),
-
-  exists: async (docType: DocSlug): Promise<boolean> => {
-    const response = await axiosInstance.get(base(docType), {
-      validateStatus: (status) => (status >= 200 && status < 300) || status === 404,
-    })
-    return response.status !== 404
-  },
 
   save: (docType: DocSlug, content: string): Promise<DocumentData> =>
     axiosInstance.put(base(docType), { content }).then((r) => r.data),
