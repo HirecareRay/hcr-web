@@ -27,6 +27,13 @@ export const documentService = {
   get: (docType: DocSlug): Promise<DocumentData> =>
     axiosInstance.get(base(docType)).then((r) => r.data),
 
+  exists: async (docType: DocSlug): Promise<boolean> => {
+    const response = await axiosInstance.get(base(docType), {
+      validateStatus: (status) => (status >= 200 && status < 300) || status === 404,
+    })
+    return response.status !== 404
+  },
+
   save: (docType: DocSlug, content: string): Promise<DocumentData> =>
     axiosInstance.put(base(docType), { content }).then((r) => r.data),
 

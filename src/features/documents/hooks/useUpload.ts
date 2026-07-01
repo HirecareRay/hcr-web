@@ -29,8 +29,10 @@ export function useUploadFiles() {
   useEffect(() => {
     if (!docExists) return
     items.forEach(({ id }) => {
-      const val = docExists[UPLOAD_TYPE_TO_SLUG[id]]
-      setExists(id, val !== null, val ?? undefined)
+      documentService
+        .exists(UPLOAD_TYPE_TO_SLUG[id])
+        .then((exists) => setExists(id, exists))
+        .catch(() => {})
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docExists])

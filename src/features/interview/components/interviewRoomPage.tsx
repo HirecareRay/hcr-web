@@ -14,15 +14,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, WifiOff } from "lucide-react"
-import { generalInterviewId, routes } from "@/constants/routes"
+import { WifiOff } from "lucide-react"
+import { AiAnalyzingLoader } from "@/components/ui/aiAnalyzingLoader"
+import { routes } from "@/constants/routes"
 import { useInterview } from "../hooks/useInterview"
 import { useMediaStream } from "../hooks/useMediaStream"
 import { useTts } from "../hooks/useTts"
 import { useInterviewTimer } from "../hooks/useInterviewTimer"
 import { useLiveStreaming } from "../hooks/useLiveStreaming"
 import { useInterviewSessionStore } from "../store/interviewSessionStore"
-import { useInterviewSummaryStore } from "../store/interviewSummaryStore"
 import { InterviewSetup } from "./room/interviewSetup"
 import { SessionTimerBar } from "./room/sessionTimerBar"
 import { VideoStage } from "./room/videoStage"
@@ -39,9 +39,13 @@ interface Props {
 export function InterviewRoomPage({ companyId }: Props) {
   const router = useRouter()
 
-  // 기업 없이 보는 "일반 면접"이면 WS 에 기업 컨텍스트를 보내지 않는다(약속값 general 은 ObjectId 가 아님).
-  // 라우트용(로그인 복귀·결과 이동)에는 companyId("general")를 그대로 쓴다 — URL 은 안 깨진다.
-  const wsCompanyId = companyId === generalInterviewId ? null : companyId
+  // 일반 면접(general)도 companyId 를 그대로 WS 로 실어 보낸다. 백엔드는 이 값을 두 곳에 쓰는데,
+  //   ① 기업 컨텍스트 조회 — general 은 ObjectId 가 아니라 조회에 실패하지만 백엔드가 안전하게
+  //      무시한다(get_company_context 가 예외를 흡수 → 컨텍스트만 비고 면접은 그대로 진행).
+  //   ② 결과 저장 키 — 세션은 이 company_id 로 저장되고, 결과 페이지는 /results/{companyId} 로
+  //      조회한다. general 을 null 로 비우면 백엔드가 ''(빈 문자열)로 저장해 'general' 조회와
+  //      키가 어긋나 404 가 난다. 저장 키 == 조회 키를 맞추려면 여기서 general 을 반드시 실어야 한다.
+  const wsCompanyId = companyId
 
   // ─── 상태머신 ───
   const phase = useInterviewSessionStore((s) => s.phase)
@@ -56,8 +60,6 @@ export function InterviewRoomPage({ companyId }: Props) {
   const reset = useInterviewSessionStore((s) => s.reset)
   const cameraConsented = useInterviewSessionStore((s) => s.cameraConsented)
   const setCameraConsent = useInterviewSessionStore((s) => s.setCameraConsent)
-  const setLiveSummary = useInterviewSummaryStore((s) => s.setSummary)
-  const clearLiveSummary = useInterviewSummaryStore((s) => s.clearSummary)
 
   // ─── 미디어 · 음성 · 세션 ───
   const { start, isStarting, startError } = useInterview()
@@ -146,10 +148,10 @@ export function InterviewRoomPage({ companyId }: Props) {
     setVoiceAnswer(live.transcript)
   }, [mode, voiceStep, live.transcript])
 
-  // 최종 요약 도착 → 결과 페이지로 넘길 핸드오프 스토어에 담고 종료 전이
+  // 최종 요약(WS summary) 도착 → 종료 전이. 결과 자체는 백엔드가 저장하므로 결과 페이지가
+  // /results/{companyId} 로 조회한다(요약을 프론트로 들고 넘기지 않는다).
   useEffect(() => {
     if (!live.summary) return
-    setLiveSummary(live.summary)
     finishNow()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live.summary])
@@ -169,12 +171,10 @@ export function InterviewRoomPage({ companyId }: Props) {
 
   const handleStart = useCallback(
     (payload: { mode: InterviewMode; totalDurationSec: number; jobTitle: string }) => {
-      // 새 면접 시작 → 직전 세션의 요약 핸드오프를 비워 옛 결과가 새 면접에 섞이지 않게 한다.
-      clearLiveSummary()
       const cfg: InterviewConfig = { companyId, ...payload }
       start(cfg)
     },
-    [companyId, start, clearLiveSummary]
+    [companyId, start]
   )
 
   const handleBeginAnswering = useCallback(() => {
@@ -230,7 +230,9 @@ export function InterviewRoomPage({ companyId }: Props) {
         startError={startError}
         cameraConsented={cameraConsented}
         onCameraConsentChange={setCameraConsent}
-        onRequestDevices={() => media.request({ video: true, audio: true })}
+        onRequestDevices={(options) =>
+          options.video || options.audio ? void media.request(options) : media.stop()
+        }
         onStart={handleStart}
       />
     )
@@ -238,35 +240,50 @@ export function InterviewRoomPage({ companyId }: Props) {
 
   if (!session) return null
 
-  // 첫 질문 도착 전 — 연결 게이트(연결 중 / 끊김 재시도)
+  // 첫 질문 도착 전 — 연결 게이트(끊김 재시도 / 첫 질문 생성 중)
   if (!liveQuestion) {
-    const closed = live.socketState === "closed"
+    if (live.socketState === "closed") {
+      return (
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
+          <WifiOff className="text-error h-8 w-8" />
+          <p className="text-ink text-sm font-semibold">면접관과 연결이 끊어졌어요</p>
+          <p className="text-muted text-xs">네트워크를 확인하고 다시 시도해 주세요.</p>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="bg-primary mt-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            다시 시도
+          </button>
+        </div>
+      )
+    }
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
-        {closed ? (
-          <>
-            <WifiOff className="text-error h-8 w-8" />
-            <p className="text-ink text-sm font-semibold">면접관과 연결이 끊어졌어요</p>
-            <p className="text-muted text-xs">네트워크를 확인하고 다시 시도해 주세요.</p>
-            <button
-              type="button"
-              onClick={handleRetry}
-              className="bg-primary mt-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
-            >
-              다시 시도
-            </button>
-          </>
-        ) : (
-          <>
-            <Loader2 className="text-primary h-8 w-8 animate-spin" />
-            <p className="text-muted text-sm">면접관과 연결 중…</p>
-          </>
-        )}
-      </div>
+      <AiAnalyzingLoader
+        center
+        title="첫 질문을 준비하고 있어요"
+        subtitle="AI 면접관이 곧 면접을 시작합니다"
+        steps={["기업·직무 정보 반영", "면접 질문 구성", "면접관 준비"]}
+      />
+    )
+  }
+
+  // 마지막 답변 제출 후 "결과 보기"를 누른 상태 — summary 도착 전까지 전체 화면 결과 정리 로더.
+  // summary 가 오면 finishNow → 결과 페이지로 이동한다.
+  if (phase === "evaluating" && nextRequested && liveQuestion.isLast) {
+    return (
+      <AiAnalyzingLoader
+        center
+        title="면접 결과를 정리하고 있어요"
+        subtitle="답변과 표정·음성을 종합해 리포트를 만들고 있어요"
+        steps={["답변 내용 종합", "표정·시선 분석", "음성 안정도 분석", "강점·보완점 도출"]}
+      />
     )
   }
 
   const connectionLost = live.socketState === "closed"
+  // 카메라 트랙이 실제로 있을 때만 화상 스테이지를 노출한다(표정 분석 off = 순수 텍스트/음성).
+  const hasCameraTrack = !!media.stream && media.stream.getVideoTracks().length > 0
 
   return (
     <div className="space-y-4 px-4 py-4">
@@ -288,33 +305,47 @@ export function InterviewRoomPage({ companyId }: Props) {
         questionNo={liveQuestionNo}
       />
 
-      <div className="relative">
-        <VideoStage stream={media.stream} videoRef={analysisVideoRef} />
-        <div className="absolute top-2 right-2">
-          <ListeningIndicator active={listening} />
+      {/* 카메라(표정 분석)를 켠 경우에만 화상 스테이지를 노출한다 — 순수 텍스트 면접에선 숨긴다. */}
+      {hasCameraTrack && (
+        <div className="relative">
+          <VideoStage stream={media.stream} videoRef={analysisVideoRef} />
+          <div className="absolute top-2 right-2">
+            <ListeningIndicator active={listening} />
+          </div>
         </div>
-      </div>
+      )}
 
       <InterviewerPanel
         questionText={liveQuestion.text}
         questionNo={liveQuestionNo}
-        isFollowUp={liveQuestion.questionId.startsWith("f")}
+        isFollowUp={liveQuestion.kind === "follow_up"}
         isSpeaking={tts.isSpeaking}
         ttsSupported={tts.supported}
         onReplay={() => void tts.speak(liveQuestion.ttsText ?? liveQuestion.text)}
       />
 
       {phase === "evaluating" ? (
-        <EvaluationPanel
-          transcript={submittedAnswer || live.transcript}
-          nextRequested={nextRequested}
-          onNext={handleNext}
-        />
+        nextRequested ? (
+          // 다음 질문 생성 대기(마지막 질문 요약 대기는 위에서 전체 화면으로 처리)
+          <AiAnalyzingLoader
+            title="AI가 다음 질문을 준비하고 있어요"
+            steps={["직전 답변 분석", "다음 질문 구성"]}
+            skeletonCount={0}
+            className="px-0 py-2"
+          />
+        ) : (
+          <EvaluationPanel
+            transcript={submittedAnswer || live.transcript}
+            isLast={liveQuestion.isLast ?? false}
+            onNext={handleNext}
+          />
+        )
       ) : (
         <AnswerPanel
           mode={mode}
           phase={phase}
           voiceStep={voiceStep}
+          stream={media.stream}
           answerText={answerText}
           liveTranscript={live.transcript}
           voiceAnswer={voiceAnswer}
