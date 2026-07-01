@@ -315,6 +315,7 @@ export function InterviewRoomPage({ companyId }: Props) {
           mode={mode}
           phase={phase}
           voiceStep={voiceStep}
+          stream={media.stream}
           answerText={answerText}
           liveTranscript={live.transcript}
           voiceAnswer={voiceAnswer}
