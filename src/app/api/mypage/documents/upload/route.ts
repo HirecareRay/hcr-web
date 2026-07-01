@@ -48,6 +48,8 @@ export async function POST(request: Request) {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      // LLM 파싱 라우트라 기본 30s로는 부족 — 프론트(uploadService) 타임아웃과 맞춘다.
+      timeout: 120000,
     })
     // // 환경변수(예: FASTAPI_URL)가 없다면 실제 FastAPI 주소(예: http://localhost:8000)를 입력하세요.
     // const fastapiUrl = process.env.FASTAPI_URL ?? "http://localhost:8000/documents/upload"
