@@ -1,17 +1,11 @@
 /**
  * dummyFeed.ts
  *
- * 홈 피드 더미데이터. 프론트가 아니라 BFF 옆에 격리합니다.
+ * 홈 피드 "폴백" 더미데이터. 프론트가 아니라 BFF 옆에 격리합니다.
  *
- * 데이터 출처:
- * - trending   : CJ ENM 1건은 팀 보유 실데이터(검색/리포트와 동일 회사). 나머지는 더미.
- * - jobsByRole : 백엔드 `GET /home/jobs-by-role` 집계 가정 — 더미.
- * - issues     : 팀 뉴스 파이프라인(ChromaDB) 실데이터(cjEnmNewsFixtures)를 그대로 변환.
- *                기업 리포트(growth.news)와 동일한 단일 출처를 참조합니다.
- *
- * TODO: 백엔드 연결 시 buildDummyFeed 내부를 실제 조회로 교체하세요.
- *       - jobsByRole → GET /home/jobs-by-role
- *       - issues     → GET /home/news
+ * 세 섹션(trending·jobsByRole·issues) 모두 route.ts가 AI 백엔드 실데이터로 조회하며,
+ * 이 더미는 각 섹션 호출이 실패/타임아웃/검증 실패했을 때만 "그 섹션만" 대체하는
+ * 폴백으로 쓰입니다(섹션별 graceful degrade). 정상 시에는 사용되지 않습니다.
  */
 
 import type { HomeFeed, IssueBriefingItem, JobRoleGroup } from "@/features/home/types/home"
