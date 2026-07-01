@@ -7,7 +7,7 @@ export default function UploadList() {
   const { items, upload } = useUploadFiles()
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {items.map((item) => (
         <UploadStepCard key={item.id} item={item} onUpload={(file) => upload(item.id, file)} />
       ))}
