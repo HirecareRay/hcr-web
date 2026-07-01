@@ -9,7 +9,7 @@ import { UPLOAD_TYPE_TO_SLUG } from "../hooks/useUpload"
 
 interface Props {
   item: UploadItem
-  onUpload: (file: File) => void
+  onUpload: (file: File) => Promise<boolean>
 }
 
 // 문서 종류별 아이콘 — 한눈에 구분되도록 각기 다른 아이콘 사용
@@ -30,8 +30,10 @@ export default function UploadStepCard({ item, onUpload }: Props) {
     if (file) setSelectedFile(file)
   }
 
-  const handleUploadClick = () => {
-    if (selectedFile) onUpload(selectedFile)
+  const handleUploadClick = async () => {
+    if (!selectedFile) return
+    const ok = await onUpload(selectedFile)
+    if (ok) setSelectedFile(null)
   }
 
   const hasFileOrDoc = Boolean(selectedFile) || Boolean(item.exists)
