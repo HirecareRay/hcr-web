@@ -15,7 +15,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { EventSnapshotMessage, LandmarkFrameMessage } from "../types/interviewProtocol"
-import { emptyFaceMetrics, type FaceMetrics, type NonverbalEvent } from "../types/nonverbal"
+import {
+  emptyFaceMetrics,
+  hasFaceSignal,
+  type FaceMetrics,
+  type NonverbalEvent,
+} from "../types/nonverbal"
 import { metricsToFrame } from "../lib/metricsToFrame"
 import { shouldEmit } from "../lib/throttle"
 import {
@@ -113,9 +118,11 @@ export function useNonverbalCapture({
 
       if (!answering) return // 답변 구간이 아니면 오버레이만, 송신 없음
 
-      // landmark_frame ~1s throttle 송신 — 소켓이 닫혀 있어 실제 송신에 실패하면
-      // 카운트하지 않는다(검증 지표가 실제 전송 수를 반영하도록).
-      if (shouldEmit(lastSendAtRef.current, now, cfg.sendIntervalMs)) {
+      // landmark_frame ~1s throttle 송신 — 얼굴이 실제로 검출된 프레임만 보낸다.
+      // 카메라 가림·미검출(전 필드 null) 프레임을 보내면 백엔드가 "데이터 있음"으로 오판해
+      // 표정 점수를 가짜로(시선이탈 0% → 만점) 채우므로, 미검출 프레임은 송신하지 않는다.
+      // 소켓이 닫혀 실제 송신에 실패해도 카운트하지 않는다(검증 지표가 실제 전송 수를 반영).
+      if (hasFaceSignal(next) && shouldEmit(lastSendAtRef.current, now, cfg.sendIntervalMs)) {
         lastSendAtRef.current = now
         if (sendLandmark(metricsToFrame(next))) setSentFrameCount((c) => c + 1)
       }
