@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { Pencil } from "lucide-react"
 import axiosInstance from "@/lib/axiosInstance"
 import DocumentForm from "@/features/documents/components/DocumentForm"
+import DocumentView from "@/features/documents/components/DocumentView"
 import { documentService } from "@/features/documents/services/documentService"
 import { useAuthStore } from "@/features/auth/store/authStore"
+import { PageTopBar } from "@/components/ui/pageTopBar"
 
 const DOC_LABELS: Record<string, string> = {
   resume: "이력서",
@@ -21,6 +24,7 @@ export default function DocumentEditPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
+  const [isEditing, setIsEditing] = useState(false)
   const setDocExists = useAuthStore((s) => s.setDocExists)
 
   useEffect(() => {
@@ -45,6 +49,8 @@ export default function DocumentEditPage() {
     setError("")
     try {
       await axiosInstance.put(`/api/mypage/documents/${docType}`, formData)
+      setData(formData)
+      setIsEditing(false)
     } catch {
       setError("저장에 실패했습니다.")
     } finally {
@@ -63,20 +69,62 @@ export default function DocumentEditPage() {
     }
   }
 
-  if (loading) return <div className="p-5">불러오는 중...</div>
+  const title = DOC_LABELS[docType] ?? docType
+
+  if (loading) {
+    return (
+      <section className="bg-background flex min-h-full flex-col">
+        <PageTopBar title={title} backTo="/mypage/documents" />
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-muted text-sm">불러오는 중...</p>
+        </div>
+      </section>
+    )
+  }
+
   if (!data) return null
 
   return (
-    <div className="p-5 pb-24">
-      <h1 className="mb-6 text-xl font-bold">{DOC_LABELS[docType] ?? docType} 편집</h1>
-      <DocumentForm
-        docType={docType}
-        initialData={data}
-        saving={saving}
-        error={error}
-        onSave={handleSave}
-        onDelete={handleDelete}
-      />
-    </div>
+    <section className="bg-background min-h-full pb-24">
+      <PageTopBar title={title} backTo="/mypage/documents" />
+      <div className="px-5 pt-5">
+        {isEditing ? (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setIsEditing(false)
+                setError("")
+              }}
+              className="text-muted mb-4 text-sm font-medium"
+            >
+              취소
+            </button>
+            <DocumentForm
+              docType={docType}
+              initialData={data}
+              saving={saving}
+              error={error}
+              onSave={handleSave}
+              onDelete={handleDelete}
+            />
+          </>
+        ) : (
+          <>
+            <div className="mb-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="bg-primary hover:bg-coral-beam flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold text-white transition-colors"
+              >
+                <Pencil className="size-4" />
+                편집
+              </button>
+            </div>
+            <DocumentView docType={docType} data={data} />
+          </>
+        )}
+      </div>
+    </section>
   )
 }
