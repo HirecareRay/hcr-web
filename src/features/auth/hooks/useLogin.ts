@@ -21,7 +21,7 @@ export function useLogin() {
       // 토큰은 BFF 가 쿠키로 심었으니, 여기선 유저 정보만 전역 스토어에 채운다.
       setUser(result.user)
       documentService
-        .exists()
+        .existsAll()
         .then(setDocExists)
         .catch((e) => logger.error("문서 존재 여부 조회 실패", e))
       // 보호 페이지에서 튕겨와 로그인했다면 원래 가려던 곳으로, 아니면 홈으로.
