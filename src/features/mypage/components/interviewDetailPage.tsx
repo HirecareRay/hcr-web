@@ -77,7 +77,7 @@ export function InterviewDetailPage({ interviewId }: { interviewId: string }) {
   if (!detail) {
     return (
       <section className="bg-background min-h-full pb-10">
-        <header className="border-warm-border border-b bg-white px-5 pt-10 pb-4">
+        <header className="border-warm-border border-b bg-white px-5 pt-5 pb-4">
           <div className="flex items-center gap-2">
             <Link href="/mypage/interview" aria-label="뒤로가기">
               <ChevronLeft className="text-muted size-5" />
@@ -94,7 +94,7 @@ export function InterviewDetailPage({ interviewId }: { interviewId: string }) {
 
   return (
     <section className="bg-background min-h-full pb-10">
-      <header className="border-warm-border border-b bg-white px-5 pt-10 pb-4">
+      <header className="border-warm-border border-b bg-white px-5 pt-5 pb-4">
         <div className="flex items-center gap-2">
           <Link href="/mypage/interview" aria-label="뒤로가기">
             <ChevronLeft className="text-muted size-5" />
