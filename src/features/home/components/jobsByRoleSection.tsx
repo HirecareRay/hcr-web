@@ -2,17 +2,16 @@
  * jobsByRoleSection.tsx
  *
  * "직군별 채용공고" 카드. 백엔드/프론트엔드/AI 탭으로 나눠
- * 각 직군의 실채용공고를 보여줍니다. 공고 클릭 시 해당 기업 분석 리포트로 이동합니다.
+ * 각 직군의 실채용공고를 보여줍니다. 공고 1건당 원본공고·적합도분석 버튼을 제공합니다.
  */
 
 "use client"
 
 import { useState } from "react"
 import Link from "next/link"
-import { Briefcase } from "lucide-react"
+import { Briefcase, ClipboardCheck, ExternalLink } from "lucide-react"
 import { SectionHeader } from "./sectionHeader"
 import { formatShortDate } from "../lib/formatters"
-import { routes } from "@/constants/routes"
 import type { HomeJobPosting, JobRoleGroup } from "../types/home"
 
 export function JobsByRoleSection({ groups }: { groups: JobRoleGroup[] }) {
@@ -71,18 +70,10 @@ function deadlineLabel(job: HomeJobPosting): string {
 }
 
 function JobRow({ job }: { job: HomeJobPosting }) {
-  // 클릭 시 원본 채용공고로 이동(새 탭). url 이 없으면 그 기업 분석 리포트로 폴백한다.
-  const hasUrl = job.url.length > 0
-
-  const rowClassName =
-    "border-warm-border hover:border-primary group block rounded-xl border p-3 transition-colors"
-
-  const body = (
-    <>
+  return (
+    <li className="border-warm-border rounded-xl border p-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-ink group-hover:text-primary min-w-0 flex-1 truncate text-sm font-semibold">
-          {job.title}
-        </p>
+        <p className="text-ink min-w-0 flex-1 truncate text-sm font-semibold">{job.title}</p>
         <span className="text-primary shrink-0 text-xs font-medium">{deadlineLabel(job)}</span>
       </div>
 
@@ -111,20 +102,25 @@ function JobRow({ job }: { job: HomeJobPosting }) {
           ))}
         </div>
       )}
-    </>
-  )
 
-  return (
-    <li>
-      {hasUrl ? (
-        <a href={job.url} target="_blank" rel="noopener noreferrer" className={rowClassName}>
-          {body}
+      <div className="mt-3 flex gap-2">
+        <a
+          href={job.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="border-warm-border text-muted hover:bg-warm-bg flex flex-1 items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors"
+        >
+          <ExternalLink className="size-3.5" />
+          공고 링크
         </a>
-      ) : (
-        <Link href={routes.company(job.companyId)} className={rowClassName}>
-          {body}
+        <Link
+          href={`/jobs/${job.id}/fit?companyId=${job.companyId}`}
+          className="bg-coral-light text-primary flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-bold"
+        >
+          <ClipboardCheck className="size-3.5" />
+          적합도 분석
         </Link>
-      )}
+      </div>
     </li>
   )
 }

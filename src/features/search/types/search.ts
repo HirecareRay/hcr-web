@@ -16,6 +16,7 @@ export type CompanySearchResult = {
 
 export type RelatedJobPosting = {
   id: string
+  companyId: string
   companyName: string
   title: string
   url: string
