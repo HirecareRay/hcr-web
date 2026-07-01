@@ -15,6 +15,9 @@ export const apiEndpoints = {
     jobs: "/api/companies/jobs",
     report: (id: string) => `/api/companies/${id}/report`,
   },
+  jobs: {
+    search: "/api/jobs/search",
+  },
   interview: {
     sessions: "/api/interview/sessions",
     // 마이페이지 "AI 면접 기록" 목록 — 유저의 세션 요약을 최신순으로 조회.
