@@ -23,9 +23,6 @@ export function IssueBriefingSection({ issues }: { issues: IssueBriefingItem[] }
               rel="noopener noreferrer"
               className="hover:bg-warm-bg flex items-center gap-3 px-4 py-3 transition-colors"
             >
-              <span className="bg-coral-light text-primary shrink-0 rounded-md px-2 py-1 text-xs font-bold">
-                {issue.companyTag}
-              </span>
               <p className="text-ink min-w-0 flex-1 truncate text-sm">{issue.headline}</p>
               <span className="text-disabled shrink-0 text-xs">
                 {formatShortDate(issue.publishedAt)}
