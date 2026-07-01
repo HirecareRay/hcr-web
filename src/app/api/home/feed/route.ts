@@ -17,13 +17,6 @@ import { homeFeedSchema, trendingCompanySchema } from "@/features/home/types/hom
 import type { TrendingCompany } from "@/features/home/types/home"
 import { logger } from "@/lib/logger"
 
-// 더미 폴백 경로에서만 쓰는 인위적 지연(ms) — 실데이터 경로에선 적용하지 않는다.
-// 백엔드가 죽어 더미로 떨어질 때만 기존 로딩/스켈레톤 UX를 유지하기 위함.
-// TODO: techStack·issues까지 실연결되면 이 지연은 제거하세요.
-const dummyFeedDelayMs = 1200
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
 const trendingListSchema = z.array(trendingCompanySchema)
 
 /**
@@ -73,8 +66,6 @@ export async function GET() {
 
     if (!backendTrending) {
       // 백엔드 장애 — 더미 trending으로 폴백(홈 전체가 더미로 정상 렌더).
-      // 이 경로에서만 로딩/스켈레톤 UX용 인위적 지연을 유지한다.
-      await delay(dummyFeedDelayMs)
       const fallback = homeFeedSchema.parse(buildDummyFeed(now))
       return NextResponse.json({ success: true, data: fallback })
     }

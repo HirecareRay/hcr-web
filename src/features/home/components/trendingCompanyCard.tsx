@@ -10,6 +10,7 @@ import { ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { routes } from "@/constants/routes"
 import type { TrendingCompany } from "../types/home"
+import { CompanyLogo } from "./companyLogo"
 
 // 랭킹 뱃지 배경/글자색 — 상위 3위는 금·은·동 메달색, 4위부터는 중립 톤.
 function rankBadgeClass(rank: number): string {
@@ -31,11 +32,12 @@ export function TrendingCompanyCard({ company }: { company: TrendingCompany }) {
         {company.rank}
       </span>
 
-      <div
-        className="mt-2 flex size-20 items-center justify-center rounded-full text-sm font-bold text-white"
-        style={{ backgroundColor: company.logoColor }}
-      >
-        {company.logoText}
+      <div className="mt-2">
+        <CompanyLogo
+          logoUrl={company.logoUrl}
+          logoText={company.logoText}
+          logoColor={company.logoColor}
+        />
       </div>
 
       <h3 className="text-ink mt-3 line-clamp-1 text-center text-base font-bold">{company.name}</h3>

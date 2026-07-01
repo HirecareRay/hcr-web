@@ -25,6 +25,8 @@ export type TrendingCompany = {
   logoText: string
   /** 로고 원 배경색 (hex) */
   logoColor: string
+  /** 회사 로고 URL. 없거나 로드 실패 시 logoText+logoColor 이니셜 원으로 폴백 */
+  logoUrl: string | null
 }
 
 /** 기술 스택 랭킹의 개별 항목 */
