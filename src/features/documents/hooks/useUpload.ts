@@ -21,7 +21,7 @@ export function useUploadFiles() {
   // 페이지 진입마다 서버에서 최신 존재 여부를 가져와 스토어와 동기화
   useEffect(() => {
     documentService
-      .exists()
+      .existsAll()
       .then(setDocExists)
       .catch((e) => logger.error("문서 존재 여부 조회 실패", e))
   }, [])
@@ -44,7 +44,7 @@ export function useUploadFiles() {
       await uploadFile(file, type)
       setExists(type, true)
       documentService
-        .exists()
+        .existsAll()
         .then(setDocExists)
         .catch((e) => logger.error("문서 존재 여부 조회 실패", e))
       return true

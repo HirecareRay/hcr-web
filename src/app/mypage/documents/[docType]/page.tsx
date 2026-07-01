@@ -56,7 +56,7 @@ export default function DocumentEditPage() {
     if (!confirm(`${DOC_LABELS[docType] ?? docType} 문서를 삭제하시겠습니까?`)) return
     try {
       await axiosInstance.delete(`/api/mypage/documents/${docType}`)
-      setDocExists(await documentService.exists())
+      setDocExists(await documentService.existsAll())
       router.replace("/mypage/documents")
     } catch {
       setError("삭제에 실패했습니다.")
