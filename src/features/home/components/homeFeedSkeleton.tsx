@@ -6,7 +6,7 @@
  */
 
 function Block({ className }: { className: string }) {
-  return <div className={`bg-warm-bg animate-pulse rounded-2xl ${className}`} />
+  return <div className={`bg-skeleton animate-pulse rounded-2xl ${className}`} />
 }
 
 export function HomeFeedSkeleton() {

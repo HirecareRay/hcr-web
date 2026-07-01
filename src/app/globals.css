@@ -13,6 +13,7 @@
   --color-gutter: #ececec; /* 데스크탑 양옆 여백 — 콘텐츠보다 한 단계 어둡게 구분 */
   --color-warm-bg: #fff9f6; /* 웜 톤 배경 (강조 영역) */
   --color-warm-border: #f1d8cf; /* 보더 */
+  --color-skeleton: #e7e0d9; /* 로딩 스켈레톤 블록 — 배경(#fafafa) 위에서 확실히 보이는 웜 그레이 */
 
   /* Status */
   --color-error: #f24d4d;
