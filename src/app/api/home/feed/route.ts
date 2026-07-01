@@ -3,7 +3,8 @@
 // 홈(메인) 피드 BFF.
 // - trending(인기기업 순위): AI 백엔드(GET /rankings/trending) 실데이터.
 //   응답은 래퍼 없는 TrendingCompany[] 배열(이미 camelCase)이며 인증 불필요(공개 홈).
-// - techStack·issues: 아직 더미(buildDummyFeed).
+// - jobsByRole·issues: 아직 더미(buildDummyFeed).
+//   실연결 시 GET /home/jobs-by-role · GET /home/news 로 교체.
 //
 // 홈은 공개 페이지라 백엔드가 죽어도 화면이 깨지면 안 된다.
 // trending 호출이 실패/타임아웃/검증 실패하면 502 대신 더미 trending으로 폴백해
@@ -50,9 +51,9 @@ async function fetchBackendTrending(limit: number): Promise<TrendingCompany[] | 
  *   get:
  *     summary: 홈 피드 조회 API
  *     description: >
- *       메인 화면의 트렌딩 채용공고·기술 스택 랭킹·기업 이슈 브리핑을 한 번에 반환합니다.
+ *       메인 화면의 트렌딩 기업·직군별 채용공고·기업 이슈 브리핑을 한 번에 반환합니다.
  *       trending(인기기업 순위)은 AI 백엔드 실데이터이며, 백엔드 장애 시 더미로 폴백합니다.
- *       techStack·issues는 현재 더미 데이터 응답입니다.
+ *       jobsByRole·issues는 현재 더미 데이터 응답입니다.
  *     responses:
  *       200:
  *         description: 피드 조회 성공 (백엔드 장애 시에도 더미로 graceful degrade)
@@ -70,7 +71,7 @@ export async function GET() {
       return NextResponse.json({ success: true, data: fallback })
     }
 
-    // 실데이터 trending을 더미 피드 위에 덮어쓴다(techStack·issues는 더미 유지).
+    // 실데이터 trending을 더미 피드 위에 덮어쓴다(jobsByRole·issues는 더미 유지).
     const feed = { ...buildDummyFeed(now), trending: backendTrending }
 
     // 응답이 계약(HomeFeed)을 지키는지 Zod로 검증한 뒤 내려보낸다.
