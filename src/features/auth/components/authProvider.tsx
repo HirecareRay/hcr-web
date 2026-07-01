@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!active) return
         setUser(user)
         documentService
-          .exists()
+          .existsAll()
           .then(setDocExists)
           .catch((e) => logger.error("문서 존재 여부 조회 실패", e))
       })

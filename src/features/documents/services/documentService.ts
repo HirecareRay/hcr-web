@@ -21,7 +21,8 @@ export interface DocExists {
 const base = (docType: DocSlug) => `/api/mypage/documents/${docType}`
 
 export const documentService = {
-  exists: (): Promise<DocExists> =>
+  // 전체 문서 등록 여부 맵(로그인 직후 등 전역 상태 동기화용). 특정 1건 여부는 exists(docType) 참고.
+  existsAll: (): Promise<DocExists> =>
     axiosInstance.get("/api/mypage/documents/exists").then((r) => r.data),
 
   get: (docType: DocSlug): Promise<DocumentData> =>
