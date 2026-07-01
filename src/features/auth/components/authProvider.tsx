@@ -7,16 +7,24 @@
 import { useEffect } from "react"
 import { fetchMe } from "../services/authService"
 import { useAuthStore } from "../store/authStore"
+import { documentService } from "@/features/documents/services/documentService"
+import { logger } from "@/lib/logger"
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser)
   const clearUser = useAuthStore((s) => s.clearUser)
+  const setDocExists = useAuthStore((s) => s.setDocExists)
 
   useEffect(() => {
     let active = true
     fetchMe()
       .then((user) => {
-        if (active) setUser(user)
+        if (!active) return
+        setUser(user)
+        documentService
+          .exists()
+          .then(setDocExists)
+          .catch((e) => logger.error("문서 존재 여부 조회 실패", e))
       })
       .catch(() => {
         if (active) clearUser()
@@ -24,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false
     }
-  }, [setUser, clearUser])
+  }, [setUser, clearUser, setDocExists])
 
   return <>{children}</>
 }

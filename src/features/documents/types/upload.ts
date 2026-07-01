@@ -8,4 +8,6 @@ export interface UploadItem {
   file?: File | null
   uploadedUrl?: string
   exists?: boolean
+  createdAt?: string
+  uploading?: boolean
 }
