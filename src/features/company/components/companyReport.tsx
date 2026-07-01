@@ -4,7 +4,6 @@ import { useState } from "react"
 import Link from "next/link"
 import { BadgeCheck, BarChart2, Bot, ChevronRight, FileText, Sparkles, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AiAnalyzingLoader } from "@/components/ui/aiAnalyzingLoader"
 import { PageTopBar } from "@/components/ui/pageTopBar"
 import { routes } from "@/constants/routes"
 import { useAuthStore } from "@/features/auth/store/authStore"
@@ -18,6 +17,7 @@ import { ReviewSection } from "./sections/reviewSection"
 import { GrowthSection } from "./sections/growthSection"
 import { HiringSection } from "./sections/hiringSection"
 import { InsightSection } from "./sections/insightSection"
+import { ReportSkeleton } from "./reportSkeleton"
 
 interface Props {
   companyId: string
@@ -339,12 +339,8 @@ function formatDday(
 }
 
 function ReportLoading() {
-  return (
-    <AiAnalyzingLoader
-      title="AI가 기업을 분석하고 있어요"
-      steps={["재무 지표 분석", "최근 뉴스 읽는 중", "채용공고 정리", "면접 포인트 도출"]}
-    />
-  )
+  // 리포트는 DB 저장분 조회라 짧은 fetch 뿐 — AI 분석 극장 대신 담백한 스켈레톤.
+  return <ReportSkeleton />
 }
 
 function ReportError({ onRetry }: { onRetry: () => void }) {
