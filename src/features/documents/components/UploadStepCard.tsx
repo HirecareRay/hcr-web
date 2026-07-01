@@ -7,7 +7,7 @@ import { UPLOAD_TYPE_TO_SLUG } from "../hooks/useUpload"
 
 interface Props {
   item: UploadItem
-  onUpload: (file: File) => void
+  onUpload: (file: File) => Promise<boolean>
 }
 
 export default function UploadStepCard({ item, onUpload }: Props) {
@@ -19,8 +19,10 @@ export default function UploadStepCard({ item, onUpload }: Props) {
     if (file) setSelectedFile(file)
   }
 
-  const handleUploadClick = () => {
-    if (selectedFile) onUpload(selectedFile)
+  const handleUploadClick = async () => {
+    if (!selectedFile) return
+    const ok = await onUpload(selectedFile)
+    if (ok) setSelectedFile(null)
   }
 
   return (
@@ -46,14 +48,14 @@ export default function UploadStepCard({ item, onUpload }: Props) {
 
         <button
           onClick={handleUploadClick}
-          disabled={!selectedFile}
+          disabled={!selectedFile || !!item.uploading}
           className={`flex min-w-[10ch] items-center justify-center rounded-xl px-4 py-2 text-center text-sm whitespace-nowrap transition-colors ${
-            selectedFile
+            selectedFile && !item.uploading
               ? "bg-primary hover:bg-coral-beam cursor-pointer text-white"
               : "bg-gutter text-disabled cursor-not-allowed"
           }`}
         >
-          업로드
+          {item.uploading ? "파싱 중..." : "업로드"}
         </button>
 
         {item.exists && (

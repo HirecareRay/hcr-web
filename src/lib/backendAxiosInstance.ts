@@ -15,8 +15,8 @@ const backendApiUrl = process.env.BACKEND_API_URL ?? "http://localhost:8000"
 // axios 인스턴스 생성 — BFF 전용 FastAPI 클라이언트
 const backendAxiosInstance = axios.create({
   baseURL: backendApiUrl,
-  // AI 백엔드는 LLM·RAG 처리로 응답이 느릴 수 있어 브라우저용(10초)보다 넉넉히 둔다.
-  timeout: 60000,
+  // 기본 타임아웃 — LLM 미사용 엔드포인트 기준. LLM 사용 라우트는 호출 시 개별 override
+  timeout: 30000,
   headers: { "Content-Type": "application/json" },
 })
 

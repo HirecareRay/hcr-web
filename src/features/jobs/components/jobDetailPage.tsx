@@ -6,6 +6,7 @@ import {
   Bookmark,
   BriefcaseBusiness,
   CalendarDays,
+  ClipboardCheck,
   ExternalLink,
   MapPin,
   Sparkles,
@@ -203,25 +204,33 @@ export function JobDetailPage({ jobId }: { jobId: string }) {
           ))}
         </div>
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-col gap-2">
           <Link
-            href={`/company/${job.companyId}`}
-            className="bg-coral-light text-primary flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-3 text-sm font-bold"
+            href={`/jobs/${job.id}/fit?companyId=${job.companyId}`}
+            className="bg-primary flex items-center justify-center gap-1.5 rounded-2xl py-3 text-sm font-bold text-white"
           >
-            <Sparkles className="size-4" />
-            AI 기업 분석 리포트
+            <ClipboardCheck className="size-4" />내 서류 적합도 분석
           </Link>
-          {job.companyWebsite && (
-            <a
-              href={job.companyWebsite}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-warm-border text-muted flex items-center justify-center gap-1.5 rounded-2xl border bg-white px-4 py-3 text-sm font-semibold"
+          <div className="flex gap-2">
+            <Link
+              href={`/company/${job.companyId}`}
+              className="bg-coral-light text-primary flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-3 text-sm font-bold"
             >
-              <ExternalLink className="size-4" />
-              기업 사이트
-            </a>
-          )}
+              <Sparkles className="size-4" />
+              AI 기업 분석 리포트
+            </Link>
+            {job.companyWebsite && (
+              <a
+                href={job.companyWebsite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border-warm-border text-muted flex items-center justify-center gap-1.5 rounded-2xl border bg-white px-4 py-3 text-sm font-semibold"
+              >
+                <ExternalLink className="size-4" />
+                기업 사이트
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
