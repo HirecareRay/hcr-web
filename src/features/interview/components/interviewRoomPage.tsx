@@ -230,7 +230,9 @@ export function InterviewRoomPage({ companyId }: Props) {
         startError={startError}
         cameraConsented={cameraConsented}
         onCameraConsentChange={setCameraConsent}
-        onRequestDevices={() => media.request({ video: true, audio: true })}
+        onRequestDevices={(options) =>
+          options.video || options.audio ? void media.request(options) : media.stop()
+        }
         onStart={handleStart}
       />
     )
@@ -280,6 +282,8 @@ export function InterviewRoomPage({ companyId }: Props) {
   }
 
   const connectionLost = live.socketState === "closed"
+  // 카메라 트랙이 실제로 있을 때만 화상 스테이지를 노출한다(표정 분석 off = 순수 텍스트/음성).
+  const hasCameraTrack = !!media.stream && media.stream.getVideoTracks().length > 0
 
   return (
     <div className="space-y-4 px-4 py-4">
@@ -301,12 +305,15 @@ export function InterviewRoomPage({ companyId }: Props) {
         questionNo={liveQuestionNo}
       />
 
-      <div className="relative">
-        <VideoStage stream={media.stream} videoRef={analysisVideoRef} />
-        <div className="absolute top-2 right-2">
-          <ListeningIndicator active={listening} />
+      {/* 카메라(표정 분석)를 켠 경우에만 화상 스테이지를 노출한다 — 순수 텍스트 면접에선 숨긴다. */}
+      {hasCameraTrack && (
+        <div className="relative">
+          <VideoStage stream={media.stream} videoRef={analysisVideoRef} />
+          <div className="absolute top-2 right-2">
+            <ListeningIndicator active={listening} />
+          </div>
         </div>
-      </div>
+      )}
 
       <InterviewerPanel
         questionText={liveQuestion.text}
