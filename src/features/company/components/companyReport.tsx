@@ -2,20 +2,21 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   BadgeCheck,
   BarChart2,
   Bot,
+  ChevronLeft,
   ChevronRight,
   FileText,
-  Info,
-  Lock,
   Sparkles,
   Star,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AiAnalyzingLoader } from "@/components/ui/aiAnalyzingLoader"
 import { routes } from "@/constants/routes"
+import { useAuthStore } from "@/features/auth/store/authStore"
 import { useCompanyReport } from "../hooks/useCompanyReport"
 import { formatKrwShort } from "../lib/formatters"
 import type { CompanyReport as CompanyReportData, JobPosting } from "../types/company"
@@ -55,7 +56,7 @@ export function CompanyReport({ companyId }: Props) {
       <CompanyHeader data={data} />
 
       <div className="px-4">
-        <PassReadinessCard />
+        <PassReadinessCard companyId={companyId} />
       </div>
 
       <div className="bg-background border-warm-border sticky top-0 z-10 mt-4 border-b">
@@ -85,11 +86,7 @@ export function CompanyReport({ companyId }: Props) {
 
       <div className="space-y-4 px-4 pt-5">
         {activeTab === "summary" && (
-          <SummaryTab
-            data={data}
-            companyId={companyId}
-            onSeeAllJobs={() => setActiveTab("hiring")}
-          />
+          <SummaryTab data={data} onSeeAllJobs={() => setActiveTab("hiring")} />
         )}
         {activeTab === "financial" && <FinancialSection data={data.financial} />}
         {activeTab === "hiring" && <HiringSection data={data.hiring} />}
@@ -107,6 +104,7 @@ export function CompanyReport({ companyId }: Props) {
 }
 
 function CompanyHeader({ data }: { data: CompanyReportData }) {
+  const router = useRouter()
   const { company, overview } = data
   const profile = overview.profile
   const tags = [company.industry, profile.companyType, profile.companySize]
@@ -118,82 +116,114 @@ function CompanyHeader({ data }: { data: CompanyReportData }) {
     .slice(0, 2)
 
   return (
-    <header className="bg-white px-5 pt-10 pb-5">
-      <div className="flex items-start gap-3">
-        <div className="bg-coral-light text-primary flex size-12 shrink-0 items-center justify-center rounded-full text-sm font-extrabold">
-          {logoText}
+    <>
+      {/* 상단 바 — 공고 상세(jobDetailPage)와 동일한 뒤로가기+제목 패턴 */}
+      <header className="border-warm-border border-b bg-white px-5 pt-5 pb-4">
+        <div className="flex items-center gap-2">
+          {/* 들어왔던 검색 화면(검색어·스크롤 유지)으로 복귀 */}
+          {/* ponytail: router.back() — 딥링크로 바로 진입한 경우 폴백은 생략 */}
+          <button
+            type="button"
+            onClick={() => router.back()}
+            aria-label="뒤로가기"
+            className="-ml-1"
+          >
+            <ChevronLeft className="text-muted size-5" />
+          </button>
+          <h1 className="text-ink text-base font-bold">기업 분석</h1>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <h1 className="text-ink truncate text-xl font-extrabold">{company.name}</h1>
-            <BadgeCheck className="text-primary size-5 shrink-0" />
+      </header>
+
+      <div className="bg-white px-5 pt-5 pb-5">
+        <div className="flex items-start gap-3">
+          <div className="bg-coral-light text-primary flex size-12 shrink-0 items-center justify-center rounded-full text-sm font-extrabold">
+            {logoText}
           </div>
-          {tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="border-warm-border text-muted rounded-full border px-2.5 py-0.5 text-xs"
-                >
-                  {tag}
-                </span>
-              ))}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1">
+              <h2 className="text-ink truncate text-xl font-extrabold">{company.name}</h2>
+              <BadgeCheck className="text-primary size-5 shrink-0" />
             </div>
-          )}
+            {tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="border-warm-border text-muted rounded-full border px-2.5 py-0.5 text-xs"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <button type="button" aria-label="관심 기업 추가" className="shrink-0 p-1">
+            <Star className="text-disabled size-5" />
+          </button>
         </div>
-        <button type="button" aria-label="관심 기업 추가" className="shrink-0 p-1">
-          <Star className="text-disabled size-5" />
-        </button>
       </div>
-    </header>
+    </>
   )
 }
 
-function PassReadinessCard() {
+function PassReadinessCard({ companyId }: { companyId: string }) {
+  // 로그인 상태에서만 실제 분석/면접 버튼을 노출. 비로그인/확인중이면 등록 유도.
+  const isAuthenticated = useAuthStore((s) => s.status) === "authenticated"
+
   return (
     <section className="bg-coral-light rounded-2xl p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-1">
-            <span className="text-ink text-sm font-bold">AI 합격 준비도</span>
-            <Info className="text-disabled size-3.5" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-primary text-4xl font-extrabold blur-[6px] select-none">77</span>
-            <span className="text-muted text-sm font-bold">/100점</span>
-          </div>
-          <span className="text-primary mt-1 inline-block text-xs font-bold blur-[4px] select-none">
-            상위 00%
-          </span>
-        </div>
-        <div className="relative flex size-20 shrink-0 items-center justify-center">
-          <span className="absolute inset-0 rounded-full border-[6px] border-white/70" />
-          <Lock className="text-disabled size-7" />
-        </div>
+      <div className="flex items-center gap-1.5">
+        <Sparkles className="text-primary size-4" />
+        <span className="text-ink text-sm font-bold">이 회사 맞춤 지원 준비</span>
       </div>
 
-      <p className="text-muted mt-4 text-xs leading-relaxed">
-        이력서·자기소개서를 등록하면 나의 AI 합격 준비도를 확인할 수 있어요.
-      </p>
-
-      <Link
-        href={RESUME_UPLOAD_PATH}
-        className="bg-primary mt-3 flex items-center justify-center gap-1.5 rounded-2xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
-      >
-        <FileText className="size-4" />내 이력서 등록하고 합격 준비도 확인하기
-      </Link>
+      {isAuthenticated ? (
+        <>
+          <p className="text-muted mt-2 text-xs leading-relaxed">
+            내 이력서로 서류 적합도를 보고, 맞춤 모의면접을 준비하세요.
+          </p>
+          <div className="mt-3 space-y-2">
+            <Link
+              href={RESUME_UPLOAD_PATH}
+              className="bg-primary flex items-center justify-center gap-1.5 rounded-2xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            >
+              <BarChart2 className="size-4" />
+              서류적합도 분석
+            </Link>
+            <Link
+              href={routes.interview(companyId)}
+              className="border-warm-border text-ink hover:bg-warm-bg flex items-center justify-center gap-1.5 rounded-2xl border bg-white py-3 text-sm font-bold transition-colors"
+            >
+              <Bot className="text-primary size-4" />
+              AI 면접 시작하기
+            </Link>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-muted mt-2 text-xs leading-relaxed">
+            이력서를 등록하면 이 회사에 대한 서류 적합도 분석과 AI 모의면접을 이용할 수 있어요.
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            <li className="text-ink flex items-center gap-1.5 text-xs font-medium">
+              <BarChart2 className="text-primary size-3.5" />내 이력서 기반 서류 적합도 분석
+            </li>
+            <li className="text-ink flex items-center gap-1.5 text-xs font-medium">
+              <Bot className="text-primary size-3.5" />이 회사 맞춤 AI 모의면접
+            </li>
+          </ul>
+          <Link
+            href={RESUME_UPLOAD_PATH}
+            className="bg-primary mt-4 flex items-center justify-center gap-1.5 rounded-2xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+          >
+            <FileText className="size-4" />내 이력서 등록하고 시작하기
+          </Link>
+        </>
+      )}
     </section>
   )
 }
-function SummaryTab({
-  data,
-  companyId,
-  onSeeAllJobs,
-}: {
-  data: CompanyReportData
-  companyId: string
-  onSeeAllJobs: () => void
-}) {
+function SummaryTab({ data, onSeeAllJobs }: { data: CompanyReportData; onSeeAllJobs: () => void }) {
   const { insight, hiring, employees, overview, review } = data
   const summaryTags = review.pros.slice(0, 4)
   const positions = hiring.openings.slice(0, 3)
@@ -264,21 +294,6 @@ function SummaryTab({
         </section>
       )}
 
-      {/* 액션 CTA */}
-      <Link
-        href={routes.interview(companyId)}
-        className="bg-primary flex items-center justify-center gap-1.5 rounded-2xl py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
-      >
-        <Bot className="size-4" />
-        AI 면접 시작하기
-      </Link>
-      <Link
-        href={RESUME_UPLOAD_PATH}
-        className="border-warm-border text-ink hover:bg-warm-bg flex items-center justify-center gap-1.5 rounded-2xl border bg-white py-3.5 text-sm font-bold transition-colors"
-      >
-        <BarChart2 className="text-primary size-4" />내 합격 가능성 분석
-      </Link>
-
       {/* 취업 핵심 정보 */}
       <section>
         <h2 className="text-ink mb-2 text-sm font-bold">취업 핵심 정보</h2>
@@ -304,8 +319,20 @@ function PositionRow({ posting }: { posting: JobPosting }) {
   const dday = formatDday(workConditions.deadline, workConditions.deadlineType)
   const location = job.locations[0] ?? ""
 
+  // 공고 URL이 있으면 행 전체를 새 탭 링크로(전체보기 탭의 카드와 동일 동작), 없으면 일반 행.
+  const Wrapper = posting.url ? "a" : "div"
+  const linkProps = posting.url
+    ? { href: posting.url, target: "_blank", rel: "noopener noreferrer" as const }
+    : {}
+
   return (
-    <div className="flex items-center gap-2 px-4 py-3">
+    <Wrapper
+      {...linkProps}
+      className={cn(
+        "flex items-center gap-2 px-4 py-3",
+        posting.url && "hover:bg-warm-bg transition-colors"
+      )}
+    >
       <div className="min-w-0 flex-1">
         <p className="text-ink truncate text-sm font-bold">{posting.title}</p>
         {location && <p className="text-muted mt-0.5 text-xs">{location}</p>}
@@ -318,7 +345,7 @@ function PositionRow({ posting }: { posting: JobPosting }) {
           <p className="text-disabled text-xs">{workConditions.employmentType}</p>
         )}
       </div>
-    </div>
+    </Wrapper>
   )
 }
 
