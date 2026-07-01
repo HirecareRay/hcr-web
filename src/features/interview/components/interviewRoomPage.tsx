@@ -318,7 +318,7 @@ export function InterviewRoomPage({ companyId }: Props) {
       <InterviewerPanel
         questionText={liveQuestion.text}
         questionNo={liveQuestionNo}
-        isFollowUp={liveQuestion.questionId.startsWith("f")}
+        isFollowUp={liveQuestion.kind === "follow_up"}
         isSpeaking={tts.isSpeaking}
         ttsSupported={tts.supported}
         onReplay={() => void tts.speak(liveQuestion.ttsText ?? liveQuestion.text)}
