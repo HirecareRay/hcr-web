@@ -10,9 +10,20 @@ export interface DocumentData {
   tables?: Array<{ headers: string[]; rows: string[][] }>
 }
 
+// 값이 string이면 존재(= created_datetime), null이면 미등록
+export interface DocExists {
+  resume: string | null
+  cover_letter: string | null
+  portfolio: string | null
+  work_experience: string | null
+}
+
 const base = (docType: DocSlug) => `/api/mypage/documents/${docType}`
 
 export const documentService = {
+  exists: (): Promise<DocExists> =>
+    axiosInstance.get("/api/mypage/documents/exists").then((r) => r.data),
+
   get: (docType: DocSlug): Promise<DocumentData> =>
     axiosInstance.get(base(docType)).then((r) => r.data),
 

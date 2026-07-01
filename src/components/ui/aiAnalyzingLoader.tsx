@@ -129,7 +129,7 @@ export function AiAnalyzingLoader({
       {!center && skeletonCount > 0 && (
         <div className="mt-4 space-y-4">
           {Array.from({ length: skeletonCount }).map((_, i) => (
-            <div key={i} className="bg-warm-bg h-40 animate-pulse rounded-2xl" />
+            <div key={i} className="bg-skeleton h-40 animate-pulse rounded-2xl" />
           ))}
         </div>
       )}

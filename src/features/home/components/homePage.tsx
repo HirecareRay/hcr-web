@@ -14,7 +14,7 @@ import { HomeHero } from "./homeHero"
 import { HomeSearchBar } from "./homeSearchBar"
 import { HomeFeedSkeleton } from "./homeFeedSkeleton"
 import { TrendingSection } from "./trendingSection"
-import { TechStackSection } from "./techStackSection"
+import { JobsByRoleSection } from "./jobsByRoleSection"
 import { IssueBriefingSection } from "./issueBriefingSection"
 
 export function HomePage() {
@@ -44,7 +44,7 @@ export function HomePage() {
       {data && (
         <div className="space-y-8">
           <TrendingSection companies={data.trending} />
-          <TechStackSection ranking={data.techStack} />
+          <JobsByRoleSection groups={data.jobsByRole} />
           <IssueBriefingSection issues={data.issues} />
         </div>
       )}

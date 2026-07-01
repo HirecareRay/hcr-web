@@ -2,19 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import {
-  BadgeCheck,
-  BarChart2,
-  Bot,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  Sparkles,
-  Star,
-} from "lucide-react"
+import { BadgeCheck, BarChart2, Bot, ChevronRight, FileText, Sparkles, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AiAnalyzingLoader } from "@/components/ui/aiAnalyzingLoader"
+import { PageTopBar } from "@/components/ui/pageTopBar"
 import { routes } from "@/constants/routes"
 import { useAuthStore } from "@/features/auth/store/authStore"
 import { useCompanyReport } from "../hooks/useCompanyReport"
@@ -27,6 +17,7 @@ import { ReviewSection } from "./sections/reviewSection"
 import { GrowthSection } from "./sections/growthSection"
 import { HiringSection } from "./sections/hiringSection"
 import { InsightSection } from "./sections/insightSection"
+import { ReportSkeleton } from "./reportSkeleton"
 
 interface Props {
   companyId: string
@@ -104,7 +95,6 @@ export function CompanyReport({ companyId }: Props) {
 }
 
 function CompanyHeader({ data }: { data: CompanyReportData }) {
-  const router = useRouter()
   const { company, overview } = data
   const profile = overview.profile
   const tags = [company.industry, profile.companyType, profile.companySize]
@@ -117,22 +107,8 @@ function CompanyHeader({ data }: { data: CompanyReportData }) {
 
   return (
     <>
-      {/* 상단 바 — 공고 상세(jobDetailPage)와 동일한 뒤로가기+제목 패턴 */}
-      <header className="border-warm-border border-b bg-white px-5 pt-5 pb-4">
-        <div className="flex items-center gap-2">
-          {/* 들어왔던 검색 화면(검색어·스크롤 유지)으로 복귀 */}
-          {/* ponytail: router.back() — 딥링크로 바로 진입한 경우 폴백은 생략 */}
-          <button
-            type="button"
-            onClick={() => router.back()}
-            aria-label="뒤로가기"
-            className="-ml-1"
-          >
-            <ChevronLeft className="text-muted size-5" />
-          </button>
-          <h1 className="text-ink text-base font-bold">기업 분석</h1>
-        </div>
-      </header>
+      {/* 들어왔던 검색 화면(검색어·스크롤 유지)으로 복귀 — router.back() */}
+      <PageTopBar title="기업 분석" />
 
       <div className="bg-white px-5 pt-5 pb-5">
         <div className="flex items-start gap-3">
@@ -363,12 +339,8 @@ function formatDday(
 }
 
 function ReportLoading() {
-  return (
-    <AiAnalyzingLoader
-      title="AI가 기업을 분석하고 있어요"
-      steps={["재무 지표 분석", "최근 뉴스 읽는 중", "채용공고 정리", "면접 포인트 도출"]}
-    />
-  )
+  // 리포트는 DB 저장분 조회라 짧은 fetch 뿐 — AI 분석 극장 대신 담백한 스켈레톤.
+  return <ReportSkeleton />
 }
 
 function ReportError({ onRetry }: { onRetry: () => void }) {
