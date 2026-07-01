@@ -28,7 +28,7 @@ export default function DocumentForm({
     structuredClone(initialData)
   )
 
-  if (!config) return <p className="p-5 text-red-500">알 수 없는 문서 타입입니다.</p>
+  if (!config) return <p className="text-error p-5 text-sm">알 수 없는 문서 타입입니다.</p>
 
   // ── 섹션 항목 helpers ──────────────────────────────────────────────
   const getItems = (key: string): Item[] => (formData[key] as Item[]) ?? []
@@ -181,11 +181,17 @@ export default function DocumentForm({
 
   // ── 필드 렌더 ─────────────────────────────────────────────────────
   function renderField(field: FieldDef, value: unknown, onChange: (v: unknown) => void) {
-    const base = "w-full rounded border px-2 py-1 text-sm"
+    const base =
+      "border-warm-border focus:border-primary text-ink w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors"
     if (field.type === "boolean") {
       return (
-        <label key={field.key} className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
+        <label key={field.key} className="text-ink flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={!!value}
+            onChange={(e) => onChange(e.target.checked)}
+            className="accent-primary size-4"
+          />
           {field.label}
         </label>
       )
@@ -193,7 +199,7 @@ export default function DocumentForm({
     if (field.type === "textarea") {
       return (
         <div key={field.key}>
-          <label className="mb-0.5 block text-xs text-gray-500">{field.label}</label>
+          <label className="text-disabled mb-0.5 block text-xs">{field.label}</label>
           <textarea
             className={`${base} min-h-[80px]`}
             value={(value as string) ?? ""}
@@ -204,7 +210,7 @@ export default function DocumentForm({
     }
     return (
       <div key={field.key}>
-        <label className="mb-0.5 block text-xs text-gray-500">{field.label}</label>
+        <label className="text-disabled mb-0.5 block text-xs">{field.label}</label>
         <input
           type={field.type === "number" ? "number" : "text"}
           className={base}
@@ -227,30 +233,30 @@ export default function DocumentForm({
   ) {
     return (
       <div className="mt-3">
-        <h2 className="mb-2 text-base font-bold">{label}</h2>
+        <h2 className="text-ink mb-2 text-base font-bold">{label}</h2>
         <div className="space-y-2">
           {Array.isArray(list) &&
             list.map((etc, i) => (
               <div key={i} className="flex items-start gap-2">
                 <div className="flex-1">
-                  <label className="mb-0.5 block text-xs text-gray-500">항목명</label>
+                  <label className="text-disabled mb-0.5 block text-xs">항목명</label>
                   <input
-                    className="w-full rounded border px-2 py-1 text-sm"
+                    className="border-warm-border focus:border-primary text-ink w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
                     value={etc.custom_key ?? ""}
                     onChange={(e) => onUpdate(i, "custom_key", e.target.value)}
                   />
                 </div>
                 <div className="flex-[2]">
-                  <label className="mb-0.5 block text-xs text-gray-500">내용</label>
+                  <label className="text-disabled mb-0.5 block text-xs">내용</label>
                   <input
-                    className="w-full rounded border px-2 py-1 text-sm"
+                    className="border-warm-border focus:border-primary text-ink w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
                     value={etc.custom_content ?? ""}
                     onChange={(e) => onUpdate(i, "custom_content", e.target.value)}
                   />
                 </div>
                 <button
                   onClick={() => onRemove(i)}
-                  className="mt-5 text-xs text-red-400 hover:text-red-600"
+                  className="text-error mt-5 text-xs font-medium hover:opacity-70"
                 >
                   삭제
                 </button>
@@ -259,7 +265,7 @@ export default function DocumentForm({
         </div>
         <button
           onClick={onAdd}
-          className="mt-2 rounded border px-3 py-1 text-sm text-gray-500 hover:bg-gray-50"
+          className="border-warm-border text-muted hover:bg-warm-bg mt-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors"
         >
           + 기타 추가
         </button>
@@ -267,15 +273,35 @@ export default function DocumentForm({
     )
   }
 
+  const actionButtons = (
+    <div className="flex gap-2">
+      <button
+        onClick={() => onSave(formData)}
+        disabled={saving}
+        className="bg-primary hover:bg-coral-beam rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {saving ? "저장 중..." : "저장"}
+      </button>
+      <button
+        onClick={onDelete}
+        className="text-error border-error/30 hover:bg-error/10 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors"
+      >
+        문서 삭제
+      </button>
+    </div>
+  )
+
   return (
     <div className="space-y-8">
+      {actionButtons}
+
       {/* 섹션 렌더 */}
       {config.sections.map((sec) => (
         <section key={sec.key}>
-          <h2 className="mb-2 text-base font-bold">{sec.label}</h2>
+          <h2 className="text-ink mb-2 text-base font-bold">{sec.label}</h2>
           <div className="space-y-3">
             {getItems(sec.key).map((item, idx) => (
-              <div key={idx} className="rounded-lg border p-3">
+              <div key={idx} className="border-warm-border rounded-2xl border bg-white p-4">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {sec.fields.map((field) =>
                     renderField(field, item[field.key], (v) =>
@@ -287,9 +313,9 @@ export default function DocumentForm({
                 {/* List[str] 필드 (responsibilities) */}
                 {sec.strListKey && (
                   <div className="mt-2">
-                    <label className="mb-0.5 block text-xs text-gray-500">{sec.strListLabel}</label>
+                    <label className="text-disabled mb-0.5 block text-xs">{sec.strListLabel}</label>
                     <textarea
-                      className="min-h-[80px] w-full rounded border px-2 py-1 text-sm"
+                      className="border-warm-border focus:border-primary text-ink min-h-[80px] w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
                       value={((item[sec.strListKey] as string[]) ?? []).join("\n")}
                       onChange={(e) =>
                         updateField(
@@ -306,10 +332,13 @@ export default function DocumentForm({
                 {/* 중첩 프로젝트 (work_experience) */}
                 {sec.subKey && (
                   <div className="mt-3">
-                    <p className="mb-1 text-xs font-medium text-gray-600">{sec.subLabel}</p>
+                    <p className="text-muted mb-1 text-xs font-medium">{sec.subLabel}</p>
                     <div className="space-y-2 pl-2">
                       {getSubItems(sec.key, idx, sec.subKey).map((sub, subIdx) => (
-                        <div key={subIdx} className="rounded border border-gray-200 p-2">
+                        <div
+                          key={subIdx}
+                          className="bg-warm-bg border-warm-border rounded-xl border p-3"
+                        >
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {(sec.subFields ?? []).map((field) =>
                               renderField(field, sub[field.key], (v) =>
@@ -328,7 +357,7 @@ export default function DocumentForm({
                             )}
                           <button
                             onClick={() => removeSubItem(sec, idx, subIdx)}
-                            className="mt-2 text-xs text-red-400 hover:text-red-600"
+                            className="text-error mt-2 text-xs font-medium hover:opacity-70"
                           >
                             프로젝트 삭제
                           </button>
@@ -336,7 +365,7 @@ export default function DocumentForm({
                       ))}
                       <button
                         onClick={() => addSubItem(sec, idx)}
-                        className="rounded border px-2 py-1 text-xs text-gray-500 hover:bg-gray-50"
+                        className="border-warm-border text-muted hover:bg-warm-bg rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors"
                       >
                         + {sec.subLabel} 추가
                       </button>
@@ -356,7 +385,7 @@ export default function DocumentForm({
 
                 <button
                   onClick={() => removeItem(sec.key, idx)}
-                  className="mt-2 text-xs text-red-400 hover:text-red-600"
+                  className="text-error mt-2 text-xs font-medium hover:opacity-70"
                 >
                   항목 삭제
                 </button>
@@ -365,7 +394,7 @@ export default function DocumentForm({
           </div>
           <button
             onClick={() => addItem(sec)}
-            className="mt-2 rounded border px-3 py-1 text-sm text-gray-500 hover:bg-gray-50"
+            className="border-warm-border text-muted hover:bg-warm-bg mt-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors"
           >
             + {sec.label} 추가
           </button>
@@ -379,19 +408,19 @@ export default function DocumentForm({
         </section>
       )}
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-error text-sm">{error}</p>}
 
       <div className="flex gap-2 pb-8">
         <button
           onClick={() => onSave(formData)}
           disabled={saving}
-          className="rounded bg-orange-400 px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="bg-primary hover:bg-coral-beam rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? "저장 중..." : "저장"}
         </button>
         <button
           onClick={onDelete}
-          className="rounded bg-red-100 px-4 py-2 text-sm text-red-600 hover:bg-red-200"
+          className="text-error border-error/30 hover:bg-error/10 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors"
         >
           문서 삭제
         </button>
