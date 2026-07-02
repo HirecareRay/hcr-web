@@ -30,6 +30,7 @@ import { getWsTicket, WsTicketError } from "../services/interviewService"
 import { buildInterviewWsUrl } from "../lib/wsUrl"
 import { logger } from "@/lib/logger"
 
+// const WS_BASE = process.env.NEXT_PUBLIC_INTERVIEW_WS_URL ?? "ws://localhost:8000"
 const WS_BASE = process.env.NEXT_PUBLIC_INTERVIEW_WS_URL ?? "ws://localhost:8000"
 
 export interface InterviewSocketOptions {

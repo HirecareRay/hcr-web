@@ -24,5 +24,5 @@ export function middleware(req: NextRequest) {
 
 // 가드 대상 경로만 미들웨어를 태운다(나머지는 영향 없음).
 export const config = {
-  matcher: ["/mypage/:path*", "/interview/:path*"],
+  matcher: ["/mypage/:path*", "/interview/:path*", "/analysis/:path*"],
 }
