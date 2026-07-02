@@ -1,12 +1,16 @@
 /**
  * interviewerPanel.tsx
  *
- * AI 면접관 패널 — 현재 질문 텍스트, 질문 번호(러닝), 꼬리질문 여부,
- * TTS 발화 상태("읽는 중"), "질문 다시 듣기" 버튼을 보여줍니다.
+ * AI 면접관 패널 — 현재 질문 텍스트, 질문 번호(러닝), 담당자 배지(페르소나),
+ * 꼬리질문 여부, TTS 발화 상태("읽는 중"), "질문 다시 듣기" 버튼을 보여줍니다.
  * 질문은 백엔드 WS 이벤트에서 오며, 실제 발화는 부모(useTts)가 담당합니다.
+ *
+ * roleLabel/personaId 는 백엔드가 질문마다 실어 주는 면접관 정보입니다. 비어 있으면
+ * 담당자 배지를 숨기고 기본 "AI 면접관" 표기로 폴백합니다(면접 흐름 무영향).
  */
 
 import { Bot, RefreshCw, Volume2 } from "lucide-react"
+import { getPersona } from "../../lib/personas"
 
 interface Props {
   questionText: string
@@ -15,6 +19,8 @@ interface Props {
   isSpeaking: boolean
   ttsSupported: boolean
   onReplay: () => void
+  roleLabel?: string // 담당자 표시 이름(백엔드) — 비면 배지 숨김
+  personaId?: string // 담당자 식별자(배지 색 결정) — 미매칭이면 기본 색
 }
 
 export function InterviewerPanel({
@@ -24,7 +30,14 @@ export function InterviewerPanel({
   isSpeaking,
   ttsSupported,
   onReplay,
+  roleLabel,
+  personaId,
 }: Props) {
+  const persona = getPersona(personaId)
+  // 배지는 roleLabel(백엔드) 이 있을 때만. 색은 페르소나 매칭 시 그 색, 아니면 중립 primary.
+  const showRoleBadge = !!roleLabel
+  const badgeClass = persona?.badgeClass ?? "bg-primary/15 text-primary"
+
   return (
     <section className="border-warm-border bg-warm-bg rounded-2xl border p-4">
       <div className="flex items-center gap-2">
@@ -32,7 +45,14 @@ export function InterviewerPanel({
           <Bot className="h-5 w-5" />
         </span>
         <div className="flex-1">
-          <p className="text-muted text-xs font-semibold">AI 면접관</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-muted text-xs font-semibold">AI 면접관</p>
+            {showRoleBadge && (
+              <span className={`${badgeClass} rounded-full px-1.5 py-0.5 text-xs font-medium`}>
+                {roleLabel}
+              </span>
+            )}
+          </div>
           <p className="text-disabled text-xs">
             질문 {questionNo}
             {isFollowUp && (

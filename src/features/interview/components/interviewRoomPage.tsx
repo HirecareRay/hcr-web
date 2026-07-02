@@ -27,6 +27,7 @@ import { InterviewSetup } from "./room/interviewSetup"
 import { SessionTimerBar } from "./room/sessionTimerBar"
 import { VideoStage } from "./room/videoStage"
 import { InterviewerPanel } from "./room/interviewerPanel"
+import { InterviewerRoster } from "./room/interviewerRoster"
 import { AnswerPanel, type VoiceStep } from "./room/answerPanel"
 import { EvaluationPanel } from "./room/evaluationPanel"
 import { ListeningIndicator } from "./room/listeningIndicator"
@@ -134,7 +135,7 @@ export function InterviewRoomPage({ companyId }: Props) {
     setSubmittedAnswer("")
     setNextRequested(false)
     presentQuestion()
-    void tts.speak(liveQuestion.ttsText ?? liveQuestion.text)
+    void tts.speak(liveQuestion.ttsText ?? liveQuestion.text, liveQuestion.voice)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveQuestion?.questionId])
 
@@ -315,13 +316,19 @@ export function InterviewRoomPage({ companyId }: Props) {
         </div>
       )}
 
+      <InterviewerRoster activePersonaId={liveQuestion.personaId} isSpeaking={tts.isSpeaking} />
+
       <InterviewerPanel
         questionText={liveQuestion.text}
         questionNo={liveQuestionNo}
         isFollowUp={liveQuestion.kind === "follow_up"}
         isSpeaking={tts.isSpeaking}
         ttsSupported={tts.supported}
-        onReplay={() => void tts.speak(liveQuestion.ttsText ?? liveQuestion.text)}
+        onReplay={() =>
+          void tts.speak(liveQuestion.ttsText ?? liveQuestion.text, liveQuestion.voice)
+        }
+        roleLabel={liveQuestion.roleLabel}
+        personaId={liveQuestion.personaId}
       />
 
       {phase === "evaluating" ? (
