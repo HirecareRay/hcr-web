@@ -10,6 +10,7 @@
  */
 
 import { Bot, RefreshCw, Volume2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { getPersona } from "../../lib/personas"
 
 interface Props {
@@ -21,6 +22,7 @@ interface Props {
   onReplay: () => void
   roleLabel?: string // 담당자 표시 이름(백엔드) — 비면 배지 숨김
   personaId?: string // 담당자 식별자(배지 색 결정) — 미매칭이면 기본 색
+  className?: string // 부모 배치용(예: flex-1 로 질문·답변 사이 남는 높이 채우기)
 }
 
 export function InterviewerPanel({
@@ -32,6 +34,7 @@ export function InterviewerPanel({
   onReplay,
   roleLabel,
   personaId,
+  className,
 }: Props) {
   const persona = getPersona(personaId)
   // 배지는 roleLabel(백엔드) 이 있을 때만. 색은 페르소나 매칭 시 그 색, 아니면 중립 primary.
@@ -39,7 +42,8 @@ export function InterviewerPanel({
   const badgeClass = persona?.badgeClass ?? "bg-primary/15 text-primary"
 
   return (
-    <section className="border-warm-border bg-warm-bg rounded-2xl border p-4">
+    // 질문 카드는 내용 크기(자연 높이). 남는 높이는 아래 답변 카드가 채운다.
+    <section className={cn("border-warm-border bg-warm-bg rounded-2xl border p-3", className)}>
       <div className="flex items-center gap-2">
         <span className="bg-primary/15 text-primary flex h-9 w-9 items-center justify-center rounded-full">
           <Bot className="h-5 w-5" />
@@ -70,13 +74,13 @@ export function InterviewerPanel({
         )}
       </div>
 
-      <p className="text-ink mt-3 text-base leading-relaxed font-semibold">{questionText}</p>
+      <p className="text-ink mt-2 text-base leading-snug font-semibold">{questionText}</p>
 
       {ttsSupported && (
         <button
           type="button"
           onClick={onReplay}
-          className="text-muted hover:text-ink mt-3 inline-flex items-center gap-1 text-xs font-medium"
+          className="text-muted hover:text-ink mt-2 inline-flex items-center gap-1 text-xs font-medium"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           질문 다시 듣기

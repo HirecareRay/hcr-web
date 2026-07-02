@@ -25,9 +25,11 @@ const primaryButton =
 // 대기 중 UI(다음 질문 생성 / 결과 정리)는 상위(interviewRoomPage)가 로더로 처리한다.
 export function EvaluationPanel({ transcript, isLast, onNext }: Props) {
   return (
-    <section className="border-warm-border bg-background space-y-4 rounded-2xl border p-4 shadow-sm">
-      <div className="space-y-1.5">
-        <p className="text-muted text-xs font-semibold">내 답변</p>
+    // 답변 단계와 같이 하단 영역 높이를 꽉 채운다(h-full) — 평가 단계로 넘어가도 크기 동일
+    <section className="border-warm-border bg-background flex h-full flex-col gap-2.5 rounded-2xl border p-3 shadow-sm">
+      {/* 라벨은 박스 밖 위에(음성 검토의 배지 위치와 통일), 박스 안엔 답변 내용만 */}
+      <p className="text-muted shrink-0 text-xs font-semibold">내 답변</p>
+      <div className="border-warm-border min-h-0 w-full flex-1 overflow-y-auto rounded-xl border p-3">
         <p className="text-ink text-sm leading-relaxed">
           {transcript || <span className="text-disabled">답변이 인식되지 않았어요.</span>}
         </p>
