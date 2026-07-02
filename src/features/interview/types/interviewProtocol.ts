@@ -106,6 +106,13 @@ export interface QuestionEvent {
   // "다음"을 누르면 백엔드가 summary 를 보낸다. 백엔드가 마지막 질문에 true 를 실어 준다.
   // (미지정 시 마지막 아님으로 간주 — 하위호환)
   isLast?: boolean
+  // ─── 면접관 페르소나 (백엔드가 질문마다 "누가 묻는지"를 실어 줌) ───
+  // 세 필드 모두 하위호환용으로 기본값 빈 문자열("")일 수 있다. 비어 있으면 배지·아바타
+  // 하이라이트·목소리 매핑을 생략하고 기본 동작으로 폴백한다(면접 흐름은 절대 안 깨지게).
+  // 꼬리질문(kind='follow_up')은 그 메인질문을 던진 면접관과 같은 personaId/voice 로 온다.
+  personaId?: string // 면접관 안정 식별자 (예: 'culture_fit' | 'tech_pressure' | 'practical')
+  roleLabel?: string // 화면 표시 이름 (예: '인사담당자')
+  voice?: string // TTS 목소리 힌트 (예: 'soft_high' | 'low_firm' | 'calm_mid')
 }
 
 // 실시간 자막 토큰 (STT 부분 결과)
