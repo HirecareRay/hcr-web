@@ -13,6 +13,7 @@ import { authCookieName, authCookieOptions } from "@/features/auth/authCookie"
 import { logger } from "@/lib/logger"
 
 // 서버 사이드 전용 env (NEXT_PUBLIC_ 아님 — 브라우저에 노출되지 않는다)
+// export const backendApiUrl = process.env.BACKEND_API_URL ?? "http://localhost:8000"
 export const backendApiUrl = process.env.BACKEND_API_URL ?? "http://localhost:8000"
 
 interface BackendAuthResponse {

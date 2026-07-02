@@ -10,6 +10,7 @@ import { cookies } from "next/headers"
 import { authCookieName } from "@/features/auth/authCookie"
 
 // 서버 사이드 전용 env (NEXT_PUBLIC_ 아님 — 브라우저에 노출되지 않는다)
+// const backendApiUrl = process.env.BACKEND_API_URL ?? "http://localhost:8000"
 const backendApiUrl = process.env.BACKEND_API_URL ?? "http://localhost:8000"
 
 // axios 인스턴스 생성 — BFF 전용 FastAPI 클라이언트
