@@ -23,11 +23,43 @@ import { getVoiceProfile } from "../lib/ttsVoices"
 // 모두 같은 voice → pitch/rate 차등만으로 구분한다. 힌트가 없으면 첫 ko-KR voice.
 const voiceHintOrder = ["soft_high", "low_firm", "calm_mid"]
 
+// 자연스러운 한국어 voice 이름(부분 일치). 브라우저·OS 대표 고품질 음성만 화이트리스트로 둔다.
+// ⚠️ macOS 는 기본 음성 '유나'만 자연스럽고, 나머지 ko voice(Eddy·Grandma·Flo 등)는
+//    노벨티(캐릭터) 음성이라 목소리가 이상하게 들린다. 예전엔 koVoices[idx] 로 앞에서부터
+//    골라 면접관 2·3인이 이 노벨티 음성에 걸렸다 → 화이트리스트+default 로만 걸러 배제한다.
+const preferredKoVoiceNames = [
+  "유나",
+  "Yuna",
+  "Google",
+  "Microsoft",
+  "Heami",
+  "SunHi",
+  "InJoon",
+  "Nari",
+]
+
+// 노벨티 음성을 배제한 "쓸 만한" 한국어 voice 를 우선순위로 모은다.
+// 기본(default) 음성을 최우선(대개 OS 대표 음성 = 자연스러움)으로, 이어서 이름
+// 화이트리스트에 걸리는 음성을 덧붙인다. 아무것도 못 고르면(정보가 부족한 브라우저)
+// 전체 ko 목록으로 폴백한다(최후의 보루).
+function usableKoVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
+  const koVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith("ko"))
+  const good: SpeechSynthesisVoice[] = []
+  const add = (v?: SpeechSynthesisVoice) => {
+    if (v && !good.includes(v)) good.push(v)
+  }
+  add(koVoices.find((v) => v.default))
+  for (const name of preferredKoVoiceNames) {
+    add(koVoices.find((v) => v.name.includes(name)))
+  }
+  return good.length > 0 ? good : koVoices
+}
+
 function pickKoVoice(
   voices: SpeechSynthesisVoice[],
   voiceHint?: string | null
 ): SpeechSynthesisVoice | undefined {
-  const koVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith("ko"))
+  const koVoices = usableKoVoices(voices)
   if (koVoices.length === 0) return undefined
   const idx = voiceHint ? voiceHintOrder.indexOf(voiceHint) : -1
   if (idx < 0) return koVoices[0]
