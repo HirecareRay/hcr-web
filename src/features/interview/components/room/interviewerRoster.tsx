@@ -14,42 +14,60 @@ import { interviewPersonas } from "../../lib/personas"
 interface Props {
   activePersonaId?: string // 현재 질문을 던진 면접관 — 일치하는 카드 하이라이트
   isSpeaking: boolean // TTS 발화 중이면 활성 면접관에 "말하는 중" 표시
+  // vertical: 웹(sm+)에서 카메라 오른쪽에 세로로 배치. 모바일은 항상 가로 3열.
+  vertical?: boolean
+  className?: string // 부모 배치용(예: flex-1 로 카메라 옆 남은 폭 채우기)
 }
 
-export function InterviewerRoster({ activePersonaId, isSpeaking }: Props) {
+export function InterviewerRoster({
+  activePersonaId,
+  isSpeaking,
+  vertical = false,
+  className,
+}: Props) {
   return (
     <section
-      className="border-warm-border bg-warm-bg grid grid-cols-3 gap-2 rounded-2xl border p-3"
+      className={cn(
+        "border-warm-border bg-warm-bg grid gap-1.5 rounded-2xl border p-1.5",
+        // 세로 모드: 모바일 가로 3열 → 웹에서 1열(세로)로. 기본: 항상 가로 3열.
+        vertical ? "grid-cols-3 sm:grid-cols-1 sm:content-between sm:gap-1" : "grid-cols-3",
+        className
+      )}
       aria-label="면접관"
     >
       {interviewPersonas.map((persona) => {
         const isActive = persona.id === activePersonaId
         const Icon = persona.icon
+        const speaking = isActive && isSpeaking
         return (
           <div
             key={persona.id}
             className={cn(
-              "flex flex-col items-center gap-1.5 rounded-xl py-2 transition",
+              "flex items-center justify-center gap-1 rounded-xl px-1 py-1 transition",
+              // 세로 모드에선 웹에서 왼쪽 정렬(리스트처럼)
+              vertical && "sm:justify-start sm:gap-2 sm:px-2",
               isActive ? "bg-background/60" : "opacity-55"
             )}
           >
             <span
               className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-full ring-2 transition",
+                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full ring-2 transition",
                 persona.avatarClass,
                 isActive ? persona.ringClass : "ring-transparent"
               )}
             >
-              <Icon className="h-5 w-5" aria-hidden="true" />
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
             </span>
-            <p className="text-ink text-xs font-semibold">{persona.roleLabel}</p>
-            {/* "말하는 중" 유무와 무관하게 높이를 고정해 카드가 튀지 않게 한다. */}
-            <span
-              className="text-primary h-4 text-xs font-medium"
-              aria-hidden={!(isActive && isSpeaking)}
+            {/* 이름은 항상 그대로 두고, 발화 중이면 색만 강조한다(이름이 사라지지 않게).
+                "누가 말하는지"는 링 하이라이트 + 질문 카드의 "읽는 중" 배지로도 드러난다. */}
+            <p
+              className={cn(
+                "truncate text-[0.6875rem] font-semibold sm:text-xs",
+                speaking ? "text-primary" : "text-ink"
+              )}
             >
-              {isActive && isSpeaking ? "말하는 중" : ""}
-            </span>
+              {persona.roleLabel}
+            </p>
           </div>
         )
       })}
