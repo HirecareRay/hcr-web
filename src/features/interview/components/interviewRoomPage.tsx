@@ -24,7 +24,7 @@ import { useInterviewTimer } from "../hooks/useInterviewTimer"
 import { useLiveStreaming } from "../hooks/useLiveStreaming"
 import { useInterviewSessionStore } from "../store/interviewSessionStore"
 import { InterviewSetup } from "./room/interviewSetup"
-import { SessionTimerBar } from "./room/sessionTimerBar"
+import { TimeBadge } from "./room/timeBadge"
 import { VideoStage } from "./room/videoStage"
 import { InterviewerPanel } from "./room/interviewerPanel"
 import { InterviewerRoster } from "./room/interviewerRoster"
@@ -287,9 +287,11 @@ export function InterviewRoomPage({ companyId }: Props) {
   const hasCameraTrack = !!media.stream && media.stream.getVideoTracks().length > 0
 
   return (
-    <div className="space-y-4 px-4 py-4">
+    // 화면 높이에 딱 맞춘 flex 컬럼 — 카메라/면접관(상단) · 질문(남는 높이 채움) · 답변(하단).
+    // 질문 카드가 늘어나 빈 공간을 먹으므로 스크롤도, 섹션 사이 빈 여백도 없다.
+    <div className="flex h-full min-h-0 flex-col gap-3 px-4 py-3">
       {connectionLost && (
-        <div className="border-error/30 bg-error/10 text-error flex items-center justify-between gap-2 rounded-xl border p-3 text-xs">
+        <div className="border-error/30 bg-error/10 text-error flex shrink-0 items-center justify-between gap-2 rounded-xl border p-3 text-xs">
           <span className="flex items-center gap-1.5">
             <WifiOff className="h-4 w-4" />
             연결이 끊어졌어요. 답변이 전달되지 않을 수 있어요.
@@ -300,24 +302,42 @@ export function InterviewRoomPage({ companyId }: Props) {
         </div>
       )}
 
-      <SessionTimerBar
-        remainingSec={remainingSec}
-        totalSec={session.totalDurationSec}
-        questionNo={liveQuestionNo}
-      />
-
-      {/* 카메라(표정 분석)를 켠 경우에만 화상 스테이지를 노출한다 — 순수 텍스트 면접에선 숨긴다. */}
-      {hasCameraTrack && (
-        <div className="relative">
-          <VideoStage stream={media.stream} videoRef={analysisVideoRef} />
-          <div className="absolute top-2 right-2">
-            <ListeningIndicator active={listening} />
+      {/* 상단 — 카메라·면접관(내용 높이만큼). 카메라 켜면 화상 위에 시간·듣는중 배지,
+          웹(sm+)에선 카메라 오른쪽에 면접관 3인 세로. 모바일은 카메라 중앙. */}
+      <div className="shrink-0 space-y-3">
+        {hasCameraTrack ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+            <div className="relative w-full shrink-0 sm:w-fit">
+              <VideoStage stream={media.stream} videoRef={analysisVideoRef} compact />
+              <div className="absolute top-2 left-2">
+                <TimeBadge remainingSec={remainingSec} onVideo />
+              </div>
+              <div className="absolute top-2 right-2">
+                <ListeningIndicator active={listening} />
+              </div>
+            </div>
+            <InterviewerRoster
+              activePersonaId={liveQuestion.personaId}
+              isSpeaking={tts.isSpeaking}
+              vertical
+              className="sm:flex-1"
+            />
           </div>
-        </div>
-      )}
+        ) : (
+          // 순수 텍스트 면접(카메라 off) — 얹을 영상이 없어 남은 시간만 상단에 작게, 로스터는 가로.
+          <>
+            <div className="flex justify-end">
+              <TimeBadge remainingSec={remainingSec} />
+            </div>
+            <InterviewerRoster
+              activePersonaId={liveQuestion.personaId}
+              isSpeaking={tts.isSpeaking}
+            />
+          </>
+        )}
+      </div>
 
-      <InterviewerRoster activePersonaId={liveQuestion.personaId} isSpeaking={tts.isSpeaking} />
-
+      {/* 질문 — 내용 크기(작게). 남는 높이는 아래 답변 카드가 갖는다 */}
       <InterviewerPanel
         questionText={liveQuestion.text}
         questionNo={liveQuestionNo}
@@ -329,40 +349,44 @@ export function InterviewRoomPage({ companyId }: Props) {
         }
         roleLabel={liveQuestion.roleLabel}
         personaId={liveQuestion.personaId}
+        className="shrink-0"
       />
 
-      {phase === "evaluating" ? (
-        nextRequested ? (
-          // 다음 질문 생성 대기(마지막 질문 요약 대기는 위에서 전체 화면으로 처리)
-          <AiAnalyzingLoader
-            title="AI가 다음 질문을 준비하고 있어요"
-            steps={["직전 답변 분석", "다음 질문 구성"]}
-            skeletonCount={0}
-            className="px-0 py-2"
-          />
+      {/* 하단 답변 — 남는 높이를 채워 크게(질문·답변 사이 빈 공간 없음, 단계 바뀌어도 크기 동일) */}
+      <div className="min-h-0 flex-1">
+        {phase === "evaluating" ? (
+          nextRequested ? (
+            // 다음 질문 생성 대기(마지막 질문 요약 대기는 위에서 전체 화면으로 처리)
+            <AiAnalyzingLoader
+              title="AI가 다음 질문을 준비하고 있어요"
+              steps={["직전 답변 분석", "다음 질문 구성"]}
+              skeletonCount={0}
+              className="px-0 py-2"
+            />
+          ) : (
+            <EvaluationPanel
+              transcript={submittedAnswer || live.transcript}
+              isLast={liveQuestion.isLast ?? false}
+              onNext={handleNext}
+            />
+          )
         ) : (
-          <EvaluationPanel
-            transcript={submittedAnswer || live.transcript}
-            isLast={liveQuestion.isLast ?? false}
-            onNext={handleNext}
+          <AnswerPanel
+            mode={mode}
+            phase={phase}
+            voiceStep={voiceStep}
+            stream={media.stream}
+            answerText={answerText}
+            liveTranscript={live.transcript}
+            voiceAnswer={voiceAnswer}
+            onAnswerTextChange={setAnswerText}
+            onVoiceAnswerChange={handleVoiceAnswerChange}
+            onBeginAnswering={handleBeginAnswering}
+            onFinishSpeaking={handleFinishSpeaking}
+            onEndAnswer={handleEndAnswer}
           />
-        )
-      ) : (
-        <AnswerPanel
-          mode={mode}
-          phase={phase}
-          voiceStep={voiceStep}
-          stream={media.stream}
-          answerText={answerText}
-          liveTranscript={live.transcript}
-          voiceAnswer={voiceAnswer}
-          onAnswerTextChange={setAnswerText}
-          onVoiceAnswerChange={handleVoiceAnswerChange}
-          onBeginAnswering={handleBeginAnswering}
-          onFinishSpeaking={handleFinishSpeaking}
-          onEndAnswer={handleEndAnswer}
-        />
-      )}
+        )}
+      </div>
     </div>
   )
 }
