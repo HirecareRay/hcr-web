@@ -23,6 +23,9 @@ export function middleware(req: NextRequest) {
 }
 
 // 가드 대상 경로만 미들웨어를 태운다(나머지는 영향 없음).
+// 주의: Next matcher 의 `/x/:path*` 는 하위 경로만 잡고 `/x`(엔트리 페이지) 자체는 안 잡는다.
+// 그래서 로그아웃 상태로 `/interview`(면접 엔트리)·`/mypage`(마이 첫 화면)에 그냥 들어가지는
+// 구멍이 생긴다. exact 경로를 함께 명시해 진입 즉시 막는다.
 export const config = {
-  matcher: ["/mypage/:path*", "/interview/:path*"],
+  matcher: ["/mypage", "/mypage/:path*", "/interview", "/interview/:path*"],
 }
