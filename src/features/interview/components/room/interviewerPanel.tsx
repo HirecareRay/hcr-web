@@ -52,19 +52,21 @@ export function InterviewerPanel({
           <div className="flex items-center gap-1.5">
             <p className="text-muted text-xs font-semibold">AI 면접관</p>
             {showRoleBadge && (
-              <span className={`${badgeClass} rounded-full px-1.5 py-0.5 text-xs font-medium`}>
+              <span
+                className={`${badgeClass} rounded-full px-1.5 py-0.5 text-[0.6875rem] leading-none font-medium`}
+              >
                 {roleLabel}
               </span>
             )}
           </div>
-          <p className="text-disabled text-xs">
-            질문 {questionNo}
+          <div className="mt-0.5 flex items-center gap-1.5">
+            <p className="text-disabled text-xs">질문 {questionNo}</p>
             {isFollowUp && (
-              <span className="bg-primary/15 text-primary ml-1.5 rounded-full px-1.5 py-0.5 text-xs font-medium">
+              <span className="bg-primary/15 text-primary rounded-full px-1.5 py-0.5 text-[0.6875rem] leading-none font-medium">
                 꼬리질문
               </span>
             )}
-          </p>
+          </div>
         </div>
         {isSpeaking && (
           <span className="text-primary flex items-center gap-1 text-xs font-medium">
