@@ -11,10 +11,15 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#ff5a4f", // globals.css --color-coral-deep (헤더 배경)
     icons: [
       {
-        // ponytail: 로고 확정 전 임시 아이콘. 실제 로고 받으면 이 파일(public/logo.svg)만 덮어쓰면 됨
-        src: "/logo.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        // ponytail: 로고 확정 전 임시 아이콘. 실제 로고 받으면 이 파일들만 같은 이름으로 덮어쓰면 됨
+        src: "/icon-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: "/icon-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
       },
     ],
   }
