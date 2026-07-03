@@ -143,7 +143,7 @@ export function JobDetailPage({ jobId }: { jobId: string }) {
 
   return (
     <section className="bg-background min-h-full pb-10">
-      <PageTopBar title="채용공고" backTo="/jobs" />
+      <PageTopBar title="채용공고" />
 
       <div className="bg-white px-5 pt-5 pb-6">
         <div className="flex items-start gap-3">

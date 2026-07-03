@@ -97,6 +97,11 @@ export const questionEventSchema = z.object({
   kind: z.enum(["main", "follow_up"]),
   // 마지막 질문 표식(백엔드가 마지막 질문에만 true) — 미지정 허용(하위호환)
   isLast: z.boolean().optional(),
+  // 면접관 페르소나 3필드 — 백엔드 default 는 "" 이나 구버전 호환 위해 optional.
+  // 비어 있으면 프론트가 배지·하이라이트·목소리 매핑을 생략하고 폴백한다.
+  personaId: z.string().optional(),
+  roleLabel: z.string().optional(),
+  voice: z.string().optional(),
 })
 
 export const transcriptDeltaEventSchema = z.object({

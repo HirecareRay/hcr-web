@@ -7,9 +7,9 @@
  * 채워지므로, 아직 자막이 없을 때 "실시간"을 약속하지 않고 정직한 안내만 보여준다.
  * 자막이 들어오면 끝에 깜빡이는 커서를 붙여 스트리밍 느낌을 준다.
  *
- * 자막칸 높이는 고정(h-40)이라 답변이 길어져도 패널이 늘어나지 않고 안에서만 스크롤한다 —
- * review 단계 텍스트칸과 같은 높이라 단계 전환 시 레이아웃이 안 튄다. 새 자막이 들어오면
- * 항상 하단으로 자동 스크롤해 최신 인식 결과(+커서)가 보이게 유지한다.
+ * 자막칸은 카드 안 남는 높이를 채운다(flex-1). 답변이 길어져도 패널이 늘어나지 않고 안에서만
+ * 스크롤한다 — review 단계 텍스트칸과 같은 높이라 단계 전환 시 레이아웃이 안 튄다. 새 자막이
+ * 들어오면 항상 하단으로 자동 스크롤해 최신 인식 결과(+커서)가 보이게 유지한다.
  */
 
 "use client"
@@ -35,7 +35,7 @@ export function LiveTranscriptView({ transcript }: Props) {
     <div
       ref={scrollRef}
       aria-live="polite"
-      className="border-warm-border bg-background text-ink h-40 w-full overflow-y-auto rounded-xl border p-3 text-sm leading-relaxed"
+      className="border-warm-border bg-background text-ink min-h-0 w-full flex-1 overflow-y-auto rounded-xl border p-3 text-sm leading-relaxed"
     >
       {hasText ? (
         <span>

@@ -60,14 +60,17 @@ export function AiAnalyzingLoader({
   return (
     <div
       className={cn(
-        center ? "flex min-h-[70vh] flex-col items-center justify-center px-4 py-10" : "px-4 py-6",
+        "flex flex-col",
+        // center: 보이는 영역(main) 높이를 그대로 채워 세로 정중앙에.
+        // 기본: 콘텐츠 흐름 위에서부터(카드 + 스켈레톤).
+        center ? "min-h-full items-center justify-center px-4 py-10" : "px-4 py-6",
         className
       )}
     >
       <div
         className={cn(
-          "from-coral-deep to-coral-beam relative overflow-hidden rounded-3xl bg-gradient-to-br text-white shadow-lg",
-          center ? "w-full max-w-md p-7" : "p-5"
+          "from-coral-deep to-coral-beam relative w-full max-w-md self-center overflow-hidden rounded-3xl bg-gradient-to-br text-white shadow-lg",
+          center ? "p-7" : "p-5"
         )}
       >
         {/* 카드 위를 훑고 지나가는 광택 */}

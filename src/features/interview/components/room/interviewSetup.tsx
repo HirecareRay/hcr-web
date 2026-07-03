@@ -108,14 +108,14 @@ export function InterviewSetup({
     <>
       {/* 시작 전 화면에서만 이탈 허용 — 진입했던 곳(진입 화면·기업 리포트)으로 복귀 */}
       <PageTopBar title="AI 모의 면접" />
-      <div className="space-y-5 px-4 py-5">
+      <div className="space-y-4 px-4 py-4">
         <header>
           <h2 className="text-ink text-xl font-bold">AI 모의 면접 준비</h2>
-          <p className="text-muted mt-1 text-sm">설정을 고르고 면접을 시작하세요.</p>
+          <p className="text-muted mt-0.5 text-sm">설정을 고르고 면접을 시작하세요.</p>
         </header>
 
         {/* 지원 직무 */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <label className="text-ink text-sm font-semibold">지원 직무</label>
           <input
             value={jobTitle}
@@ -126,7 +126,7 @@ export function InterviewSetup({
         </div>
 
         {/* 응답 모드 */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <span className="text-ink text-sm font-semibold">응답 방식</span>
           <div className="flex gap-2">
             <button
@@ -149,7 +149,7 @@ export function InterviewSetup({
         </div>
 
         {/* 전체 면접 시간 */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <span className="text-ink text-sm font-semibold">면접 시간</span>
           <div className="flex gap-2">
             {durationOptionsSec.map((sec) => (
@@ -174,21 +174,21 @@ export function InterviewSetup({
 
           {mode === "voice" ? (
             // 음성 모드 — 실제 면접처럼 화상(표정 분석)을 항상 함께 진행한다.
-            <div className="border-warm-border flex items-start gap-3 rounded-xl border px-3.5 py-3">
-              <span className="bg-coral-light text-primary mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+            <div className="border-warm-border flex items-center gap-3 rounded-xl border px-3.5 py-2.5">
+              <span className="bg-coral-light text-primary inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
                 <ScanFace className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="text-ink block text-sm font-semibold">화상 면접으로 진행돼요</span>
                 <span className="text-muted mt-0.5 block text-xs">
-                  음성 면접은 실제 면접처럼 카메라로 표정·시선·자세까지 함께 분석해요.
+                  카메라로 표정·시선·자세까지 함께 분석해요.
                 </span>
               </span>
             </div>
           ) : (
             // 텍스트 모드 — 타이핑 중 얼굴 유지가 어려울 수 있어 선택으로 둔다.
-            <label className="border-warm-border flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3">
-              <span className="bg-coral-light text-primary mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+            <label className="border-warm-border flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5">
+              <span className="bg-coral-light text-primary inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
                 <ScanFace className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
@@ -196,8 +196,7 @@ export function InterviewSetup({
                   표정·태도 분석 받기 <span className="text-muted font-normal">(선택)</span>
                 </span>
                 <span className="text-muted mt-0.5 block text-xs">
-                  카메라로 비언어 태도까지 분석해 피드백에 반영해요. 타이핑에 집중하고 싶으면 꺼도
-                  돼요.
+                  비언어 태도까지 분석해 피드백에 반영해요.
                 </span>
               </span>
               <Toggle checked={textNonverbalOn} onChange={handleTextNonverbalChange} />
