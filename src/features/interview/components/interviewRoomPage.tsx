@@ -14,9 +14,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import { WifiOff } from "lucide-react"
 import { AiAnalyzingLoader } from "@/components/ui/aiAnalyzingLoader"
 import { routes } from "@/constants/routes"
+import { resultLoaderCopy } from "../lib/loaderCopy"
+import { getInterviewResult } from "../services/interviewResultService"
 import { useInterview } from "../hooks/useInterview"
 import { useMediaStream } from "../hooks/useMediaStream"
 import { useTts } from "../hooks/useTts"
@@ -39,6 +42,7 @@ interface Props {
 
 export function InterviewRoomPage({ companyId }: Props) {
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   // 일반 면접(general)도 companyId 를 그대로 WS 로 실어 보낸다. 백엔드는 이 값을 두 곳에 쓰는데,
   //   ① 기업 컨텍스트 조회 — general 은 ObjectId 가 아니라 조회에 실패하지만 백엔드가 안전하게
@@ -157,13 +161,23 @@ export function InterviewRoomPage({ companyId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live.summary])
 
-  // 종료되면 미디어/음성을 정리하고 결과 리포트로 이동
+  // 종료되면 미디어/음성을 정리하고, 결과를 먼저 prefetch 한 뒤 결과 리포트로 이동한다.
+  // WS summary 는 완료 신호만 줄 뿐 데이터를 안 실어주므로 결과 페이지는 REST 로 결과를 다시
+  // 조회한다(useInterviewResult). 그 재조회 대기를 결과 페이지가 아니라 여기 "정리 중" 중앙
+  // 로더가 붙어 있는 동안 미리 흡수해, 이동 후 두 번째 로더(레이아웃 점프)를 없앤다.
+  //   - queryKey 는 useInterviewResult 와 반드시 동일(["interviewResult", companyId]) → 캐시 재사용.
+  //   - prefetch 는 성공·실패 모두 조용히 settle(throw X)하므로 finally 로 항상 이동한다.
+  //     실패했으면 결과 페이지가 스스로 재조회하며 ResultSkeleton(같은 중앙 로더)로 fallback.
   useEffect(() => {
-    if (phase === "finished") {
-      tts.cancel()
-      media.stop()
-      router.push(routes.interviewResult(companyId))
-    }
+    if (phase !== "finished") return
+    tts.cancel()
+    media.stop()
+    void queryClient
+      .prefetchQuery({
+        queryKey: ["interviewResult", companyId],
+        queryFn: () => getInterviewResult(companyId),
+      })
+      .finally(() => router.push(routes.interviewResult(companyId)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
@@ -241,6 +255,13 @@ export function InterviewRoomPage({ companyId }: Props) {
 
   if (!session) return null
 
+  // 종료 — summary 도착 후 결과 prefetch~이동 사이. liveQuestion/socket 상태와 무관하게 항상
+  // "정리 중" 중앙 로더를 유지한다. !liveQuestion·socket-closed 가드보다 위에 둬, 백엔드가 향후
+  // summary 시 question 을 비우거나 소켓을 먼저 끊어도 "첫 질문 준비"·"연결 끊김"으로 오분기되지 않게.
+  if (phase === "finished") {
+    return <AiAnalyzingLoader center {...resultLoaderCopy} />
+  }
+
   // 첫 질문 도착 전 — 연결 게이트(끊김 재시도 / 첫 질문 생성 중)
   if (!liveQuestion) {
     if (live.socketState === "closed") {
@@ -270,16 +291,10 @@ export function InterviewRoomPage({ companyId }: Props) {
   }
 
   // 마지막 답변 제출 후 "결과 보기"를 누른 상태 — summary 도착 전까지 전체 화면 결과 정리 로더.
-  // summary 가 오면 finishNow → 결과 페이지로 이동한다.
+  // summary 가 오면 finishNow(phase=finished) → 위 finished 브랜치가 같은 로더를 이어받아
+  // prefetch·이동까지 끊김 없이 유지한다(같은 resultLoaderCopy).
   if (phase === "evaluating" && nextRequested && liveQuestion.isLast) {
-    return (
-      <AiAnalyzingLoader
-        center
-        title="면접 결과를 정리하고 있어요"
-        subtitle="답변과 표정·음성을 종합해 리포트를 만들고 있어요"
-        steps={["답변 내용 종합", "표정·시선 분석", "음성 안정도 분석", "강점·보완점 도출"]}
-      />
-    )
+    return <AiAnalyzingLoader center {...resultLoaderCopy} />
   }
 
   const connectionLost = live.socketState === "closed"
@@ -361,7 +376,7 @@ export function InterviewRoomPage({ companyId }: Props) {
               title="AI가 다음 질문을 준비하고 있어요"
               steps={["직전 답변 분석", "다음 질문 구성"]}
               skeletonCount={0}
-              className="px-0 py-2"
+              className="h-full justify-center px-0 py-2"
             />
           ) : (
             <EvaluationPanel
