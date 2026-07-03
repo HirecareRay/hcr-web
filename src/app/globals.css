@@ -60,3 +60,24 @@ textarea:focus,
 select:focus {
   outline: none;
 }
+
+/* AI 분석 로더(aiAnalyzingLoader) — 카드 위를 훑고 지나가는 광택
+   ⚠️ develop 머지 때 한 번 유실된 적 있음. 로더 진행바가 멈춰 보이면 이 블록부터 확인 */
+@keyframes aiSheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+/* AI 분석 로더 — 진행 바가 좌우로 흐르는 인디케이터 */
+@keyframes aiProgressFlow {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
