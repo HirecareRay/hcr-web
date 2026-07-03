@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/* 공통 디자인 토큰 — Figma "01.공통 컴포넌트 & 디자인 토큰" 기준 */
+@theme {
+  /* Brand / Coral */
+  --color-primary: #ff6b57; /* 메인 강조: 활성 탭, 인디케이터 */
+  --color-coral-deep: #ff5a4f; /* 헤더 배경 */
+  --color-coral-beam: #ff8a6b; /* 보조 코랄 */
+  --color-coral-light: #fff3ef; /* 활성 탭 배경 */
+
+  /* Surface / Border */
+  --color-background: #fafafa; /* neutral/background — 콘텐츠(가운데) 영역 배경 */
+  --color-gutter: #ececec; /* 데스크탑 양옆 여백 — 콘텐츠보다 한 단계 어둡게 구분 */
+  --color-warm-bg: #fff9f6; /* 웜 톤 배경 (강조 영역) */
+  --color-warm-border: #f1d8cf; /* 보더 */
+  --color-skeleton: #e7e0d9; /* 로딩 스켈레톤 블록 — 배경(#fafafa) 위에서 확실히 보이는 웜 그레이 */
+
+  /* Status */
+  --color-error: #f24d4d;
+  --color-success: #26bf67;
+  --color-info: #2f6fed; /* 파랑 — 보조/정보, 데이터 시각화(예: 남녀 비율) */
+
+  /* Text (컴포넌트에서 관찰된 중립색) */
+  --color-ink: #1a1a1a; /* 강한 본문 */
+  --color-muted: #666666; /* 보조 텍스트 */
+  --color-disabled: #a6a6a6; /* 비활성 텍스트 */
+}
+
+@layer base {
+  * {
+    outline: none;
+  }
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  outline: none;
+}
+
+/* 전역 페이지 배경 — 여백(gutter)색. 가운데 콘텐츠 영역은 appShell이 #fafafa로 덮음 */
+body {
+  background-color: var(--color-gutter);
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* 포커스 시 기본 아웃라인만 제거하고, 테두리는 컴포넌트의 focus:border-* 가 담당한다.
+   (예전엔 border:none 이 있어 포커스 시 테두리가 통째로 사라졌다) */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+}
