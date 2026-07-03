@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation"
 import { NavBar } from "./navBar"
 
 // 폰 프레임을 적용하지 않는 경로 (Swagger API 독스 등 풀폭이 필요한 화면)
-const fullWidthPrefixes = ["/docs"]
+const fullWidthPrefixes = ["/docs", "/install"]
 
 /**
  * 앱 셸 — 콘텐츠를 docs처럼 화면 폭에 꽉 채우고 가운데 정렬한다.
