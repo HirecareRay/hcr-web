@@ -5,7 +5,7 @@ import { usePwaInstallPrompt } from "@/features/pwa/hooks/usePwaInstallPrompt"
 
 // QR로 접속하는 발표용 설치 랜딩 페이지. 로그인 불필요(middleware 가드 대상 아님).
 export default function InstallPage() {
-  const { isIOS, isStandalone, canPrompt, promptInstall } = usePwaInstallPrompt()
+  const { isIOS, isStandalone, isInApp, canPrompt, promptInstall } = usePwaInstallPrompt()
 
   return (
     <main className="bg-background flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
