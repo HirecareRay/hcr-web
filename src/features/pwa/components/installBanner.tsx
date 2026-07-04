@@ -6,28 +6,33 @@ import { usePwaInstallPrompt } from "@/features/pwa/hooks/usePwaInstallPrompt"
 
 const DISMISSED_KEY = "pwa-install-dismissed"
 
-// 앱 내 상시 노출 설치 유도 배너 — 한 번 닫으면 localStorage에 기록해 다시 안 뜸
+// 앱 내 상시 노출 설치 유도 배너 — 닫으면 sessionStorage에 기록해 같은 세션 동안만 재노출 안 함
+// (localStorage로 영구 기록하면 나중에 설치하고 싶어져도 다시 안 떠서 sessionStorage로 둠)
 export function InstallBanner() {
-  const { isIOS, isStandalone, canPrompt, promptInstall } = usePwaInstallPrompt()
+  const { isIOS, isStandalone, isInApp, canPrompt, promptInstall } = usePwaInstallPrompt()
   const [dismissed, setDismissed] = useState(true)
 
   useEffect(() => {
-    setDismissed(localStorage.getItem(DISMISSED_KEY) === "1")
+    // setDismissed(localStorage.getItem(DISMISSED_KEY) === "1")
+    setDismissed(sessionStorage.getItem(DISMISSED_KEY) === "1")
   }, [])
 
   function dismiss() {
-    localStorage.setItem(DISMISSED_KEY, "1")
+    // localStorage.setItem(DISMISSED_KEY, "1")
+    sessionStorage.setItem(DISMISSED_KEY, "1")
     setDismissed(true)
   }
 
-  if (isStandalone || dismissed || !(canPrompt || isIOS)) return null
+  if (isStandalone || dismissed || !(canPrompt || isIOS || isInApp)) return null
 
   return (
     <div className="bg-warm-bg border-warm-border flex items-center gap-3 border-b px-4 py-2.5">
       <p className="text-ink flex-1 text-sm">
-        {canPrompt
-          ? "홈 화면에 추가하고 앱처럼 사용해보세요"
-          : "하단 공유 버튼(⎋)에서 홈 화면에 추가할 수 있어요"}
+        {isInApp
+          ? "우측 상단 메뉴에서 '다른 브라우저로 열기'를 선택해주세요"
+          : canPrompt
+            ? "홈 화면에 추가하고 앱처럼 사용해보세요"
+            : "하단 공유 버튼(⎋)에서 홈 화면에 추가할 수 있어요"}
       </p>
       {canPrompt && (
         <button
