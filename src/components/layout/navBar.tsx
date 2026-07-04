@@ -16,7 +16,7 @@ type NavItem = {
 // 라우트 생기면 href만 교체하면 됨
 const navItems: NavItem[] = [
   { label: "홈", href: routes.home, icon: Home },
-  { label: "유저분석", href: "#", icon: ChartNoAxesColumn }, // TODO: 유저분석 라우트 연결
+  { label: "유저분석", href: routes.fitHistory, icon: ChartNoAxesColumn },
   { label: "AI면접", href: routes.interviewEntry, icon: Mic },
   { label: "마이", href: routes.mypage, icon: User }, // 비로그인 시 미들웨어가 /login 으로 보냄
 ]
@@ -30,8 +30,7 @@ export function NavBar() {
         {navItems.map(({ label, href, icon: Icon }) => {
           // 면접 진입점은 면접 흐름(/interview/*) 전체에서 활성으로 본다(홈 "/"은 제외돼 안전).
           const isActive =
-            href !== "#" &&
-            (pathname === href || (href !== routes.home && pathname.startsWith(`${href}/`)))
+            pathname === href || (href !== routes.home && pathname.startsWith(`${href}/`))
 
           return (
             <li key={label} className="flex-1">
