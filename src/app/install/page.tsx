@@ -17,7 +17,15 @@ export default function InstallPage() {
 
       {isStandalone && <p className="text-primary text-sm font-bold">이미 설치되어 있습니다</p>}
 
-      {!isStandalone && canPrompt && (
+      {!isStandalone && isInApp && (
+        <p className="text-muted max-w-xs text-sm">
+          우측 상단 메뉴에서{" "}
+          <span className="text-ink font-bold">&quot;다른 브라우저로 열기&quot;</span>를
+          선택해주세요
+        </p>
+      )}
+
+      {!isStandalone && !isInApp && canPrompt && (
         <button
           onClick={promptInstall}
           className="bg-primary rounded-full px-8 py-3 text-sm font-bold text-white"
@@ -26,18 +34,24 @@ export default function InstallPage() {
         </button>
       )}
 
-      {!isStandalone && isIOS && (
+      {!isStandalone && !isInApp && isIOS && (
         <p className="text-muted max-w-xs text-sm">
           하단 공유 버튼(⎋)을 누른 뒤{" "}
           <span className="text-ink font-bold">&quot;홈 화면에 추가&quot;</span>를 선택해주세요
         </p>
       )}
 
-      {!isStandalone && !isIOS && !canPrompt && (
+      {!isStandalone && !isInApp && !isIOS && !canPrompt && (
         <p className="text-muted max-w-xs text-sm">
           브라우저 메뉴(⋮)에서 <span className="text-ink font-bold">&quot;앱 설치&quot;</span>를
           선택해주세요
         </p>
+      )}
+
+      {!isStandalone && !isIOS && (
+        <a href="/HcR.apk" download className="text-muted text-xs underline underline-offset-2">
+          APK 파일 직접 다운로드
+        </a>
       )}
     </main>
   )
