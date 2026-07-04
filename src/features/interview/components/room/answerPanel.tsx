@@ -42,19 +42,27 @@ interface Props {
 const primaryButton =
   "inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
 
-// 공통 패널 카드.
-const answerSection = "border-warm-border bg-background space-y-3 rounded-2xl border p-4 shadow-sm"
+// 공통 패널 카드 — 부모(하단 flex-1 영역)의 높이를 꽉 채운다(h-full). 질문 카드는 작고
+// 답변 카드가 남는 높이를 다 가져 커진다. 입력칸이 카드 안 남는 높이를 채우고(flex-1)
+// 버튼은 항상 맨 아래 → 단계(asking/answering/review/평가)가 바뀌어도 크기·버튼 위치 동일.
+const answerSection =
+  "border-warm-border bg-background flex h-full flex-col gap-2.5 rounded-2xl border p-3 shadow-sm"
+
+// 공통 내용 박스 — 모든 단계의 내용 영역을 같은 테두리 박스로 통일한다(입력칸/자막/미리보기).
+// 카드 안 남는 높이를 채우고(flex-1) 넘치면 안에서만 스크롤한다.
+const answerBox = "border-warm-border min-h-0 w-full flex-1 overflow-y-auto rounded-xl border p-3"
 
 // listening ↔ review 공통 배지 — 두 단계의 배지 높이를 h-9 로 못 박아 전환 시 안 튀게 한다.
 const stepBadge =
-  "bg-primary/10 text-primary inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-semibold"
+  "bg-primary/10 text-primary inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3 text-sm font-semibold"
 
-// listening 자막칸과 review 텍스트칸의 높이를 동일하게 고정 → 입력 영역이 안 요동친다.
-const voiceInputHeight = "h-40"
+// listening 자막칸·review 텍스트칸 모두 카드 안 남는 높이를 채운다(flex-1) → 두 단계 높이가
+// 같아 안 튀고, 답변이 길어져도 칸 안에서만 스크롤한다.
+const voiceInputHeight = "min-h-0 flex-1"
 
-// listening·review 안내 문구 — 두 문구 모두 한 줄 분량으로 짧게 유지하고, 좁은 화면에서
-// 한쪽만 줄바꿈돼도 안 튀도록 높이를 고정 예약한다(줄 수 달라도 동일 높이).
-const voiceHelperText = "text-muted min-h-[2.5rem] text-xs"
+// listening·review 안내 문구 — 두 문구 모두 한 줄 분량으로 짧게 유지한다. 한 줄 높이만
+// 예약해(min-h-[1.25rem]) 단계 전환 시 안 튀되 불필요한 여백은 남기지 않는다.
+const voiceHelperText = "text-muted min-h-[1.25rem] shrink-0 text-xs"
 
 export function AnswerPanel({
   mode,
@@ -70,15 +78,15 @@ export function AnswerPanel({
   onFinishSpeaking,
   onEndAnswer,
 }: Props) {
-  // asking 단계 — 답변 시작 전
+  // asking 단계 — 답변 시작 전. 다른 단계(입력칸)와 같은 테두리 박스로 통일한다.
   if (phase === "asking") {
     return (
       <section className={answerSection}>
-        <p className="text-muted text-xs">
+        <div className={cn(answerBox, "text-disabled text-sm")}>
           {mode === "voice"
             ? "답변을 시작하면 음성이 실시간으로 면접관에게 전달돼요."
             : "답변을 시작하고 아래에 직접 입력하세요."}
-        </p>
+        </div>
         <button type="button" onClick={onBeginAnswering} className={cn(primaryButton, "w-full")}>
           답변 시작
         </button>
@@ -91,7 +99,9 @@ export function AnswerPanel({
     return (
       <section className={answerSection}>
         {/* "잡히고 있다" presence 피드백 — 항상 동작(비용 0). 실시간 자막은 백엔드 ON 일 때만 채워짐. */}
-        <MicLevelMeter stream={stream} active />
+        <div className="shrink-0">
+          <MicLevelMeter stream={stream} active />
+        </div>
         <LiveTranscriptView transcript={liveTranscript} />
         <p className={voiceHelperText}>말씀이 끝나면 ‘답변 입력 완료’를 누르세요.</p>
         <button type="button" onClick={onFinishSpeaking} className={cn(primaryButton, "w-full")}>
@@ -138,14 +148,13 @@ export function AnswerPanel({
         value={answerText}
         onChange={(event) => onAnswerTextChange(event.target.value)}
         placeholder="여기에 답변을 입력하세요."
-        rows={5}
-        className="border-warm-border text-ink placeholder:text-disabled focus:border-primary w-full resize-none rounded-xl border p-3 text-sm leading-relaxed outline-none"
+        className="border-warm-border text-ink placeholder:text-disabled focus:border-primary min-h-0 w-full flex-1 resize-none rounded-xl border p-3 text-sm leading-relaxed outline-none"
       />
       <button
         type="button"
         onClick={onEndAnswer}
         disabled={!canEnd}
-        className={cn(primaryButton, "mt-auto w-full")}
+        className={cn(primaryButton, "w-full")}
       >
         <Send className="h-4 w-4" />
         답변 종료

@@ -4,7 +4,7 @@ import UploadList from "@/features/documents/components/UploadList"
 export default function UploadPage() {
   return (
     <section className="bg-background min-h-full pb-24">
-      <PageTopBar title="서류 등록" backTo="/mypage" />
+      <PageTopBar title="서류 등록" />
 
       <div className="px-5 pt-5">
         <div className="mb-5">
