@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useSearchParams } from "next/navigation"
-import { searchKeywordParam } from "@/constants/routes"
+import { searchKeywordParam, searchTabParam } from "@/constants/routes"
 import { searchCompanies, searchCompanyJobs, searchJobs } from "../services/searchService"
 import { ALL_CATEGORY, industryToCategory } from "../utils/categorize"
 import type { CompanyCategory } from "../types/search"
@@ -21,7 +21,9 @@ export function useSearchResults() {
   const [query, setQuery] = useState(initialKeyword)
   const [selectedCategory, setSelectedCategory] = useState<CompanyCategory>(ALL_CATEGORY)
   // 탭: 기업 검색 결과 vs 채용공고(직무·직군 키워드) 검색 결과
-  const [activeTab, setActiveTab] = useState<SearchResultTab>("company")
+  // 유입 URL에 `?tab=job`이 실려 있으면(예: 유저분석 검색바) 채용공고 탭으로 연다.
+  const initialTab: SearchResultTab = searchParams.get(searchTabParam) === "job" ? "job" : "company"
+  const [activeTab, setActiveTab] = useState<SearchResultTab>(initialTab)
 
   // 검색 실행(돋보기/엔터): 현재 입력값을 검색어로 커밋한다.
   const submitSearch = (value: string) => setQuery(value.trim())
