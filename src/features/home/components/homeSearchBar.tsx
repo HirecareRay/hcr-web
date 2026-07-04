@@ -15,7 +15,10 @@ import { routes } from "@/constants/routes"
 import { SEARCH_UI_LIMITS } from "@/features/search/constants/search"
 import { searchCompanies } from "@/features/search/services/searchService"
 
-export function HomeSearchBar() {
+export function HomeSearchBar({
+  resultTab,
+  placeholder,
+}: { resultTab?: "company" | "job"; placeholder?: string } = {}) {
   const router = useRouter()
   const [keyword, setKeyword] = useState("")
   const [debouncedKeyword, setDebouncedKeyword] = useState("")
@@ -47,7 +50,7 @@ export function HomeSearchBar() {
 
   const handleSubmit = (value: string) => {
     setSuggestOpen(false)
-    router.push(routes.searchWithKeyword(value))
+    router.push(routes.searchWithKeyword(value, resultTab))
   }
 
   return (
@@ -59,6 +62,7 @@ export function HomeSearchBar() {
           setSuggestOpen(true)
         }}
         onSubmit={handleSubmit}
+        placeholder={placeholder}
       />
 
       {showSuggest && (
