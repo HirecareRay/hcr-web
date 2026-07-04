@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { NavBar } from "./navBar"
+import { InstallBanner } from "@/features/pwa/components/installBanner"
 
 // 폰 프레임을 적용하지 않는 경로 (Swagger API 독스 등 풀폭이 필요한 화면)
 const fullWidthPrefixes = ["/docs", "/install"]
@@ -30,6 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* pt-[env(safe-area-inset-top)] — 모바일 노치·상태바만큼 상단을 비운다.
           노치 없는 기기·데스크탑에서는 0이라 영향 없음(layout.tsx의 viewportFit: "cover"와 짝). */}
       <div className="bg-background flex h-full w-full max-w-4xl flex-col overflow-hidden pt-[env(safe-area-inset-top)] shadow-[0_0_1.5rem_rgba(0,0,0,0.06)]">
+        <InstallBanner />
         <main className="flex-1 overflow-y-auto">{children}</main>
         <NavBar />
       </div>
