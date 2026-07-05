@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ChevronLeft, Building2, ExternalLink } from "lucide-react"
+import { ChevronLeft, Building2, ExternalLink, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useFitAnalysis } from "../hooks/useFitAnalysis"
 import type { FitAnalysis, JobMatch, CompanyMatch, CategorySummary } from "../types/analysis"
@@ -11,17 +11,12 @@ import type { FitAnalysis, JobMatch, CompanyMatch, CategorySummary } from "../ty
 
 const QUALIFICATION_TYPES = ["required", "tech_tool", "career"]
 
-const COMPANY_SUBS = [
-  { key: "industry_domain", label: "산업 및 사업 분야", emptyMsg: undefined },
+const COMPANY_GROUPS = [
+  { label: "산업 및 사업 분야", dims: ["industry_domain"], emptyMsg: undefined },
   {
-    key: "culture",
-    label: "조직문화",
-    emptyMsg: "기업의 조직문화에 대한 공개 정보가 충분하지 않아 평가가 어렵습니다.",
-  },
-  {
-    key: "talent_values",
-    label: "인재상",
-    emptyMsg: "기업의 인재상 정보가 게시되어 있지 않아 평가가 어렵습니다.",
+    label: "인재상 및 조직문화",
+    dims: ["culture", "talent_values"],
+    emptyMsg: "기업의 인재상·조직문화에 대한 공개 정보가 충분하지 않아 평가가 어렵습니다.",
   },
 ] as const
 
@@ -204,34 +199,23 @@ function JobTab({ jobMatches }: { jobMatches: JobMatch[] }) {
 // ── 탭: 기업 적합도 ───────────────────────────────────────────────────
 
 function CompanyTab({ companyMatches }: { companyMatches: CompanyMatch[] }) {
-  const grouped = Object.fromEntries(
-    COMPANY_SUBS.map(({ key }) => [
-      key,
-      companyMatches
-        .filter((m) => m.dimension === key)
-        .map(companyToItemData)
-        .filter((item) => !!item.text?.trim()),
-    ])
-  )
   return (
     <div className="flex flex-col gap-3">
-      <MatchGroup
-        label="산업 및 사업 분야"
-        items={grouped.industry_domain}
-        emptyMessage={COMPANY_SUBS[0].emptyMsg}
-      />
-      <div className="flex flex-col gap-3">
-        <MatchGroup
-          label="조직문화"
-          items={grouped.culture}
-          emptyMessage={COMPANY_SUBS[1].emptyMsg}
-        />
-        <MatchGroup
-          label="인재상"
-          items={grouped.talent_values}
-          emptyMessage={COMPANY_SUBS[2].emptyMsg}
-        />
-      </div>
+      {COMPANY_GROUPS.map((group) => {
+        const dims: readonly string[] = group.dims
+        const items = companyMatches
+          .filter((m) => dims.includes(m.dimension))
+          .map(companyToItemData)
+          .filter((item) => !!item.text?.trim())
+        return (
+          <MatchGroup
+            key={group.label}
+            label={group.label}
+            items={items}
+            emptyMessage={group.emptyMsg}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -272,22 +256,29 @@ function ReportSection({
 
 // ── 방사 차트 ─────────────────────────────────────────────────────────
 
-const RADAR_ORDER = [
-  "자격요건",
-  "경력사항",
-  "학력사항",
-  "주요업무",
-  "우대사항",
-  "산업 및 사업 분야",
-  "조직문화",
-  "인재상",
-]
-const RADAR_SHORT: Record<string, string> = { "산업 및 사업 분야": "사업분야" }
+// 자격요건 포인트 = JobTab의 자격요건 카드(QUALIFICATION_TYPES)와 동일하게
+// 자격요건·기술·도구·경력사항 3개 카테고리를 합산
+const QUALIFICATION_CATEGORIES = ["자격요건", "기술·도구", "경력사항"]
+const RADAR_ORDER = ["자격요건", "주요업무", "우대사항", "산업 및 사업 분야", "인재상 및 조직문화"]
+const RADAR_SHORT: Record<string, string> = {
+  "산업 및 사업 분야": "사업분야",
+  "인재상 및 조직문화": "인재상·문화",
+}
+
+function radarData(summary: CategorySummary[]) {
+  return RADAR_ORDER.map((cat) => {
+    const sources =
+      cat === "자격요건"
+        ? summary.filter((s) => QUALIFICATION_CATEGORIES.includes(s.category))
+        : summary.filter((s) => s.category === cat)
+    const total = sources.reduce((sum, s) => sum + s.total, 0)
+    const matched = sources.reduce((sum, s) => sum + s.matched, 0)
+    return total > 0 ? { label: RADAR_SHORT[cat] ?? cat, value: matched / total } : null
+  }).filter((d): d is { label: string; value: number } => !!d)
+}
 
 function RadarChart({ summary }: { summary: CategorySummary[] }) {
-  const data = RADAR_ORDER.map((cat) => summary.find((s) => s.category === cat))
-    .filter((s): s is CategorySummary => !!s && s.total > 0)
-    .map((s) => ({ label: RADAR_SHORT[s.category] ?? s.category, value: s.matched / s.total }))
+  const data = radarData(summary)
 
   if (data.length < 3) return null
 
@@ -373,70 +364,149 @@ function ReportTab({ analysis }: { analysis: FitAnalysis }) {
   )
 }
 
-// ── 탭 바 + 결과 ──────────────────────────────────────────────────────
+// ── 상세 모달 ─────────────────────────────────────────────────────────
+
+function DetailModal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string
+  onClose: () => void
+  children: React.ReactNode
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
+    document.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", onKey)
+      document.body.style.overflow = ""
+    }
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="border-warm-border relative flex max-h-[85svh] w-full flex-col rounded-t-3xl border bg-white sm:max-h-[90svh] sm:min-h-[60svh] sm:w-full sm:max-w-2xl sm:rounded-3xl"
+      >
+        <div className="border-warm-border flex shrink-0 items-center justify-between border-b px-4 py-3">
+          <h2 className="text-ink text-sm font-bold">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="text-muted hover:text-ink"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+        <div className="overflow-y-auto px-4 py-4">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+// ── 탭 바 (클릭 시 모달로 상세 표시) ──────────────────────────────────
+// 모바일: 라벨 + 배지만(공간 협소). sm 이상: 미리보기 한 줄 추가(남는 폭 활용).
+
+function TabBar({
+  tabs,
+  onSelect,
+}: {
+  tabs: { key: TabKey; label: string; badge: string; preview: string }[]
+  onSelect: (key: TabKey) => void
+}) {
+  return (
+    <div className="border-warm-border flex overflow-hidden rounded-3xl border bg-white">
+      {tabs.map((tab, i) => (
+        <button
+          key={tab.key}
+          type="button"
+          onClick={() => onSelect(tab.key)}
+          className={cn(
+            "hover:bg-warm-bg flex flex-1 flex-col items-center gap-1 px-2 py-4 text-center transition-colors sm:py-5",
+            i > 0 && "border-warm-border border-l"
+          )}
+        >
+          <span className="text-ink text-sm font-bold sm:text-base">{tab.label}</span>
+          {tab.badge && <span className="text-muted text-xs">{tab.badge}</span>}
+          {tab.preview && (
+            <span className="text-disabled mt-1 hidden max-w-full truncate text-xs sm:block">
+              {tab.preview}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── 결과 ──────────────────────────────────────────────────────────────
 
 type TabKey = "job" | "company" | "report"
 
-function tabBadge(matched: number, total: number) {
-  if (total === 0) return ""
-  return matched === total ? " ✓" : ` ${matched}/${total}`
+const MODAL_TITLE: Record<TabKey, string> = {
+  job: "직무 적합도",
+  company: "기업 적합도",
+  report: "리포트",
 }
 
 function Result({ analysis }: { analysis: FitAnalysis }) {
-  const [active, setActive] = useState<TabKey>("job")
+  const [openTab, setOpenTab] = useState<TabKey | null>(null)
 
+  const jobTotal = analysis.jobMatches.length
   const jobMatched = analysis.jobMatches.filter((m) => m.matched).length
+  const compTotal = analysis.companyMatches.length
   const compMatched = analysis.companyMatches.filter((m) => m.matched).length
 
-  const TABS = [
-    { key: "job" as TabKey, label: `직무${tabBadge(jobMatched, analysis.jobMatches.length)}` },
+  const tabs = [
+    {
+      key: "job" as TabKey,
+      label: "직무",
+      badge: jobTotal > 0 ? `${jobMatched}/${jobTotal} 충족` : "",
+      preview: "자격요건 · 주요업무 · 우대사항",
+    },
     {
       key: "company" as TabKey,
-      label: `기업${tabBadge(compMatched, analysis.companyMatches.length)}`,
+      label: "기업",
+      badge: compTotal > 0 ? `${compMatched}/${compTotal} 충족` : "",
+      preview: "산업 및 사업 분야 · 인재상 및 조직문화",
     },
-    { key: "report" as TabKey, label: "리포트" },
+    {
+      key: "report" as TabKey,
+      label: "리포트",
+      badge: "",
+      preview: `강점 ${analysis.strengths?.length ?? 0} · 보완 ${analysis.improvements?.length ?? 0} · 개선 방향 ${analysis.recommendations?.length ?? 0}`,
+    },
   ]
 
   return (
-    <div>
-      {/* ── 방사 차트 + 종합 요약: 이 블록 전체를 주석 처리하면 차트·요약 제거 ── */}
-      <div className="px-4 pt-4 sm:px-6">
-        <div className="border-warm-border rounded-3xl border bg-white p-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
-            <div className="mx-auto w-full max-w-[14rem] shrink-0 sm:mx-0 sm:w-[14rem]">
-              <RadarChart summary={analysis.categorySummary} />
-            </div>
-            <p className="text-ink text-sm leading-relaxed font-semibold">
-              {analysis.overallSummary}
-            </p>
+    <div className="flex flex-col gap-3 px-4 pt-4 pb-10 sm:px-6">
+      <div className="border-warm-border rounded-3xl border bg-white p-4 sm:p-6">
+        <div className="flex flex-col items-center gap-4 sm:gap-6">
+          <div className="mx-auto w-full max-w-80 sm:max-w-xl md:max-w-2xl">
+            <RadarChart summary={analysis.categorySummary} />
           </div>
-        </div>
-      </div>
-      {/* ── /방사 차트 + 종합 요약 ── */}
-
-      <div className="bg-background border-warm-border sticky top-0 z-10 mt-4 border-b">
-        <div className="flex px-4 sm:px-6">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActive(tab.key)}
-              className={cn(
-                "flex-1 py-3 text-sm font-semibold transition-colors",
-                active === tab.key ? "border-primary text-primary border-b-2" : "text-muted"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+          <p className="text-ink w-full text-sm leading-relaxed font-semibold sm:text-base">
+            {analysis.overallSummary}
+          </p>
         </div>
       </div>
 
-      <div className="px-4 pt-4 pb-10 sm:px-6">
-        {active === "job" && <JobTab jobMatches={analysis.jobMatches} />}
-        {active === "company" && <CompanyTab companyMatches={analysis.companyMatches} />}
-        {active === "report" && <ReportTab analysis={analysis} />}
-      </div>
+      <TabBar tabs={tabs} onSelect={setOpenTab} />
+
+      {openTab && (
+        <DetailModal title={MODAL_TITLE[openTab]} onClose={() => setOpenTab(null)}>
+          {openTab === "job" && <JobTab jobMatches={analysis.jobMatches} />}
+          {openTab === "company" && <CompanyTab companyMatches={analysis.companyMatches} />}
+          {openTab === "report" && <ReportTab analysis={analysis} />}
+        </DetailModal>
+      )}
     </div>
   )
 }
