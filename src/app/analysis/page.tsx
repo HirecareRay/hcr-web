@@ -1,5 +1,5 @@
-import { FitHistoryPage } from "@/features/analysis/components/fitHistoryPage"
+import { FitEntryPage } from "@/features/analysis/components/fitEntryPage"
 
 export default function Page() {
-  return <FitHistoryPage />
+  return <FitEntryPage />
 }

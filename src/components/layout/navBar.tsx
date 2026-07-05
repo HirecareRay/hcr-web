@@ -16,10 +16,15 @@ type NavItem = {
 // 라우트 생기면 href만 교체하면 됨
 const navItems: NavItem[] = [
   { label: "홈", href: routes.home, icon: Home },
-  { label: "유저분석", href: routes.fitHistory, icon: ChartNoAxesColumn },
+  { label: "적합도 분석", href: routes.fitEntry, icon: ChartNoAxesColumn },
   { label: "AI면접", href: routes.interviewEntry, icon: Mic },
   { label: "마이", href: routes.mypage, icon: User }, // 비로그인 시 미들웨어가 /login 으로 보냄
 ]
+
+// 서류 적합도 분석 상세(/jobs/[jobId]/fit)는 "적합도 분석" 흐름에 속하므로 네비바에서 같이 활성 처리한다.
+// 마이페이지 하위의 적합도 보고서 목록(/mypage/analysis)은 인터뷰 기록(/mypage/interview)과
+// 마찬가지로 "마이" 탭 소관이라 별도 처리하지 않는다.
+const FIT_DETAIL_RE = /^\/jobs\/[^/]+\/fit(\/|$)/
 
 export function NavBar() {
   const pathname = usePathname()
@@ -28,9 +33,11 @@ export function NavBar() {
     <nav className="border-warm-border w-full shrink-0 border-t bg-white/95 backdrop-blur">
       <ul className="flex">
         {navItems.map(({ label, href, icon: Icon }) => {
-          // 면접 진입점은 면접 흐름(/interview/*) 전체에서 활성으로 본다(홈 "/"은 제외돼 안전).
+          // 면접/적합도 분석 진입점은 각자 흐름 전체에서 활성으로 본다(홈 "/"은 제외돼 안전).
           const isActive =
-            pathname === href || (href !== routes.home && pathname.startsWith(`${href}/`))
+            pathname === href ||
+            (href !== routes.home && pathname.startsWith(`${href}/`)) ||
+            (href === routes.fitEntry && FIT_DETAIL_RE.test(pathname))
 
           return (
             <li key={label} className="flex-1">

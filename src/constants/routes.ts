@@ -1,6 +1,6 @@
 // 검색 결과 페이지가 읽는 URL 쿼리 파라미터 키 — 홈 검색바(쓰기)·검색 페이지(읽기)의 단일 계약
 export const searchKeywordParam = "q"
-// 검색 결과 페이지의 초기 활성 탭 힌트(선택) — 예: 유저분석 검색바는 "채용공고" 탭으로 열림
+// 검색 결과 페이지의 초기 활성 탭 힌트(선택) — 예: 적합도 분석 검색바는 "채용공고" 탭으로 열림
 export const searchTabParam = "tab"
 
 // 기업을 고르지 않고 보는 "일반 면접"의 약속된 companyId.
@@ -21,8 +21,10 @@ export const routes = {
     const qs = params.toString()
     return qs ? `/search?${qs}` : "/search"
   },
-  // 네비바 "유저분석" — 내 적합도 보고서(fit_*) 목록
-  fitHistory: "/analysis",
+  // 적합도 분석 진입 화면(네비바 "적합도 분석") — 채용공고를 골라 적합도 분석을 시작하는 화면
+  fitEntry: "/analysis",
+  // 마이페이지 "적합도 보고서" — 내 적합도 보고서(fit_*) 목록. mypage 하위 페이지.
+  fitHistory: "/mypage/analysis",
   login: "/login",
   signup: "/signup",
   mypage: "/mypage",
