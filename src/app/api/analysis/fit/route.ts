@@ -47,6 +47,7 @@ function toFitAnalysis(raw: Record<string, any>): FitAnalysis {
     companyName: raw.company_name ?? null,
     jobTitle: raw.job_title ?? null,
     jobNames: raw.job_names ?? [],
+    jobUrl: raw.job_url || null,
     candidateProfileId: raw.candidate_profile_id,
     jobProfileId: raw.job_profile_id,
     companyProfileId: raw.company_profile_id,
