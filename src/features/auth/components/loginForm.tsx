@@ -6,6 +6,7 @@ import Link from "next/link"
 import { loginSchema, type LoginFormValues } from "../types/auth"
 import { useLogin } from "../hooks/useLogin"
 import { AuthField } from "./authField"
+import { SocialLoginButtons } from "./socialLoginButtons"
 
 export function LoginForm() {
   const { handleLogin, error, isLoading } = useLogin()
@@ -19,9 +20,9 @@ export function LoginForm() {
   })
 
   return (
-    <div className="bg-warm-bg flex min-h-screen items-center justify-center px-4">
+    <div className="bg-warm-bg flex h-full items-center justify-center px-4 py-6">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
+        <div className="mb-6 text-center">
           <div className="bg-primary mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm">
             <span className="text-lg font-extrabold text-white">H</span>
           </div>
@@ -63,6 +64,10 @@ export function LoginForm() {
               {isLoading ? "로그인 중..." : "로그인"}
             </button>
           </form>
+
+          <div className="mt-4">
+            <SocialLoginButtons />
+          </div>
         </div>
 
         <p className="text-muted mt-5 text-center text-sm">

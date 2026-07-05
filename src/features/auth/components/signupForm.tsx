@@ -6,6 +6,7 @@ import Link from "next/link"
 import { signupSchema, type SignupFormValues } from "../types/auth"
 import { useSignup } from "../hooks/useSignup"
 import { AuthField } from "./authField"
+import { SocialLoginButtons } from "./socialLoginButtons"
 
 export function SignupForm() {
   const { handleSignup, error, isLoading } = useSignup()
@@ -19,18 +20,18 @@ export function SignupForm() {
   })
 
   return (
-    <div className="bg-warm-bg flex min-h-screen items-center justify-center px-4 py-8">
+    <div className="bg-warm-bg flex h-full items-center justify-center px-4 py-3">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div className="bg-primary mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm">
-            <span className="text-lg font-extrabold text-white">H</span>
+        <div className="mb-4 text-center">
+          <div className="bg-primary mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl shadow-sm">
+            <span className="text-base font-extrabold text-white">H</span>
           </div>
           <h1 className="text-ink text-2xl font-extrabold">회원가입</h1>
           <p className="text-muted mt-1 text-sm">취업 준비를 시작해보세요</p>
         </div>
 
-        <div className="border-warm-border rounded-2xl border bg-white p-6 shadow-sm">
-          <form onSubmit={handleSubmit(handleSignup)} className="space-y-4">
+        <div className="border-warm-border rounded-2xl border bg-white p-4 shadow-sm">
+          <form onSubmit={handleSubmit(handleSignup)} className="space-y-3">
             <AuthField
               label="이름"
               id="name"
@@ -81,9 +82,13 @@ export function SignupForm() {
               {isLoading ? "가입 중..." : "회원가입"}
             </button>
           </form>
+
+          <div className="mt-3">
+            <SocialLoginButtons />
+          </div>
         </div>
 
-        <p className="text-muted mt-5 text-center text-sm">
+        <p className="text-muted mt-4 text-center text-sm">
           이미 계정이 있으신가요?{" "}
           <Link href="/login" className="text-primary hover:text-coral-deep font-bold">
             로그인
