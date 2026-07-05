@@ -139,7 +139,10 @@ export function InterviewRoomPage({ companyId }: Props) {
     setSubmittedAnswer("")
     setNextRequested(false)
     presentQuestion()
-    void tts.speak(liveQuestion.ttsText ?? liveQuestion.text, liveQuestion.voice)
+    void tts.speak(liveQuestion.ttsText ?? liveQuestion.text, {
+      personaId: liveQuestion.personaId,
+      voiceHint: liveQuestion.voice,
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveQuestion?.questionId])
 
@@ -360,7 +363,10 @@ export function InterviewRoomPage({ companyId }: Props) {
         isSpeaking={tts.isSpeaking}
         ttsSupported={tts.supported}
         onReplay={() =>
-          void tts.speak(liveQuestion.ttsText ?? liveQuestion.text, liveQuestion.voice)
+          void tts.speak(liveQuestion.ttsText ?? liveQuestion.text, {
+            personaId: liveQuestion.personaId,
+            voiceHint: liveQuestion.voice,
+          })
         }
         roleLabel={liveQuestion.roleLabel}
         personaId={liveQuestion.personaId}
