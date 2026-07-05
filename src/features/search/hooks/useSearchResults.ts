@@ -21,9 +21,20 @@ export function useSearchResults() {
   const [query, setQuery] = useState(initialKeyword)
   const [selectedCategory, setSelectedCategory] = useState<CompanyCategory>(ALL_CATEGORY)
   // 탭: 기업 검색 결과 vs 채용공고(직무·직군 키워드) 검색 결과
-  // 유입 URL에 `?tab=job`이 실려 있으면(예: 유저분석 검색바) 채용공고 탭으로 연다.
+  // 유입 URL에 `?tab=job`이 실려 있으면(예: 적합도 분석 검색바) 채용공고 탭으로 연다.
   const initialTab: SearchResultTab = searchParams.get(searchTabParam) === "job" ? "job" : "company"
   const [activeTab, setActiveTab] = useState<SearchResultTab>(initialTab)
+
+  // useState(initial...)는 최초 마운트 때만 URL을 읽는다. 검색 페이지에 이미 머무는 채로
+  // (예: 인기 기업 카드) 다른 ?q=&tab= 링크를 눌러 클라이언트 사이드로만 이동하면 컴포넌트가
+  // 재마운트되지 않아 값이 안 바뀌므로, URL이 실제로 바뀔 때마다 다시 동기화한다.
+  // (탭 버튼 클릭 등 페이지 내부 상태 변경은 URL을 바꾸지 않으므로 영향 없다.)
+  useEffect(() => {
+    const keyword = searchParams.get(searchKeywordParam) ?? ""
+    setInputValue(keyword)
+    setQuery(keyword)
+    setActiveTab(searchParams.get(searchTabParam) === "job" ? "job" : "company")
+  }, [searchParams])
 
   // 검색 실행(돋보기/엔터): 현재 입력값을 검색어로 커밋한다.
   const submitSearch = (value: string) => setQuery(value.trim())

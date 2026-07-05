@@ -9,7 +9,7 @@ export default function InstallPage() {
 
   return (
     <main className="bg-background flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
-      <Image src="/logo.svg" alt="HcR" width={72} height={72} priority />
+      <Image src="/logo.svg" alt="HcR" width={115} height={72} priority />
       <div>
         <h1 className="text-ink text-xl font-bold">HcR 앱 설치</h1>
         <p className="text-muted mt-1 text-sm">홈 화면에 추가하고 앱처럼 사용해보세요</p>

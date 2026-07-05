@@ -15,37 +15,114 @@ import {
 } from "lucide-react"
 import { useAuthStore } from "@/features/auth/store/authStore"
 import { useLogout } from "@/features/auth/hooks/useLogout"
+import { useFitHistory } from "@/features/analysis/hooks/useFitHistory"
+import { useInterviewHistory } from "@/features/interview/hooks/useInterviewHistory"
+import type { FitHistoryItem } from "@/features/analysis/types/analysis"
+import type { InterviewHistoryItem } from "@/features/interview/types/interviewHistory"
 
-function StatusCard({
-  icon: Icon,
-  label,
-  value,
-  unit,
-  color,
+// 가장 최근에 본 직무 적합도 분석 1건 — 어떤 기업·공고인지 바로 알 수 있게 표시.
+function FitStatusCard({
+  item,
+  isLoading,
 }: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  value: string
-  unit: string
-  color: "primary" | "success"
+  item: FitHistoryItem | undefined
+  isLoading: boolean
 }) {
-  return (
-    <div className="flex-1 rounded-2xl bg-white p-4 shadow-sm">
-      <div className="flex items-center gap-1.5">
-        <Icon className={`size-4 ${color === "primary" ? "text-primary" : "text-green-500"}`} />
-        <span className="text-ink text-xs font-bold">{label}</span>
-      </div>
-      <div className="mt-4 flex items-baseline gap-1">
-        <span
-          className={`text-3xl leading-none font-extrabold ${
-            color === "primary" ? "text-primary" : "text-green-500"
-          }`}
-        >
-          {value}
-        </span>
-        <span className="text-muted text-sm font-bold">{unit}</span>
-      </div>
+  const header = (
+    <div className="flex items-center gap-1.5">
+      <BarChart2 className="text-success size-4" />
+      <span className="text-ink text-xs font-bold">직무 적합도</span>
     </div>
+  )
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 rounded-2xl bg-white p-4 shadow-sm">
+        {header}
+        <div className="bg-skeleton mt-4 h-4 w-24 animate-pulse rounded" />
+        <div className="bg-skeleton mt-2 h-3 w-32 animate-pulse rounded" />
+      </div>
+    )
+  }
+
+  if (!item) {
+    return (
+      <div className="flex-1 rounded-2xl bg-white p-4 shadow-sm">
+        {header}
+        <p className="text-muted mt-4 text-xs leading-relaxed">아직 분석한 공고가 없어요</p>
+      </div>
+    )
+  }
+
+  const href =
+    item.jobPostingId && item.companyId
+      ? `/jobs/${item.jobPostingId}/fit?companyId=${item.companyId}`
+      : "/mypage/analysis"
+
+  return (
+    <Link href={href} className="flex-1 rounded-2xl bg-white p-4 shadow-sm">
+      {header}
+      <div className="mt-2 flex items-baseline gap-1">
+        <span className="text-success text-3xl leading-none font-extrabold">
+          {item.overallPct ?? "-"}
+        </span>
+        {item.overallPct !== null && <span className="text-muted text-sm font-bold">%</span>}
+      </div>
+      <p className="text-ink mt-1.5 truncate text-xs font-semibold">
+        {item.companyName ?? "기업 미상"}
+      </p>
+      <p className="text-muted truncate text-[0.6875rem]">{item.jobTitle ?? "직무 미상"}</p>
+    </Link>
+  )
+}
+
+// 가장 최근에 본 AI 면접 결과 1건 — 어떤 기업·공고인지 바로 알 수 있게 표시.
+function InterviewStatusCard({
+  item,
+  isLoading,
+}: {
+  item: InterviewHistoryItem | undefined
+  isLoading: boolean
+}) {
+  const header = (
+    <div className="flex items-center gap-1.5">
+      <Sparkles className="text-primary size-4" />
+      <span className="text-ink text-xs font-bold">AI 면접 결과</span>
+    </div>
+  )
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 rounded-2xl bg-white p-4 shadow-sm">
+        {header}
+        <div className="bg-skeleton mt-4 h-8 w-12 animate-pulse rounded" />
+        <div className="bg-skeleton mt-2 h-3 w-28 animate-pulse rounded" />
+      </div>
+    )
+  }
+
+  if (!item) {
+    return (
+      <div className="flex-1 rounded-2xl bg-white p-4 shadow-sm">
+        {header}
+        <p className="text-muted mt-4 text-xs leading-relaxed">아직 면접 기록이 없어요</p>
+      </div>
+    )
+  }
+
+  return (
+    <Link
+      href={`/mypage/interview/${item.resultId}`}
+      className="flex-1 rounded-2xl bg-white p-4 shadow-sm"
+    >
+      {header}
+      <div className="mt-2 flex items-baseline gap-1">
+        <span className="text-primary text-3xl leading-none font-extrabold">{item.score}</span>
+        <span className="text-muted text-sm font-bold">점</span>
+      </div>
+      <p className="text-ink mt-1.5 truncate text-xs font-semibold">{item.companyName}</p>
+      <p className="text-muted truncate text-[0.6875rem]">{item.jobTitle}</p>
+    </Link>
   )
 }
 
@@ -92,10 +169,32 @@ function SupportRow({
   )
 }
 
+// 직무 적합도 분석 기록의 jobNames를 빈도순으로 집계 — 자주 본 직무 태그가 위로.
+// AI 면접 기록은 jobTitle이 공고 제목 원문이라 태그로 쓰기엔 너무 길어 집계 대상에서 제외.
+function topJobTags(fitHistory: FitHistoryItem[] | undefined, max = 3): string[] {
+  if (!fitHistory?.length) return []
+  const counts = new Map<string, number>()
+  for (const item of fitHistory) {
+    for (const name of item.jobNames) {
+      counts.set(name, (counts.get(name) ?? 0) + 1)
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, max)
+    .map(([name]) => name)
+}
+
 export function MyPageDashboard() {
   // 로그인한 사용자 정보 — 미들웨어가 비로그인 진입을 막으므로 보통 채워져 있다.
   const user = useAuthStore((s) => s.user)
   const { handleLogout, isLoading: isLoggingOut } = useLogout()
+  // 각 목록은 최신순 정렬이라 첫 항목이 "가장 최근에 본" 것이다.
+  const { data: fitHistory, isLoading: isFitLoading } = useFitHistory()
+  const { data: interviewHistory, isLoading: isInterviewLoading } = useInterviewHistory()
+  const recentFit = fitHistory?.[0]
+  const recentInterview = interviewHistory?.items[0]
+  const jobTags = topJobTags(fitHistory)
 
   return (
     <section className="bg-background min-h-full pb-10">
@@ -115,21 +214,25 @@ export function MyPageDashboard() {
         </div>
         <div className="py-4">
           <div className="flex flex-wrap gap-1.5">
-            {["프론트엔드", "스타트업", "신입"].map((tag) => (
-              <span key={tag} className="text-primary text-base font-extrabold">
-                #{tag}
-              </span>
-            ))}
+            {jobTags.length > 0 ? (
+              jobTags.map((tag) => (
+                <span key={tag} className="text-primary text-base font-extrabold">
+                  #{tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-muted text-sm">분석 기록이 쌓이면 관심 분야가 표시돼요</span>
+            )}
           </div>
         </div>
       </div>
 
       <div className="px-5 pt-5 pb-8">
         {/* 내 분석 현황 */}
-        <h2 className="text-ink mt-5 mb-3 text-base font-bold">내 분석 현황</h2>
+        <h2 className="text-ink mt-5 mb-3 text-base font-bold">내 최근 분석 현황</h2>
         <div className="flex gap-3">
-          <StatusCard icon={BarChart2} label="직무 적합도" value="85" unit="점" color="success" />
-          <StatusCard icon={Sparkles} label="AI 면접 결과" value="82" unit="점" color="primary" />
+          <FitStatusCard item={recentFit} isLoading={isFitLoading} />
+          <InterviewStatusCard item={recentInterview} isLoading={isInterviewLoading} />
         </div>
 
         {/* 내 관리 목록 */}
@@ -146,6 +249,12 @@ export function MyPageDashboard() {
             title="AI 면접 기록"
             subtitle="지난 면접 피드백"
             href="/mypage/interview"
+          />
+          <ManageRow
+            icon={BarChart2}
+            title="적합도 보고서"
+            subtitle="직무 적합도 분석 기록"
+            href="/mypage/analysis"
           />
           <ManageRow
             icon={Bell}

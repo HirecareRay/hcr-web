@@ -58,7 +58,7 @@ export type FitAnalysis = {
   recommendations: string[] | null
 }
 
-// 유저분석 탭의 "적합도 보고서" 목록 카드 1건 — 상세는 FitAnalysis(jobPostingId+companyId로 조회).
+// 적합도 분석 탭의 "적합도 보고서" 목록 카드 1건 — 상세는 FitAnalysis(jobPostingId+companyId로 조회).
 export type FitHistoryItem = {
   analysisId: string
   companyId: string | null
@@ -67,4 +67,5 @@ export type FitHistoryItem = {
   jobTitle: string | null
   jobNames: string[]
   analyzedAt: string | null
+  overallPct: number | null
 }

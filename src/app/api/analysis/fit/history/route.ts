@@ -14,6 +14,7 @@ function toFitHistoryItem(raw: Record<string, any>): FitHistoryItem {
     jobTitle: raw.job_title ?? null,
     jobNames: raw.job_names ?? [],
     analyzedAt: raw.analyzed_at ?? null,
+    overallPct: raw.overall_pct ?? null,
   }
 }
 

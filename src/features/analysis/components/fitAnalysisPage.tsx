@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import Link from "next/link"
 import {
   Building2,
@@ -360,8 +360,10 @@ function RadarChart({ summary }: { summary: CategorySummary[] }) {
   const dataPoints = data.map((d, i) => pt(i, r * (MIN_RATIO + d.value * (1 - MIN_RATIO))))
   const dataPoly = dataPoints.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")
 
+  // viewBox 좌우로 40씩 여유를 둔다 — 가장 긴 라벨("인재상·문화")이 왼쪽 축 위치에서
+  // 텍스트 폭만큼 0 밖으로 밀려나가 잘리는 걸 막기 위함(도형 좌표는 그대로, 캔버스만 확장).
   return (
-    <svg viewBox="0 0 330 240" className="w-full">
+    <svg viewBox="-40 0 410 240" className="w-full">
       {[0.25, 0.5, 0.75, 1].map((l) => (
         <polygon key={l} points={gridPoly(r * l)} fill="none" stroke="#f1d8cf" strokeWidth="1" />
       ))}
@@ -476,22 +478,18 @@ function Result({
   const [activeTab, setActiveTab] = useState<TabKey>("job")
   const tabBarRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  const isFirstRender = useRef(true)
 
-  // 탭을 누르면(또는 다른 탭으로 바꾸면) 새로 나타난 내용이 sticky 탭바 바로 아래
-  // 오도록 스크롤을 맞춘다. 이 앱은 window가 아니라 appShell의 <main overflow-y-auto>가
-  // 스크롤 컨테이너라 scrollIntoView를 써야 한다(중첩 스크롤 컨테이너를 알아서 찾아줌).
-  // 단, 첫 렌더(기본 열린 "직무" 탭)에서는 스크롤하지 않는다 — 진입하자마자 화면이
-  // 훅 내려가면 안 되니, 사용자가 실제로 탭을 바꿀 때만 동작해야 한다.
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
+  // 탭을 누르면 그 내용이 sticky 탭바 바로 아래 오도록 스크롤한다. 클릭 핸들러에서
+  // 직접 호출해야 이미 활성화된 탭을 다시 눌러도(activeTab 값이 안 바뀌어도) 매번
+  // 스크롤이 동작한다 — activeTab을 의존성으로 둔 useEffect는 값이 그대로면 실행되지 않음.
+  // 이 앱은 window가 아니라 appShell의 <main overflow-y-auto>가 스크롤 컨테이너라
+  // scrollIntoView를 써야 한다(중첩 스크롤 컨테이너를 알아서 찾아줌).
+  function handleTabChange(key: TabKey) {
+    setActiveTab(key)
     if (!contentRef.current) return
     contentRef.current.style.scrollMarginTop = `${tabBarRef.current?.offsetHeight ?? 0}px`
     contentRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
-  }, [activeTab])
+  }
 
   const jobTotal = analysis.jobMatches.length
   const jobMatched = analysis.jobMatches.filter((m) => m.matched).length
@@ -516,7 +514,7 @@ function Result({
   ]
 
   return (
-    <div className="px-4 py-6 sm:px-6">
+    <div className="px-4 py-6">
       <div className="border-warm-border mb-3 rounded-2xl border bg-white px-4 py-3.5 sm:flex sm:items-center sm:gap-2 sm:py-3">
         <div className="flex min-w-0 items-center gap-1.5 sm:max-w-[45%] sm:shrink-0">
           <Building2 className="text-primary size-4 shrink-0" />
@@ -583,49 +581,45 @@ function Result({
       {/* 스크롤해도 탭이 상단에 고정 */}
       <div
         ref={tabBarRef}
-        className="bg-background sticky top-0 z-10 -mx-4 mt-4 mb-4 px-4 pt-1 pb-3 sm:-mx-6 sm:px-6"
+        className="bg-background sticky top-0 z-10 -mx-4 mt-4 mb-4 px-4 pt-1 pb-3"
       >
-        <SegmentTabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
+        <SegmentTabs tabs={tabs} active={activeTab} onChange={handleTabChange} />
       </div>
 
-      <div ref={contentRef} className="space-y-3">
+      <div ref={contentRef} className="space-y-4">
         {activeTab === "job" && <JobTab jobMatches={analysis.jobMatches} />}
         {activeTab === "company" && <CompanyTab companyMatches={analysis.companyMatches} />}
         {activeTab === "report" && <ReportTab analysis={analysis} />}
       </div>
 
-      {/* 후속 행동 — 채용공고(원본 링크) / 기업리포트로.
-          스크롤 끝에 두면 하단 네비바와 위치가 겹쳐 실수로 눌리기 쉬워
-          네비바 바로 위에 고정해 둔다. */}
-      <div className="bg-background border-warm-border sticky bottom-0 z-10 -mx-4 mt-6 border-t px-4 py-3 sm:-mx-6 sm:px-6">
-        <div className="grid grid-cols-2 gap-2">
-          {analysis.jobUrl ? (
-            <a
-              href={analysis.jobUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="from-coral-deep to-coral-beam flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br px-4 py-3.5 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
-            >
-              <ExternalLink className="h-4 w-4" />
-              채용공고 보기
-            </a>
-          ) : (
-            <Link
-              href={`/jobs/${jobId}`}
-              className="from-coral-deep to-coral-beam flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br px-4 py-3.5 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
-            >
-              <ExternalLink className="h-4 w-4" />
-              채용공고 보기
-            </Link>
-          )}
-          <Link
-            href={`/company/${companyId}`}
-            className="border-warm-border text-ink flex items-center justify-center gap-2 rounded-2xl border bg-white px-4 py-3.5 text-sm font-bold shadow-sm transition-opacity hover:opacity-90"
+      {/* 후속 행동 — 채용공고(원본 링크) / 기업리포트로 */}
+      <div className="mt-6 grid grid-cols-2 gap-2">
+        {analysis.jobUrl ? (
+          <a
+            href={analysis.jobUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="from-coral-deep to-coral-beam flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br px-4 py-3.5 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
           >
-            <Building2 className="h-4 w-4" />
-            기업리포트 보기
+            <ExternalLink className="h-4 w-4" />
+            채용공고 보기
+          </a>
+        ) : (
+          <Link
+            href={`/jobs/${jobId}`}
+            className="from-coral-deep to-coral-beam flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br px-4 py-3.5 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
+          >
+            <ExternalLink className="h-4 w-4" />
+            채용공고 보기
           </Link>
-        </div>
+        )}
+        <Link
+          href={`/company/${companyId}`}
+          className="border-warm-border text-ink flex items-center justify-center gap-2 rounded-2xl border bg-white px-4 py-3.5 text-sm font-bold shadow-sm transition-opacity hover:opacity-90"
+        >
+          <Building2 className="h-4 w-4" />
+          기업리포트 보기
+        </Link>
       </div>
     </div>
   )
