@@ -1,8 +1,17 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { ChevronLeft, Building2, ExternalLink, X } from "lucide-react"
+import {
+  Building2,
+  ExternalLink,
+  Sparkles,
+  ThumbsUp,
+  Lightbulb,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react"
+import { PageTopBar } from "@/components/ui/pageTopBar"
 import { cn } from "@/lib/utils"
 import { useFitAnalysis } from "../hooks/useFitAnalysis"
 import type { FitAnalysis, JobMatch, CompanyMatch, CategorySummary } from "../types/analysis"
@@ -220,57 +229,106 @@ function CompanyTab({ companyMatches }: { companyMatches: CompanyMatch[] }) {
   )
 }
 
-// ── 탭: 리포트 ────────────────────────────────────────────────────────
+// ── 탭: 리포트  ─────────────────────────
 
 function ReportSection({
   title,
   items,
-  numBg,
+  icon: Icon,
+  color,
 }: {
   title: string
   items: string[] | null
-  numBg: string
+  icon: LucideIcon
+  color: string
 }) {
   if (!items?.length) return null
   return (
-    <div className="border-warm-border rounded-3xl border bg-white p-4">
-      <h3 className="text-ink mb-3 text-sm font-bold">{title}</h3>
-      <div className="flex flex-col gap-3">
-        {items.map((item, i) => (
-          <div key={i} className="flex items-start gap-3">
-            <span
-              className={cn(
-                "flex size-5 shrink-0 items-center justify-center rounded-full text-[0.625rem] font-bold text-white",
-                numBg
-              )}
-            >
-              {i + 1}
-            </span>
-            <p className="text-muted text-sm leading-relaxed">{item}</p>
-          </div>
-        ))}
+    <div className="border-warm-border rounded-2xl border bg-white p-5 shadow-sm">
+      <div className="mb-3 flex items-center gap-2">
+        <Icon className={cn("h-4 w-4", color)} />
+        <h3 className={cn("text-sm font-bold", color)}>{title}</h3>
+        <span className="bg-coral-light text-primary ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold">
+          <Sparkles className="h-3 w-3" />
+          AI 분석
+        </span>
       </div>
+      <ul className="space-y-2">
+        {items.map((item, i) => (
+          <li
+            key={i}
+            className="bg-warm-bg text-ink rounded-xl px-3 py-2.5 text-sm leading-relaxed"
+          >
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// improvements[i]와 recommendations[i]는 백엔드에서 1:1로 대응(같은 갭을
+// "왜 부족한지" → "어떻게 보완하는지"로 짝지어 생성)하므로 인덱스로 묶어 보여준다.
+function ImprovementPairSection({
+  improvements,
+  recommendations,
+}: {
+  improvements: string[] | null
+  recommendations: string[] | null
+}) {
+  const problems = improvements ?? []
+  if (problems.length === 0) return null
+  const methods = recommendations ?? []
+  const items = problems.map((problem, i) => ({ problem, method: methods[i] ?? null }))
+
+  return (
+    <div className="border-warm-border rounded-2xl border bg-white p-5 shadow-sm">
+      <div className="mb-3 flex items-center gap-2">
+        <h3 className="text-ink text-sm font-bold">보완점 · 보완 방향</h3>
+        <span className="bg-coral-light text-primary ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold">
+          <Sparkles className="h-3 w-3" />
+          AI 분석
+        </span>
+      </div>
+      <ul className="space-y-3">
+        {items.map((item, i) => (
+          <li key={i} className="border-warm-border rounded-xl border p-4">
+            <div className="text-muted flex items-start gap-2 text-xs leading-relaxed">
+              <Lightbulb className="text-info mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{item.problem}</span>
+            </div>
+            {item.method && (
+              <div className="text-ink bg-warm-bg mt-2 flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm leading-relaxed">
+                <Wrench className="text-primary mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>{item.method}</span>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
 
 // ── 방사 차트 ─────────────────────────────────────────────────────────
 
-// 자격요건 포인트 = JobTab의 자격요건 카드(QUALIFICATION_TYPES)와 동일하게
-// 자격요건·기술·도구·경력사항 3개 카테고리를 합산
-const QUALIFICATION_CATEGORIES = ["자격요건", "기술·도구", "경력사항"]
 const RADAR_ORDER = ["자격요건", "주요업무", "우대사항", "산업 및 사업 분야", "인재상 및 조직문화"]
 const RADAR_SHORT: Record<string, string> = {
   "산업 및 사업 분야": "사업분야",
   "인재상 및 조직문화": "인재상·문화",
 }
+// 레이더 각 축이 합산하는 category_summary 원본 카테고리명.
+// 자격요건 = JobTab의 자격요건 카드(QUALIFICATION_TYPES)와 동일하게 자격요건·기술·도구·경력사항 합산.
+// 조직문화/인재상 = culture·talent_values를 "인재상 및 조직문화"로 합치기 전(구버전) 캐시된 분석 결과 호환용.
+const RADAR_SOURCE_CATEGORIES: Record<string, string[]> = {
+  자격요건: ["자격요건", "기술·도구", "경력사항"],
+  "인재상 및 조직문화": ["인재상 및 조직문화", "조직문화", "인재상"],
+}
 
 function radarData(summary: CategorySummary[]) {
   return RADAR_ORDER.map((cat) => {
-    const sources =
-      cat === "자격요건"
-        ? summary.filter((s) => QUALIFICATION_CATEGORIES.includes(s.category))
-        : summary.filter((s) => s.category === cat)
+    const sourceCats = RADAR_SOURCE_CATEGORIES[cat] ?? [cat]
+    const sources = summary.filter((s) => sourceCats.includes(s.category))
     const total = sources.reduce((sum, s) => sum + s.total, 0)
     const matched = sources.reduce((sum, s) => sum + s.matched, 0)
     return total > 0 ? { label: RADAR_SHORT[cat] ?? cat, value: matched / total } : null
@@ -296,7 +354,10 @@ function RadarChart({ summary }: { summary: CategorySummary[] }) {
       .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
       .join(" ")
 
-  const dataPoints = data.map((d, i) => pt(i, r * d.value))
+  // 0%인 축도 중심점에 완전히 붙어버리면 모양이 찌그러져 보이므로,
+  // 가장 안쪽 그리드 링(0.25)을 바닥값으로 잡고 그 위로 스케일링한다.
+  const MIN_RATIO = 0.25
+  const dataPoints = data.map((d, i) => pt(i, r * (MIN_RATIO + d.value * (1 - MIN_RATIO))))
   const dataPoly = dataPoints.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")
 
   return (
@@ -355,158 +416,217 @@ function RadarChart({ summary }: { summary: CategorySummary[] }) {
 function ReportTab({ analysis }: { analysis: FitAnalysis }) {
   return (
     <div className="flex flex-col gap-3">
-      <ReportSection title="강점" items={analysis.strengths} numBg="bg-success" />
-      <div className="flex flex-col gap-3">
-        <ReportSection title="보완점" items={analysis.improvements} numBg="bg-error" />
-        <ReportSection title="개선 방향" items={analysis.recommendations} numBg="bg-primary" />
-      </div>
+      <ReportSection title="강점" items={analysis.strengths} icon={ThumbsUp} color="text-success" />
+      <ImprovementPairSection
+        improvements={analysis.improvements}
+        recommendations={analysis.recommendations}
+      />
     </div>
   )
 }
 
-// ── 상세 모달 ─────────────────────────────────────────────────────────
+// ── 세그먼트 탭 (인터뷰 결과 리포트와 동일한 스타일: 고정 탭 + 본문 즉시 전환) ───
 
-function DetailModal({
-  title,
-  onClose,
-  children,
-}: {
-  title: string
-  onClose: () => void
-  children: React.ReactNode
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
-    document.addEventListener("keydown", onKey)
-    document.body.style.overflow = "hidden"
-    return () => {
-      document.removeEventListener("keydown", onKey)
-      document.body.style.overflow = ""
-    }
-  }, [onClose])
+type TabKey = "job" | "company" | "report"
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="border-warm-border relative flex max-h-[85svh] w-full flex-col rounded-t-3xl border bg-white sm:max-h-[90svh] sm:min-h-[60svh] sm:w-full sm:max-w-2xl sm:rounded-3xl"
-      >
-        <div className="border-warm-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-          <h2 className="text-ink text-sm font-bold">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="닫기"
-            className="text-muted hover:text-ink"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-        <div className="overflow-y-auto px-4 py-4">{children}</div>
-      </div>
-    </div>
-  )
-}
-
-// ── 탭 바 (클릭 시 모달로 상세 표시) ──────────────────────────────────
-// 모바일: 라벨 + 배지만(공간 협소). sm 이상: 미리보기 한 줄 추가(남는 폭 활용).
-
-function TabBar({
+function SegmentTabs({
   tabs,
-  onSelect,
+  active,
+  onChange,
 }: {
-  tabs: { key: TabKey; label: string; badge: string; preview: string }[]
-  onSelect: (key: TabKey) => void
+  tabs: { key: TabKey; label: string; badge: string }[]
+  active: TabKey
+  onChange: (key: TabKey) => void
 }) {
   return (
-    <div className="border-warm-border flex overflow-hidden rounded-3xl border bg-white">
-      {tabs.map((tab, i) => (
-        <button
-          key={tab.key}
-          type="button"
-          onClick={() => onSelect(tab.key)}
-          className={cn(
-            "hover:bg-warm-bg flex flex-1 flex-col items-center gap-1 px-2 py-4 text-center transition-colors sm:py-5",
-            i > 0 && "border-warm-border border-l"
-          )}
-        >
-          <span className="text-ink text-sm font-bold sm:text-base">{tab.label}</span>
-          {tab.badge && <span className="text-muted text-xs">{tab.badge}</span>}
-          {tab.preview && (
-            <span className="text-disabled mt-1 hidden max-w-full truncate text-xs sm:block">
-              {tab.preview}
-            </span>
-          )}
-        </button>
-      ))}
+    <div className="bg-warm-bg flex gap-1 rounded-xl p-1">
+      {tabs.map((tab) => {
+        const isActive = tab.key === active
+        return (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onChange(tab.key)}
+            aria-pressed={isActive}
+            className={cn(
+              "flex flex-1 flex-col items-center rounded-lg py-2 text-sm font-medium transition-colors",
+              isActive ? "text-ink bg-white shadow-sm" : "text-muted"
+            )}
+          >
+            {tab.label}
+            {tab.badge && <span className="text-xs">{tab.badge}</span>}
+          </button>
+        )
+      })}
     </div>
   )
 }
 
 // ── 결과 ──────────────────────────────────────────────────────────────
 
-type TabKey = "job" | "company" | "report"
+function Result({
+  analysis,
+  jobId,
+  companyId,
+}: {
+  analysis: FitAnalysis
+  jobId: string
+  companyId: string
+}) {
+  const [activeTab, setActiveTab] = useState<TabKey>("job")
+  const tabBarRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const isFirstRender = useRef(true)
 
-const MODAL_TITLE: Record<TabKey, string> = {
-  job: "직무 적합도",
-  company: "기업 적합도",
-  report: "리포트",
-}
-
-function Result({ analysis }: { analysis: FitAnalysis }) {
-  const [openTab, setOpenTab] = useState<TabKey | null>(null)
+  // 탭을 누르면(또는 다른 탭으로 바꾸면) 새로 나타난 내용이 sticky 탭바 바로 아래
+  // 오도록 스크롤을 맞춘다. 이 앱은 window가 아니라 appShell의 <main overflow-y-auto>가
+  // 스크롤 컨테이너라 scrollIntoView를 써야 한다(중첩 스크롤 컨테이너를 알아서 찾아줌).
+  // 단, 첫 렌더(기본 열린 "직무" 탭)에서는 스크롤하지 않는다 — 진입하자마자 화면이
+  // 훅 내려가면 안 되니, 사용자가 실제로 탭을 바꿀 때만 동작해야 한다.
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    if (!contentRef.current) return
+    contentRef.current.style.scrollMarginTop = `${tabBarRef.current?.offsetHeight ?? 0}px`
+    contentRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [activeTab])
 
   const jobTotal = analysis.jobMatches.length
   const jobMatched = analysis.jobMatches.filter((m) => m.matched).length
   const compTotal = analysis.companyMatches.length
   const compMatched = analysis.companyMatches.filter((m) => m.matched).length
+  const overallTotal = analysis.categorySummary.reduce((sum, s) => sum + s.total, 0)
+  const overallMatched = analysis.categorySummary.reduce((sum, s) => sum + s.matched, 0)
+  const overallPct = overallTotal > 0 ? Math.round((overallMatched / overallTotal) * 100) : 0
 
   const tabs = [
     {
       key: "job" as TabKey,
       label: "직무",
       badge: jobTotal > 0 ? `${jobMatched}/${jobTotal} 충족` : "",
-      preview: "자격요건 · 주요업무 · 우대사항",
     },
     {
       key: "company" as TabKey,
       label: "기업",
       badge: compTotal > 0 ? `${compMatched}/${compTotal} 충족` : "",
-      preview: "산업 및 사업 분야 · 인재상 및 조직문화",
     },
-    {
-      key: "report" as TabKey,
-      label: "리포트",
-      badge: "",
-      preview: `강점 ${analysis.strengths?.length ?? 0} · 보완 ${analysis.improvements?.length ?? 0} · 개선 방향 ${analysis.recommendations?.length ?? 0}`,
-    },
+    { key: "report" as TabKey, label: "리포트", badge: "" },
   ]
 
   return (
-    <div className="flex flex-col gap-3 px-4 pt-4 pb-10 sm:px-6">
-      <div className="border-warm-border rounded-3xl border bg-white p-4 sm:p-6">
-        <div className="flex flex-col items-center gap-4 sm:gap-6">
-          <div className="mx-auto w-full max-w-80 sm:max-w-xl md:max-w-2xl">
-            <RadarChart summary={analysis.categorySummary} />
-          </div>
-          <p className="text-ink w-full text-sm leading-relaxed font-semibold sm:text-base">
-            {analysis.overallSummary}
+    <div className="px-4 py-6 sm:px-6">
+      <div className="border-warm-border mb-3 rounded-2xl border bg-white px-4 py-3.5 sm:flex sm:items-center sm:gap-2 sm:py-3">
+        <div className="flex min-w-0 items-center gap-1.5 sm:max-w-[45%] sm:shrink-0">
+          <Building2 className="text-primary size-4 shrink-0" />
+          <p className="text-ink min-w-0 truncate text-sm font-bold">
+            {analysis.companyName ?? "내 서류 적합도 분석"}
           </p>
+        </div>
+        {analysis.jobTitle && (
+          <>
+            <span className="text-disabled hidden shrink-0 sm:inline">·</span>
+            <p className="text-muted mt-1 min-w-0 pl-5.5 text-xs leading-relaxed break-keep sm:mt-0 sm:flex-1 sm:truncate sm:pl-0 sm:text-sm">
+              {analysis.jobTitle}
+            </p>
+          </>
+        )}
+        {analysis.jobNames.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1 pl-5.5 sm:mt-0 sm:shrink-0 sm:flex-nowrap sm:pl-0">
+            {analysis.jobNames.map((name) => (
+              <span
+                key={name}
+                className="bg-warm-bg text-muted shrink-0 rounded-md px-1.5 py-0.5 text-[0.6875rem] font-medium"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 히어로: 종합 매칭률 + AI 총평 + 직무/기업 미니 스코어 */}
+      <section className="from-coral-deep to-coral-beam overflow-hidden rounded-2xl bg-gradient-to-br p-5 text-white shadow-sm">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-white/90">
+          <Sparkles className="h-3.5 w-3.5" />
+          AI 서류 적합도 분석
+        </div>
+        <div className="mt-3 flex items-end gap-2">
+          <span className="text-4xl leading-none font-extrabold">{overallPct}%</span>
+          <span className="text-lg font-semibold text-white/80">일치</span>
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-white/95">{analysis.overallSummary}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center">
+            <p className="text-xs font-medium text-white/80">직무 적합도</p>
+            <p className="mt-0.5 text-lg font-bold">
+              {jobTotal > 0 ? `${jobMatched}/${jobTotal}` : "-"}
+            </p>
+          </div>
+          <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center">
+            <p className="text-xs font-medium text-white/80">기업 적합도</p>
+            <p className="mt-0.5 text-lg font-bold">
+              {compTotal > 0 ? `${compMatched}/${compTotal}` : "-"}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 영역별 레이더 */}
+      <div className="border-warm-border mt-4 rounded-3xl border bg-white p-4 sm:p-6">
+        <div className="mx-auto w-full max-w-80 sm:max-w-xl md:max-w-2xl">
+          <RadarChart summary={analysis.categorySummary} />
         </div>
       </div>
 
-      <TabBar tabs={tabs} onSelect={setOpenTab} />
+      {/* 스크롤해도 탭이 상단에 고정 */}
+      <div
+        ref={tabBarRef}
+        className="bg-background sticky top-0 z-10 -mx-4 mt-4 mb-4 px-4 pt-1 pb-3 sm:-mx-6 sm:px-6"
+      >
+        <SegmentTabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
+      </div>
 
-      {openTab && (
-        <DetailModal title={MODAL_TITLE[openTab]} onClose={() => setOpenTab(null)}>
-          {openTab === "job" && <JobTab jobMatches={analysis.jobMatches} />}
-          {openTab === "company" && <CompanyTab companyMatches={analysis.companyMatches} />}
-          {openTab === "report" && <ReportTab analysis={analysis} />}
-        </DetailModal>
-      )}
+      <div ref={contentRef} className="space-y-3">
+        {activeTab === "job" && <JobTab jobMatches={analysis.jobMatches} />}
+        {activeTab === "company" && <CompanyTab companyMatches={analysis.companyMatches} />}
+        {activeTab === "report" && <ReportTab analysis={analysis} />}
+      </div>
+
+      {/* 후속 행동 — 채용공고(원본 링크) / 기업리포트로.
+          스크롤 끝에 두면 하단 네비바와 위치가 겹쳐 실수로 눌리기 쉬워
+          네비바 바로 위에 고정해 둔다. */}
+      <div className="bg-background border-warm-border sticky bottom-0 z-10 -mx-4 mt-6 border-t px-4 py-3 sm:-mx-6 sm:px-6">
+        <div className="grid grid-cols-2 gap-2">
+          {analysis.jobUrl ? (
+            <a
+              href={analysis.jobUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="from-coral-deep to-coral-beam flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br px-4 py-3.5 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
+            >
+              <ExternalLink className="h-4 w-4" />
+              채용공고 보기
+            </a>
+          ) : (
+            <Link
+              href={`/jobs/${jobId}`}
+              className="from-coral-deep to-coral-beam flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br px-4 py-3.5 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
+            >
+              <ExternalLink className="h-4 w-4" />
+              채용공고 보기
+            </Link>
+          )}
+          <Link
+            href={`/company/${companyId}`}
+            className="border-warm-border text-ink flex items-center justify-center gap-2 rounded-2xl border bg-white px-4 py-3.5 text-sm font-bold shadow-sm transition-opacity hover:opacity-90"
+          >
+            <Building2 className="h-4 w-4" />
+            기업리포트 보기
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
@@ -518,56 +638,7 @@ export function FitAnalysisPage({ jobId, companyId }: { jobId: string; companyId
 
   return (
     <section className="bg-background min-h-full">
-      <header className="border-warm-border border-b bg-white">
-        <div className="px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2">
-            <Link href={`/jobs/${jobId}`} aria-label="뒤로가기" className="shrink-0">
-              <ChevronLeft className="text-muted size-5" />
-            </Link>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-ink truncate text-sm font-bold sm:text-base">
-                {data?.companyName ?? "내 서류 적합도 분석"}
-              </h1>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              <Link
-                href={`/jobs/${jobId}`}
-                className="text-muted hover:text-ink flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-gray-50"
-              >
-                <ExternalLink className="size-3.5" />
-                <span className="hidden sm:inline">채용공고</span>
-              </Link>
-              <Link
-                href={`/company/${companyId}`}
-                className="text-muted hover:text-ink flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-gray-50"
-              >
-                <Building2 className="size-3.5" />
-                <span className="hidden sm:inline">기업리포트</span>
-              </Link>
-            </div>
-          </div>
-
-          {(data?.jobTitle || (data?.jobNames?.length ?? 0) > 0) && (
-            <div className="mt-1.5 pl-7">
-              {data?.jobTitle && (
-                <p className="text-muted truncate text-xs sm:text-sm">{data.jobTitle}</p>
-              )}
-              {data?.jobNames && data.jobNames.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {data.jobNames.map((name) => (
-                    <span
-                      key={name}
-                      className="bg-coral-light text-primary rounded-full px-2 py-0.5 text-[0.625rem] font-medium"
-                    >
-                      {name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </header>
+      <PageTopBar title="서류 적합도 분석" />
 
       {isLoading && (
         <div className="flex flex-col items-center justify-center gap-3 px-4 pt-24 text-center">
@@ -587,7 +658,7 @@ export function FitAnalysisPage({ jobId, companyId }: { jobId: string; companyId
         </div>
       )}
 
-      {data && <Result analysis={data} />}
+      {data && <Result analysis={data} jobId={jobId} companyId={companyId} />}
     </section>
   )
 }

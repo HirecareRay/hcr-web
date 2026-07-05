@@ -45,6 +45,7 @@ export type FitAnalysis = {
   companyName: string | null
   jobTitle: string | null
   jobNames: string[]
+  jobUrl: string | null
   candidateProfileId: string
   jobProfileId: string
   companyProfileId: string
