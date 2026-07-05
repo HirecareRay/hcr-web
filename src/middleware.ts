@@ -1,7 +1,8 @@
 // src/middleware.ts
 //
 // 페이지가 로드되기 "전에" 서버에서 실행되는 라우트 가드.
-// 로그인 필요한 경로(/mypage, /interview, /analysis)에 토큰 쿠키 없이 접근하면 /login 으로 보낸다.
+// 로그인 필요한 경로(/mypage, /interview, /analysis, /jobs/:jobId/fit)에
+// 토큰 쿠키 없이 접근하면 /login 으로 보낸다.
 // 원래 가려던 경로는 ?redirect= 로 실어, 로그인 후 그 페이지로 복귀시킨다.
 //
 // 여기선 쿠키 "존재"만 확인한다(빠르고 Edge 안전). 토큰의 실제 유효성은
@@ -39,7 +40,6 @@ export const config = {
     "/interview/:path*",
     "/analysis",
     "/analysis/:path*",
-    "/docs",
     "/jobs/:jobId/fit",
   ],
 }

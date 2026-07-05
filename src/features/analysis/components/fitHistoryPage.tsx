@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { ChevronRight, ClipboardCheck } from "lucide-react"
+import { PageTopBar } from "@/components/ui/pageTopBar"
 import { HomeSearchBar } from "@/features/home/components/homeSearchBar"
 import { useFitHistory } from "../hooks/useFitHistory"
 import type { FitHistoryItem } from "../types/analysis"
@@ -77,16 +78,17 @@ export function FitHistoryPage() {
   const { data, isLoading, isError, refetch } = useFitHistory()
 
   return (
-    <section className="bg-background min-h-full px-6 pt-7 pb-8">
-      <header>
+    <section className="bg-background min-h-full pb-8">
+      <PageTopBar title="적합도 보고서" backTo="/mypage" />
+
+      <header className="px-6 pt-5">
         <p className="text-primary text-sm font-semibold">내 지원 결과 한눈에</p>
-        <h1 className="text-ink mt-1 text-2xl font-bold">적합도 보고서</h1>
-        <div className="mt-5">
+        <div className="mt-3">
           <HomeSearchBar resultTab="job" placeholder="직무명 또는 기업명 검색" />
         </div>
       </header>
 
-      <div className="mt-6">
+      <div className="mt-6 px-6">
         {isLoading ? (
           <FitHistorySkeleton />
         ) : isError ? (
