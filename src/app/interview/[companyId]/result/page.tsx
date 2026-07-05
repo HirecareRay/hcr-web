@@ -1,3 +1,4 @@
+import { RequireAuth } from "@/features/auth/components/requireAuth"
 import { InterviewResultPage } from "@/features/interview/components/interviewResultPage"
 
 /**
@@ -11,5 +12,9 @@ export default async function InterviewResultRoute({
   params: Promise<{ companyId: string }>
 }) {
   const { companyId } = await params
-  return <InterviewResultPage companyId={companyId} />
+  return (
+    <RequireAuth>
+      <InterviewResultPage companyId={companyId} />
+    </RequireAuth>
+  )
 }
