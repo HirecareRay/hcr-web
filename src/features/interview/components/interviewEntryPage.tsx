@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { routes } from "@/constants/routes"
 import { InterviewCompanyPicks } from "./interviewCompanyPicks"
+import { InterviewHistoryPicks } from "./interviewHistoryPicks"
 
 // 면접이 어떻게 굴러가는지 4단계로 안내 — 처음 보는 사용자의 막막함을 줄인다.
 const flowSteps: { icon: LucideIcon; title: string; desc: string }[] = [
@@ -67,10 +68,10 @@ export function InterviewEntryPage() {
       {/* 트렌딩에 없는 기업은 검색 → 분석 리포트의 면접 CTA 로 안내 */}
       <Link
         href={routes.search}
-        className="text-muted hover:text-ink flex items-center justify-center gap-1 text-xs font-semibold transition-colors"
+        className="text-muted hover:text-ink flex items-center justify-center gap-1 text-sm font-semibold transition-colors"
       >
         찾는 기업이 없나요? 기업 검색하기
-        <ArrowRight className="h-3.5 w-3.5" />
+        <ArrowRight className="h-4 w-4" />
       </Link>
 
       {/* 진행 방식 안내 */}
@@ -93,6 +94,9 @@ export function InterviewEntryPage() {
           ))}
         </ol>
       </section>
+
+      {/* 내 면접 기록 — 마이페이지 목록과 같은 데이터 재사용, 최근 몇 건 미리보기 */}
+      <InterviewHistoryPicks />
     </div>
   )
 }
