@@ -5,11 +5,17 @@ import { ArrowRight, Sparkles } from "lucide-react"
 import { routes } from "@/constants/routes"
 import { useUploadFiles } from "../hooks/useUpload"
 import UploadStepCard from "./UploadStepCard"
+import { UploadListSkeleton } from "./uploadListSkeleton"
+import { useDelayedLoading } from "@/hooks/useDelayedLoading"
 
 export default function UploadList() {
-  const { items, upload } = useUploadFiles()
+  const { items, upload, isCheckingExists } = useUploadFiles()
   const anyUploading = items.some((item) => item.uploading)
   const resumeExists = items.find((i) => i.id === "resume")?.exists
+  const showSkeleton = useDelayedLoading(isCheckingExists)
+
+  if (showSkeleton) return <UploadListSkeleton />
+  if (isCheckingExists) return null
 
   return (
     <div className="space-y-3">

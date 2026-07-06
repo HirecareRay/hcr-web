@@ -14,6 +14,8 @@ import {
 import { cn } from "@/lib/utils"
 import { PageTopBar } from "@/components/ui/pageTopBar"
 import { fetchJobDetail, jobDetailFixtures } from "../services/jobService"
+import { JobDetailSkeleton } from "./jobDetailSkeleton"
+import { useDelayedLoading } from "@/hooks/useDelayedLoading"
 import type { JobDetail } from "../types/job"
 
 const statusLabels = {
@@ -115,13 +117,9 @@ export function JobDetailPage({ jobId }: { jobId: string }) {
     })
   }, [jobId])
 
-  if (loading) {
-    return (
-      <section className="bg-background flex min-h-full items-center justify-center">
-        <p className="text-muted text-sm">불러오는 중...</p>
-      </section>
-    )
-  }
+  const showSkeleton = useDelayedLoading(loading)
+  if (showSkeleton) return <JobDetailSkeleton />
+  if (loading) return null
 
   if (!job) {
     return (

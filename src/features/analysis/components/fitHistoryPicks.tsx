@@ -4,7 +4,7 @@
  * 적합도 분석 진입 화면의 "내 분석 기록" 섹션입니다.
  * 마이페이지 "적합도 보고서"와 같은 데이터(useFitHistory)를 재사용해, 최근 본 분석 몇 건을
  * 진입 화면에서도 바로 다시 볼 수 있게 합니다. 각 카드는 분석 결과 페이지로 이동합니다.
- *   → /jobs/[jobPostingId]/fit?companyId=[companyId]
+ *   → /jobs/[jobPostingId]/fit?companyId=[companyId]&analysisId=[analysisId]
  *
  * 기록이 없거나 에러면 섹션을 숨겨 진입 흐름(주 경로: 채용공고 검색)을 막지 않는다.
  */
@@ -81,7 +81,7 @@ function SectionTitle() {
 function HistoryPickCard({ item }: { item: FitHistoryItem }) {
   const href =
     item.jobPostingId && item.companyId
-      ? `/jobs/${item.jobPostingId}/fit?companyId=${item.companyId}`
+      ? `/jobs/${item.jobPostingId}/fit?companyId=${item.companyId}&analysisId=${item.analysisId}`
       : "/mypage/analysis"
 
   return (
