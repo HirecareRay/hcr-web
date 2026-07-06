@@ -5,10 +5,10 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ jobId: string }>
-  searchParams: Promise<{ companyId?: string }>
+  searchParams: Promise<{ companyId?: string; analysisId?: string }>
 }) {
   const { jobId } = await params
-  const { companyId = "" } = await searchParams
+  const { companyId = "", analysisId } = await searchParams
 
-  return <FitAnalysisPage jobId={jobId} companyId={companyId} />
+  return <FitAnalysisPage jobId={jobId} companyId={companyId} analysisId={analysisId} />
 }

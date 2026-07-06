@@ -14,6 +14,7 @@ import {
 import { PageTopBar } from "@/components/ui/pageTopBar"
 import { cn } from "@/lib/utils"
 import { useFitAnalysis } from "../hooks/useFitAnalysis"
+import { useFitAnalysisById } from "../hooks/useFitAnalysisById"
 import type { FitAnalysis, JobMatch, CompanyMatch, CategorySummary } from "../types/analysis"
 
 // ── 자격요건 카드: required·career·tech_tool을 하위 구분 없이 병합 ───
@@ -470,10 +471,12 @@ function Result({
   analysis,
   jobId,
   companyId,
+  isHistorical,
 }: {
   analysis: FitAnalysis
   jobId: string
   companyId: string
+  isHistorical?: boolean
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>("job")
   const tabBarRef = useRef<HTMLDivElement>(null)
@@ -515,6 +518,17 @@ function Result({
 
   return (
     <div className="px-4 py-6">
+      {isHistorical && (
+        <div className="border-warm-border mb-3 flex items-center justify-between rounded-2xl border bg-white px-4 py-3">
+          <p className="text-muted text-xs">지난 분석 결과입니다</p>
+          <Link
+            href={`/jobs/${jobId}/fit?companyId=${companyId}`}
+            className="text-primary text-xs font-semibold"
+          >
+            다시 분석하기
+          </Link>
+        </div>
+      )}
       <div className="border-warm-border mb-3 rounded-2xl border bg-white px-4 py-3.5 sm:flex sm:items-center sm:gap-2 sm:py-3">
         <div className="flex min-w-0 items-center gap-1.5 sm:max-w-[45%] sm:shrink-0">
           <Building2 className="text-primary size-4 shrink-0" />
@@ -627,32 +641,61 @@ function Result({
 
 // ── 페이지 진입점 ─────────────────────────────────────────────────────
 
-export function FitAnalysisPage({ jobId, companyId }: { jobId: string; companyId: string }) {
-  const { data, isLoading, isError } = useFitAnalysis(companyId, jobId)
+export function FitAnalysisPage({
+  jobId,
+  companyId,
+  analysisId,
+}: {
+  jobId: string
+  companyId: string
+  analysisId?: string
+}) {
+  const byId = useFitAnalysisById(analysisId ?? "")
+  const fresh = useFitAnalysis(companyId, jobId, !analysisId)
+  const { data, isLoading, isError } = analysisId ? byId : fresh
 
   return (
     <section className="bg-background min-h-full">
       <PageTopBar title="서류 적합도 분석" />
 
-      {isLoading && (
-        <div className="flex flex-col items-center justify-center gap-3 px-4 pt-24 text-center">
-          <div className="border-primary size-8 animate-spin rounded-full border-2 border-t-transparent" />
-          <p className="text-muted text-sm">서류를 분석 중입니다</p>
-          <p className="text-muted text-xs">1~2분 소요됩니다</p>
-        </div>
-      )}
+      {isLoading &&
+        (analysisId ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-4 pt-24 text-center">
+            <div className="border-primary size-8 animate-spin rounded-full border-2 border-t-transparent" />
+            <p className="text-muted text-sm">불러오는 중...</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-3 px-4 pt-24 text-center">
+            <div className="border-primary size-8 animate-spin rounded-full border-2 border-t-transparent" />
+            <p className="text-muted text-sm">서류를 분석 중입니다</p>
+            <p className="text-muted text-xs">1~2분 소요됩니다</p>
+          </div>
+        ))}
 
-      {isError && (
-        <div className="flex flex-col items-center justify-center px-4 pt-24 text-center">
-          <p className="text-ink text-sm font-bold">분석에 실패했습니다</p>
-          <p className="text-muted mt-1 text-xs">이력서가 등록되어 있는지 확인해 주세요</p>
-          <Link href="/mypage/documents" className="text-primary mt-4 text-sm font-semibold">
-            서류 등록하러 가기
-          </Link>
-        </div>
-      )}
+      {isError &&
+        (analysisId ? (
+          <div className="flex flex-col items-center justify-center px-4 pt-24 text-center">
+            <p className="text-ink text-sm font-bold">분석 기록을 찾을 수 없습니다</p>
+            <Link
+              href={`/jobs/${jobId}/fit?companyId=${companyId}`}
+              className="text-primary mt-4 text-sm font-semibold"
+            >
+              새로 분석하기
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center px-4 pt-24 text-center">
+            <p className="text-ink text-sm font-bold">분석에 실패했습니다</p>
+            <p className="text-muted mt-1 text-xs">이력서가 등록되어 있는지 확인해 주세요</p>
+            <Link href="/mypage/documents" className="text-primary mt-4 text-sm font-semibold">
+              서류 등록하러 가기
+            </Link>
+          </div>
+        ))}
 
-      {data && <Result analysis={data} jobId={jobId} companyId={companyId} />}
+      {data && (
+        <Result analysis={data} jobId={jobId} companyId={companyId} isHistorical={!!analysisId} />
+      )}
     </section>
   )
 }

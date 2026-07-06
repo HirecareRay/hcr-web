@@ -10,6 +10,13 @@ export async function fetchFitAnalysis(companyId: string, jobId: string): Promis
   return data.data
 }
 
+export async function fetchFitAnalysisById(analysisId: string): Promise<FitAnalysis> {
+  const { data } = await axiosInstance.get<{ success: boolean; data: FitAnalysis }>(
+    `/api/analysis/fit/${analysisId}`
+  )
+  return data.data
+}
+
 export async function fetchFitHistory(): Promise<FitHistoryItem[]> {
   const { data } = await axiosInstance.get<{ success: boolean; data: FitHistoryItem[] }>(
     "/api/analysis/fit/history"

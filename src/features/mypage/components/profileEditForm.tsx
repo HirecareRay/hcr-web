@@ -3,24 +3,33 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { ArrowLeft, Camera, CheckCircle2, Plus, Search, UserRound, X } from "lucide-react"
 import axiosInstance from "@/lib/axiosInstance"
+import { logger } from "@/lib/logger"
 import { defaultInterestJobs, jobCategories, userProfileFixture } from "../services/myPageService"
+import { ProfileEditSkeleton } from "./profileEditSkeleton"
+import { useDelayedLoading } from "@/hooks/useDelayedLoading"
 
 export function ProfileEditForm() {
   const [name, setName] = useState(userProfileFixture.name)
   const [email, setEmail] = useState(userProfileFixture.email)
   const [statusMessage, setStatusMessage] = useState(userProfileFixture.statusMessage)
   const [interestJobs, setInterestJobs] = useState<string[]>(defaultInterestJobs)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    axiosInstance.get("/api/mypage/profile").then(({ data }) => {
-      const p = data.data
-      setName(p.name)
-      setEmail(p.email)
-      if (p.interestJobs) setInterestJobs(p.interestJobs)
-      if (p.companySize) setCompanySize(p.companySize)
-      if (p.careerLevel) setCareerLevel(p.careerLevel)
-    })
+    axiosInstance
+      .get("/api/mypage/profile")
+      .then(({ data }) => {
+        const p = data.data
+        setName(p.name)
+        setEmail(p.email)
+        if (p.interestJobs) setInterestJobs(p.interestJobs)
+        if (p.companySize) setCompanySize(p.companySize)
+        if (p.careerLevel) setCareerLevel(p.careerLevel)
+      })
+      .catch((e) => logger.error("프로필 조회 실패", e))
+      .finally(() => setIsLoading(false))
   }, [])
+  const showSkeleton = useDelayedLoading(isLoading)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [companySize, setCompanySize] = useState<string[]>(["스타트업"])
@@ -68,192 +77,196 @@ export function ProfileEditForm() {
         <h1 className="text-ink flex-1 pr-7 text-center text-base font-bold">회원 정보 수정</h1>
       </header>
 
-      <form onSubmit={handleSubmit} className="px-5 py-6">
-        <div className="flex flex-col items-center">
-          <div className="relative">
-            <span className="bg-coral-light flex size-20 items-center justify-center rounded-full">
-              <UserRound className="text-primary size-10" />
-            </span>
-            <button
-              type="button"
-              aria-label="프로필 사진 변경"
-              className="bg-primary absolute right-0 bottom-0 flex size-8 items-center justify-center rounded-full border-2 border-white text-white"
-            >
-              <Camera className="size-4" />
-            </button>
-          </div>
-          <p className="text-disabled mt-3 text-xs">프로필 사진 변경</p>
-        </div>
-
-        <div className="mt-7 space-y-5">
-          <label className="block">
-            <span className="text-ink mb-2 block text-sm font-semibold">이름</span>
-            <input
-              type="text"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value)
-                setIsSaved(false)
-              }}
-              required
-              className="border-warm-border text-ink placeholder:text-disabled w-full rounded-2xl border bg-white px-4 py-3 text-sm"
-              placeholder="이름을 입력하세요"
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-ink mb-2 block text-sm font-semibold">이메일</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value)
-                setIsSaved(false)
-              }}
-              required
-              className="border-warm-border text-ink placeholder:text-disabled w-full rounded-2xl border bg-white px-4 py-3 text-sm"
-              placeholder="이메일을 입력하세요"
-            />
-          </label>
-
-          <div>
-            <span className="text-ink mb-2 block text-sm font-semibold">기업 규모</span>
-            <div className="flex flex-wrap gap-2">
-              {["스타트업", "중소기업", "중견기업", "대기업"].map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => toggleItem(companySize, setCompanySize, size)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                    companySize.includes(size)
-                      ? "border-primary bg-primary text-white"
-                      : "border-warm-border text-muted bg-white"
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
+      {showSkeleton ? (
+        <ProfileEditSkeleton />
+      ) : isLoading ? null : (
+        <form onSubmit={handleSubmit} className="px-5 py-6">
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <span className="bg-coral-light flex size-20 items-center justify-center rounded-full">
+                <UserRound className="text-primary size-10" />
+              </span>
+              <button
+                type="button"
+                aria-label="프로필 사진 변경"
+                className="bg-primary absolute right-0 bottom-0 flex size-8 items-center justify-center rounded-full border-2 border-white text-white"
+              >
+                <Camera className="size-4" />
+              </button>
             </div>
+            <p className="text-disabled mt-3 text-xs">프로필 사진 변경</p>
           </div>
 
-          <div>
-            <span className="text-ink mb-2 block text-sm font-semibold">경력 구분</span>
-            <div className="flex gap-2">
-              {["신입", "경력", "인턴"].map((level) => (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() => toggleItem(careerLevel, setCareerLevel, level)}
-                  className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${
-                    careerLevel.includes(level)
-                      ? "border-primary bg-primary text-white"
-                      : "border-warm-border text-muted bg-white"
-                  }`}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <span className="text-ink mb-2 block text-sm font-semibold">관심 직무</span>
-            <p className="text-muted mb-3 text-xs">대분류를 선택하거나 검색해보세요</p>
-
-            {/* 검색 */}
-            <label className="border-warm-border bg-warm-bg mb-3 flex items-center gap-2 rounded-2xl border px-4 py-2.5">
-              <Search className="text-disabled size-4 shrink-0" />
+          <div className="mt-7 space-y-5">
+            <label className="block">
+              <span className="text-ink mb-2 block text-sm font-semibold">이름</span>
               <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setSelectedCategory(null)
+                type="text"
+                value={name}
+                onChange={(event) => {
+                  setName(event.target.value)
+                  setIsSaved(false)
                 }}
-                placeholder="직무를 검색하세요"
-                className="text-ink placeholder:text-disabled min-w-0 flex-1 bg-transparent text-sm"
+                required
+                className="border-warm-border text-ink placeholder:text-disabled w-full rounded-2xl border bg-white px-4 py-3 text-sm"
+                placeholder="이름을 입력하세요"
               />
             </label>
 
-            {/* 대분류 탭 */}
-            <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
-              {jobCategories.map((cat) => (
-                <button
-                  key={cat.label}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCategory(selectedCategory === cat.label ? null : cat.label)
-                    setSearchQuery("")
-                  }}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                    selectedCategory === cat.label
-                      ? "border-primary bg-primary text-white"
-                      : "border-warm-border text-muted bg-white"
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
+            <label className="block">
+              <span className="text-ink mb-2 block text-sm font-semibold">이메일</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value)
+                  setIsSaved(false)
+                }}
+                required
+                className="border-warm-border text-ink placeholder:text-disabled w-full rounded-2xl border bg-white px-4 py-3 text-sm"
+                placeholder="이메일을 입력하세요"
+              />
+            </label>
 
-            {/* 소분류 */}
-            {filteredSubJobs.length > 0 && (
-              <div className="border-warm-border mb-3 rounded-2xl border bg-white p-3">
-                <div className="flex flex-wrap gap-2">
-                  {filteredSubJobs.map((job) => {
-                    const selected = interestJobs.includes(job)
-                    return (
-                      <button
-                        key={job}
-                        type="button"
-                        onClick={() => toggleJob(job)}
-                        className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                          selected
-                            ? "border-primary bg-primary text-white"
-                            : "border-warm-border text-muted bg-white"
-                        }`}
-                      >
-                        {selected ? <X className="size-3" /> : <Plus className="size-3" />}
-                        {job}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 선택된 태그 */}
-            {interestJobs.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {interestJobs.map((job) => (
+            <div>
+              <span className="text-ink mb-2 block text-sm font-semibold">기업 규모</span>
+              <div className="flex flex-wrap gap-2">
+                {["스타트업", "중소기업", "중견기업", "대기업"].map((size) => (
                   <button
-                    key={job}
+                    key={size}
                     type="button"
-                    onClick={() => toggleJob(job)}
-                    className="bg-coral-light text-primary flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
+                    onClick={() => toggleItem(companySize, setCompanySize, size)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                      companySize.includes(size)
+                        ? "border-primary bg-primary text-white"
+                        : "border-warm-border text-muted bg-white"
+                    }`}
                   >
-                    #{job} <X className="size-3" />
+                    {size}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {isSaved && (
-          <div className="text-success mt-5 flex items-center gap-2 rounded-2xl bg-[#eefaf3] px-4 py-3 text-sm font-semibold">
-            <CheckCircle2 className="size-4" />
-            회원 정보가 저장되었어요.
-          </div>
-        )}
+            <div>
+              <span className="text-ink mb-2 block text-sm font-semibold">경력 구분</span>
+              <div className="flex gap-2">
+                {["신입", "경력", "인턴"].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => toggleItem(careerLevel, setCareerLevel, level)}
+                    className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${
+                      careerLevel.includes(level)
+                        ? "border-primary bg-primary text-white"
+                        : "border-warm-border text-muted bg-white"
+                    }`}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <button
-          type="submit"
-          className="bg-primary mt-7 w-full rounded-2xl py-4 text-sm font-bold text-white"
-        >
-          변경사항 저장
-        </button>
-      </form>
+            <div>
+              <span className="text-ink mb-2 block text-sm font-semibold">관심 직무</span>
+              <p className="text-muted mb-3 text-xs">대분류를 선택하거나 검색해보세요</p>
+
+              {/* 검색 */}
+              <label className="border-warm-border bg-warm-bg mb-3 flex items-center gap-2 rounded-2xl border px-4 py-2.5">
+                <Search className="text-disabled size-4 shrink-0" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setSelectedCategory(null)
+                  }}
+                  placeholder="직무를 검색하세요"
+                  className="text-ink placeholder:text-disabled min-w-0 flex-1 bg-transparent text-sm"
+                />
+              </label>
+
+              {/* 대분류 탭 */}
+              <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+                {jobCategories.map((cat) => (
+                  <button
+                    key={cat.label}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(selectedCategory === cat.label ? null : cat.label)
+                      setSearchQuery("")
+                    }}
+                    className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                      selectedCategory === cat.label
+                        ? "border-primary bg-primary text-white"
+                        : "border-warm-border text-muted bg-white"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 소분류 */}
+              {filteredSubJobs.length > 0 && (
+                <div className="border-warm-border mb-3 rounded-2xl border bg-white p-3">
+                  <div className="flex flex-wrap gap-2">
+                    {filteredSubJobs.map((job) => {
+                      const selected = interestJobs.includes(job)
+                      return (
+                        <button
+                          key={job}
+                          type="button"
+                          onClick={() => toggleJob(job)}
+                          className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                            selected
+                              ? "border-primary bg-primary text-white"
+                              : "border-warm-border text-muted bg-white"
+                          }`}
+                        >
+                          {selected ? <X className="size-3" /> : <Plus className="size-3" />}
+                          {job}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 선택된 태그 */}
+              {interestJobs.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {interestJobs.map((job) => (
+                    <button
+                      key={job}
+                      type="button"
+                      onClick={() => toggleJob(job)}
+                      className="bg-coral-light text-primary flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
+                    >
+                      #{job} <X className="size-3" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {isSaved && (
+            <div className="text-success mt-5 flex items-center gap-2 rounded-2xl bg-[#eefaf3] px-4 py-3 text-sm font-semibold">
+              <CheckCircle2 className="size-4" />
+              회원 정보가 저장되었어요.
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="bg-primary mt-7 w-full rounded-2xl py-4 text-sm font-bold text-white"
+          >
+            변경사항 저장
+          </button>
+        </form>
+      )}
     </section>
   )
 }
