@@ -6,6 +6,8 @@ import { ClipboardCheck, ExternalLink, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SearchBar } from "@/components/ui/searchBar"
 import { useSearchResults } from "../hooks/useSearchResults"
+import { SearchResultListSkeleton } from "./searchResultSkeleton"
+import { useDelayedLoading } from "@/hooks/useDelayedLoading"
 import { SEARCH_UI_LIMITS } from "../constants/search"
 import type { CompanySearchResult, RelatedJobPosting } from "../types/search"
 import type { HomeJobPosting } from "@/features/home/types/home"
@@ -138,6 +140,9 @@ function SearchResultContent() {
     jobResults,
     isFetchingJobs,
   } = useSearchResults()
+
+  const showCompanySkeleton = useDelayedLoading(isFetching)
+  const showJobSkeleton = useDelayedLoading(isFetchingJobs)
 
   // 연관 채용공고는 도배 방지로 기본 N개만, "더보기"로 전체 펼침
   const [showAllJobs, setShowAllJobs] = useState(false)
@@ -305,7 +310,9 @@ function SearchResultContent() {
               </div>
             )}
 
-            {filteredCompanies.length > 0 ? (
+            {showCompanySkeleton ? (
+              <SearchResultListSkeleton variant="company" />
+            ) : filteredCompanies.length > 0 ? (
               <>
                 <div className="mt-3 space-y-3">
                   {visibleCompanies.map((company) => (
@@ -322,7 +329,7 @@ function SearchResultContent() {
                   </button>
                 )}
               </>
-            ) : (
+            ) : isFetching ? null : (
               <div className="border-warm-border mt-3 rounded-2xl border border-dashed bg-white px-5 py-12 text-center">
                 {query.length === 0 ? (
                   <>
@@ -331,8 +338,6 @@ function SearchResultContent() {
                       기업명·업종 입력 후 돋보기를 누르세요.
                     </p>
                   </>
-                ) : isFetching ? (
-                  <p className="text-muted text-sm">검색 중…</p>
                 ) : (
                   <>
                     <p className="text-ink font-semibold">기업 검색 결과가 없습니다</p>
@@ -393,7 +398,9 @@ function SearchResultContent() {
             채용공고 검색 결과 · {jobResults.length}건
           </h2>
 
-          {jobResults.length > 0 ? (
+          {showJobSkeleton ? (
+            <SearchResultListSkeleton variant="job" />
+          ) : jobResults.length > 0 ? (
             <>
               <div className="mt-3 space-y-3">
                 {visibleJobResults.map((job) => (
@@ -410,7 +417,7 @@ function SearchResultContent() {
                 </button>
               )}
             </>
-          ) : (
+          ) : isFetchingJobs ? null : (
             <div className="border-warm-border mt-3 rounded-2xl border border-dashed bg-white px-5 py-12 text-center">
               {query.length === 0 ? (
                 <>
@@ -419,8 +426,6 @@ function SearchResultContent() {
                     예: AI, 백엔드, 프론트엔드 입력 후 돋보기를 누르세요.
                   </p>
                 </>
-              ) : isFetchingJobs ? (
-                <p className="text-muted text-sm">검색 중…</p>
               ) : (
                 <>
                   <p className="text-ink font-semibold">검색된 채용공고가 없어요</p>

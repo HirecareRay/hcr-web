@@ -6,6 +6,8 @@ import { Pencil } from "lucide-react"
 import axiosInstance from "@/lib/axiosInstance"
 import DocumentForm from "@/features/documents/components/DocumentForm"
 import DocumentView from "@/features/documents/components/DocumentView"
+import { DocumentDetailSkeleton } from "@/features/documents/components/documentDetailSkeleton"
+import { useDelayedLoading } from "@/hooks/useDelayedLoading"
 import { documentService } from "@/features/documents/services/documentService"
 import { useAuthStore } from "@/features/auth/store/authStore"
 import { PageTopBar } from "@/components/ui/pageTopBar"
@@ -70,17 +72,20 @@ export default function DocumentEditPage() {
   }
 
   const title = DOC_LABELS[docType] ?? docType
+  const showSkeleton = useDelayedLoading(loading)
 
-  if (loading) {
+  if (showSkeleton) {
     return (
-      <section className="bg-background flex min-h-full flex-col">
+      <section className="bg-background min-h-full pb-24">
         <PageTopBar title={title} backTo="/mypage/documents" />
-        <div className="flex flex-1 items-center justify-center">
-          <p className="text-muted text-sm">불러오는 중...</p>
+        <div className="px-5 pt-5">
+          <DocumentDetailSkeleton />
         </div>
       </section>
     )
   }
+
+  if (loading) return null
 
   if (!data) return null
 

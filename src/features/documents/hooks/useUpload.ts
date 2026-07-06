@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useUploadStore } from "../store/uploadStore"
 import { uploadFile } from "../services/uploadService"
 import { UploadType } from "../types/upload"
@@ -16,6 +16,7 @@ export const UPLOAD_TYPE_TO_SLUG: Record<UploadType, DocSlug> = {
 export function useUploadFiles() {
   const { items, setFile, setExists, setUploading } = useUploadStore()
   const setDocExists = useAuthStore((s) => s.setDocExists)
+  const [isCheckingExists, setIsCheckingExists] = useState(true)
 
   // existsAll()은 문서별 등록 여부 + 마지막 업데이트(created_datetime)를 한 번에 준다.
   // 전역(authStore)과 카드별(uploadStore) 상태를 여기서 같이 동기화해 중복 조회를 없앤다.
@@ -33,6 +34,7 @@ export function useUploadFiles() {
       .existsAll()
       .then(syncDocExists)
       .catch((e) => logger.error("문서 존재 여부 조회 실패", e))
+      .finally(() => setIsCheckingExists(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -56,5 +58,5 @@ export function useUploadFiles() {
     }
   }
 
-  return { items, upload }
+  return { items, upload, isCheckingExists }
 }

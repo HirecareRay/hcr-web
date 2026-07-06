@@ -15,7 +15,9 @@ import axiosInstance from "@/lib/axiosInstance"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 import { useJobList } from "../hooks/useJobList"
-import { fetchJobs, jobListFixtures } from "../services/jobService"
+import { fetchJobs } from "../services/jobService"
+import { JobListSkeleton } from "./jobListSkeleton"
+import { useDelayedLoading } from "@/hooks/useDelayedLoading"
 import type { JobCategory, JobListItem, JobSort } from "../types/job"
 
 const categories: JobCategory[] = ["전체", "개발·데이터", "디자인", "보안"]
@@ -118,11 +120,17 @@ function JobCard({
 }
 
 export function JobListPage() {
-  const [jobs, setJobs] = useState(jobListFixtures)
+  const [jobs, setJobs] = useState<JobListItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetchJobs().then(setJobs)
+    fetchJobs().then((data) => {
+      setJobs(data)
+      setIsLoading(false)
+    })
   }, [])
+
+  const showSkeleton = useDelayedLoading(isLoading)
 
   const {
     keyword,
@@ -209,11 +217,17 @@ export function JobListPage() {
           </select>
         </div>
 
-        <p className="text-muted mt-5 mb-3 text-xs">
-          총 <strong className="text-ink">{filteredCount}</strong>개의 공고
-        </p>
+        {!isLoading && (
+          <p className="text-muted mt-5 mb-3 text-xs">
+            총 <strong className="text-ink">{filteredCount}</strong>개의 공고
+          </p>
+        )}
 
-        {paginatedJobs.length > 0 ? (
+        {showSkeleton ? (
+          <div className="mt-5">
+            <JobListSkeleton />
+          </div>
+        ) : isLoading ? null : paginatedJobs.length > 0 ? (
           <div className="space-y-3">
             {paginatedJobs.map((job) => (
               <JobCard
@@ -231,7 +245,7 @@ export function JobListPage() {
           </div>
         )}
 
-        {filteredCount > 0 && (
+        {!isLoading && filteredCount > 0 && (
           <nav aria-label="채용공고 페이지" className="mt-6 flex items-center justify-center gap-3">
             <button
               type="button"
