@@ -17,7 +17,7 @@ function formatAnalyzedAt(raw: string | null): string {
 function FitHistoryCard({ item }: { item: FitHistoryItem }) {
   const href =
     item.jobPostingId && item.companyId
-      ? `/jobs/${item.jobPostingId}/fit?companyId=${item.companyId}`
+      ? `/jobs/${item.jobPostingId}/fit?companyId=${item.companyId}&analysisId=${item.analysisId}`
       : null
 
   const content = (
