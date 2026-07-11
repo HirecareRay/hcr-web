@@ -55,6 +55,7 @@ import type {
 import type { LiveQuestion } from "../types/interviewSession"
 import { useInterviewSessionStore } from "../store/interviewSessionStore"
 import { getPersona } from "../lib/personas"
+import { getDummyQuestionSeed } from "../lib/mockQuestionSeeds"
 
 export interface InterviewSocketOptions {
   companyId?: string | null // 기업 분석 컨텍스트 주입용(선택) — mock에서는 미사용
@@ -84,29 +85,35 @@ const EMPTY_VIEW: InterviewSocketView = {
 const MOCK_THINKING_DELAY_MS = 900
 
 // 음성 모드 답변 중 자막이 흘러들어오는 것처럼 보이게 하는 더미 문장(단어 단위로 트리클).
-// 질문 카테고리마다, 그리고 같은 카테고리가 반복돼도 매번 같은 문장이 나오지 않도록
-// 질문 번호로 로테이션한다 — 실제 답변이 아니라 mock STT이지만 "매번 똑같다"는 인상은 피한다.
-const MOCK_TRANSCRIPTS: Record<LiveQuestion["category"], string[]> = {
-  common: [
-    "안녕하세요 저는 맡은 일은 끝까지 책임지는 성격이고 팀과 적극적으로 소통하며 문제를 해결해 왔습니다",
-    "제 강점은 꼼꼼함이고 약점은 완벽을 추구하다 일정이 지연되는 경우가 있어 우선순위를 정해 보완하고 있습니다",
-    "팀 프로젝트에서 의견 충돌이 있을 때 데이터를 근거로 제시해 합의를 이끌어낸 경험이 있습니다",
-  ],
-  company: [
-    "귀사의 데이터 기반 의사결정 문화에 매력을 느껴 지원했고 입사 후 실제 서비스 지표 개선에 기여하고 싶습니다",
-    "최근 발표하신 신사업 관련 기사를 인상 깊게 보았고 그 방향에 제 역량을 보태고 싶어 지원했습니다",
-    "입사 후에는 담당 서비스의 핵심 지표를 직접 개선하는 프로젝트를 주도해보고 싶습니다",
-  ],
-  job: [
-    "이전 프로젝트에서 데이터 마트를 설계하며 쿼리 성능을 크게 개선한 경험이 이 직무에 강점이 될 것 같습니다",
-    "최근에는 새로운 데이터 파이프라인 도구를 직접 학습하고 사이드 프로젝트에 적용해보았습니다",
-    "결측치가 많은 데이터를 다뤄본 경험이 있고 원인을 분석해 보완하는 전처리 전략을 세운 적이 있습니다",
-  ],
-}
+//
+// 예전 버전: 카테고리별 풀에서 questionNo % pool.length 로 대략 로테이션 — dummyQuestions.ts의
+// 실제 질문 순서와 안 맞아(예: no=1 자기소개인데 강점/약점 답변이 나오는 등) 질문-답변 매핑이 어긋났다.
+// const MOCK_TRANSCRIPTS: Record<LiveQuestion["category"], string[]> = {
+//   common: [
+//     "안녕하세요 저는 맡은 일은 끝까지 책임지는 성격이고 팀과 적극적으로 소통하며 문제를 해결해 왔습니다",
+//     "제 강점은 꼼꼼함이고 약점은 완벽을 추구하다 일정이 지연되는 경우가 있어 우선순위를 정해 보완하고 있습니다",
+//     "팀 프로젝트에서 의견 충돌이 있을 때 데이터를 근거로 제시해 합의를 이끌어낸 경험이 있습니다",
+//   ],
+//   company: [
+//     "귀사의 데이터 기반 의사결정 문화에 매력을 느껴 지원했고 입사 후 실제 서비스 지표 개선에 기여하고 싶습니다",
+//     "최근 발표하신 신사업 관련 기사를 인상 깊게 보았고 그 방향에 제 역량을 보태고 싶어 지원했습니다",
+//     "입사 후에는 담당 서비스의 핵심 지표를 직접 개선하는 프로젝트를 주도해보고 싶습니다",
+//   ],
+//   job: [
+//     "이전 프로젝트에서 데이터 마트를 설계하며 쿼리 성능을 크게 개선한 경험이 이 직무에 강점이 될 것 같습니다",
+//     "최근에는 새로운 데이터 파이프라인 도구를 직접 학습하고 사이드 프로젝트에 적용해보았습니다",
+//     "결측치가 많은 데이터를 다뤄본 경험이 있고 원인을 분석해 보완하는 전처리 전략을 세운 적이 있습니다",
+//   ],
+// }
+// function mockTranscriptFor(category: LiveQuestion["category"], questionNo: number): string {
+//   const pool = MOCK_TRANSCRIPTS[category]
+//   return pool[questionNo % pool.length]
+// }
 
-function mockTranscriptFor(category: LiveQuestion["category"], questionNo: number): string {
-  const pool = MOCK_TRANSCRIPTS[category]
-  return pool[questionNo % pool.length]
+// 현재 버전: dummyQuestions.ts(BFF)가 채점에 쓰는 것과 같은 시드(mockQuestionSeeds)를 그대로 써서,
+// 화면에 보이는 "답변"이 실제로 그 질문에 매핑된 고정 답변과 항상 일치하게 한다.
+function mockTranscriptFor(questionNo: number): string {
+  return getDummyQuestionSeed(questionNo)?.answer ?? "질문 의도에 맞춰 구체적인 사례로 답변했습니다"
 }
 
 // LiveQuestion.category → 면접관 페르소나(고정 매핑, personas.ts 3인 중 하나).
@@ -170,10 +177,10 @@ export function useInterviewSocket(
   // ── 업스트림 액션(mock) ──────────────────────────────────────────────────
 
   // 답변 구간 동안 더미 자막을 단어 단위로 흘려보낸다(음성 모드에서 "인식 중"처럼 보이게).
-  // 현재 질문의 카테고리·번호로 문장을 골라, 질문이 바뀌어도 매번 같은 답이 나오지 않게 한다.
+  // 현재 질문 번호(no)로 그 질문에 매핑된 고정 답변을 그대로 재생한다.
   const answerStart = useCallback(() => {
     const q = session?.questions[questionIndexRef.current]
-    const transcript = q ? mockTranscriptFor(q.category, q.no) : MOCK_TRANSCRIPTS.common[0]
+    const transcript = mockTranscriptFor(q?.no ?? 1)
     const words = transcript.split(" ")
     words.forEach((_word, i) => {
       const timer = setTimeout(() => {

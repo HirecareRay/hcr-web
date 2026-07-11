@@ -2,7 +2,8 @@
  * dummyEvaluation.ts
  *
  * 답변 1건에 대한 더미 평가를 생성합니다.
- * 답변 길이에 따라 점수가 조금씩 달라지게 해, 더미라도 "반응하는" 느낌을 줍니다.
+ * 질문 번호(no)로 dummyQuestions.ts의 고정 시드를 조회해 그대로 반환합니다 —
+ * 같은 질문에는 항상 같은 평가가 매핑됩니다(answerText 내용은 채점에 영향을 주지 않음).
  *
  * TODO: 실연결 시
  *   - answerScore  ← 답변 텍스트 → LLM 평가
@@ -16,52 +17,40 @@ import type {
   LiveEvaluation,
   ModalScore,
 } from "@/features/interview/types/interviewSession"
+import { getDummyQuestionSeed } from "@/features/interview/lib/mockQuestionSeeds"
 
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v))
-
-// 답변 길이를 기준 점수로 환산(더미). 너무 짧으면 낮게, 충분하면 높게.
-function answerScoreFor(answerText: string): number {
-  const len = answerText.trim().length
-  return clamp(58 + Math.round(len / 10), 50, 94)
-}
-
-function expressionFor(hasVideo: boolean, base: number): ModalScore {
+function expressionFor(hasVideo: boolean, score: number, label: string): ModalScore {
   if (!hasVideo) return { score: 0, label: "영상을 사용하지 않은 답변입니다" }
-  const score = clamp(base - 6, 50, 92)
-  return {
-    score,
-    label:
-      score >= 80
-        ? "표정이 안정적이고 시선 처리가 좋습니다"
-        : "시선이 자주 흔들립니다. 카메라를 응시해 보세요",
-  }
+  return { score, label }
 }
 
-function voiceFor(hasAudio: boolean, base: number): ModalScore {
+function voiceFor(hasAudio: boolean, score: number, label: string): ModalScore {
   if (!hasAudio) return { score: 0, label: "음성을 사용하지 않은 답변입니다" }
-  const score = clamp(base - 2, 52, 93)
-  return {
-    score,
-    label:
-      score >= 80 ? "목소리에 자신감이 느껴집니다" : "말 끝이 흐려집니다. 또박또박 마무리해 보세요",
-  }
+  return { score, label }
 }
 
 export function buildDummyEvaluation(submission: AnswerSubmission): LiveEvaluation {
-  const answerScore = answerScoreFor(submission.answerText)
+  // 질문 번호 범위를 벗어나면(더미 세션 밖 요청 등) 안전한 기본값으로 대체.
+  const evaluation = getDummyQuestionSeed(submission.no)?.evaluation ?? {
+    answerScore: 75,
+    good: "핵심을 잘 짚어 답변했습니다.",
+    improve: "조금 더 구체적인 사례를 덧붙이면 좋습니다.",
+    expressionScore: 75,
+    expressionLabel: "표정이 안정적이고 시선 처리가 좋습니다",
+    voiceScore: 75,
+    voiceLabel: "목소리에 자신감이 느껴집니다",
+  }
 
   return {
     no: submission.no,
-    answerScore,
-    expression: expressionFor(submission.hasVideo, answerScore),
-    voice: voiceFor(submission.hasAudio, answerScore),
-    good:
-      answerScore >= 78
-        ? "질문 의도를 정확히 짚고 구체적인 사례로 답했습니다."
-        : "핵심은 짚었으나 답변이 다소 짧습니다.",
-    improve:
-      answerScore >= 78
-        ? "결론을 먼저 말하면 전달력이 더 높아집니다."
-        : "STAR(상황-과제-행동-결과) 구조로 사례를 덧붙여 보세요.",
+    answerScore: evaluation.answerScore,
+    expression: expressionFor(
+      submission.hasVideo,
+      evaluation.expressionScore,
+      evaluation.expressionLabel
+    ),
+    voice: voiceFor(submission.hasAudio, evaluation.voiceScore, evaluation.voiceLabel),
+    good: evaluation.good,
+    improve: evaluation.improve,
   }
 }

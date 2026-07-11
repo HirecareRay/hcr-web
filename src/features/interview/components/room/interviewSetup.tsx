@@ -101,7 +101,7 @@ export function InterviewSetup({
   }
 
   const handleStart = () => {
-    onStart({ mode, totalDurationSec, jobTitle: jobTitle.trim() || "일반 직무" })
+    onStart({ mode, totalDurationSec, jobTitle: jobTitle.trim() || "해당 직무" })
   }
 
   return (
