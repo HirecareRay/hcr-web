@@ -20,6 +20,12 @@ interface BackendAuthResponse {
   user: { id: string; name: string; email: string }
 }
 
+// hcr-backend 서버·DB 폐쇄로 인한 mock 고정 로그인 정보.
+// MariaDB users 테이블 id=4(실제 email: 2@2.com, name: 김취준) 기준이며,
+// 노출용 이메일만 요청대로 hcr@hcr.com 으로 대체했다.
+export const MOCK_AUTH_TOKEN = "mock-hcr-token-4"
+export const MOCK_AUTH_USER = { id: "4", name: "김취준", email: "hcr@hcr.com" }
+
 // 백엔드 인증 호출 결과 — 성공 시 {token,user}, 실패 시 상태코드+메시지.
 // NextResponse 를 만들지 않아 JSON 응답(login/signup)과 리다이렉트 응답(소셜 콜백)이 함께 재사용한다.
 export type BackendAuthResult =
@@ -34,35 +40,34 @@ export type BackendAuthResult =
  * @param body  백엔드로 보낼 인증 정보 (email/password 또는 {code} 등)
  */
 export async function callBackendAuth(path: string, body: unknown): Promise<BackendAuthResult> {
-  try {
-    const res = await fetch(`${backendApiUrl}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      // 백엔드가 응답 없이 멈추면(행) 8초 후 끊는다. 프론트 axios(10s)보다 짧게 잡아
-      // 무한 대기 대신 아래 catch 에서 깨끗한 502 로 떨어지게 한다.
-      signal: AbortSignal.timeout(8000),
-    })
+  // hcr-backend 서버·DB 폐쇄로 실제 인증 호출을 막고 항상 mock 로그인 성공으로 처리한다.
+  // 로그인·회원가입·소셜 콜백 세 진입점이 모두 이 함수를 거치므로 여기 한 곳만 바꾸면 셋 다 mock 된다.
+  // 아래는 원래 FastAPI 프록시 로직 (백엔드 복구 시 이 블록으로 되돌리세요):
+  //
+  // try {
+  //   const res = await fetch(`${backendApiUrl}${path}`, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify(body),
+  //     signal: AbortSignal.timeout(8000),
+  //   })
+  //   const payload = (await res.json().catch(() => null)) as
+  //     | BackendAuthResponse
+  //     | { detail?: string }
+  //     | null
+  //   if (!res.ok) {
+  //     const message = (payload && "detail" in payload && payload.detail) || "인증에 실패했습니다"
+  //     logger.error(`프록시 실패 ${res.status} ${path}`, payload)
+  //     return { ok: false, status: res.status, message }
+  //   }
+  //   return { ok: true, data: payload as BackendAuthResponse }
+  // } catch (error) {
+  //   logger.error(`백엔드 연결 실패 ${path}`, error)
+  //   return { ok: false, status: 502, message: "백엔드 서버에 연결할 수 없습니다" }
+  // }
 
-    // FastAPI 응답을 JSON 으로 파싱 (성공: {token,user} / 실패: {detail})
-    const payload = (await res.json().catch(() => null)) as
-      | BackendAuthResponse
-      | { detail?: string }
-      | null
-
-    if (!res.ok) {
-      // 백엔드의 상태코드(401·409 등)와 detail 메시지를 그대로 전달
-      const message = (payload && "detail" in payload && payload.detail) || "인증에 실패했습니다"
-      logger.error(`프록시 실패 ${res.status} ${path}`, payload)
-      return { ok: false, status: res.status, message }
-    }
-
-    return { ok: true, data: payload as BackendAuthResponse }
-  } catch (error) {
-    // 백엔드가 꺼져 있거나 네트워크 오류 — 502 로 알린다
-    logger.error(`백엔드 연결 실패 ${path}`, error)
-    return { ok: false, status: 502, message: "백엔드 서버에 연결할 수 없습니다" }
-  }
+  logger.api("POST", path, body)
+  return { ok: true, data: { token: MOCK_AUTH_TOKEN, user: MOCK_AUTH_USER } }
 }
 
 /**

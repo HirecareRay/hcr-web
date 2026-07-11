@@ -1,41 +1,65 @@
 /**
  * useInterviewSocket.ts
  *
- * 실시간 면접방의 WebSocket "두뇌" 훅입니다 (Phase 1 walking skeleton).
- * 브라우저가 FastAPI(`/interviews/ws/{sessionId}`)에 **직접** 연결합니다
- * (배치 REST 슬라이스의 useInterview 와 달리 BFF 를 거치지 않음).
+ * 실시간 면접방의 WebSocket "두뇌" 훅입니다.
  *
- * 수신 메시지는 interviewProtocolSchema 의 Zod 로 검증한 뒤 타입별로 분기합니다.
- * 지금은 더미 왕복 확인이 목적이며, 재연결·에러복구는 Phase 6 에서 다룹니다.
+ * hcr-backend 서버·DB 폐쇄로 실제 WS 연결 대신, REST 세션 시작(POST /api/interview/sessions)이
+ * 이미 만들어둔 interviewSessionStore.session.questions 를 "WS가 순서대로 보내주는 것처럼"
+ * 타이머로 재생한다. question → (답변) → next → question … → summary 순서만 재현하면
+ * 화면 전이(interviewRoomPage 상태머신)는 실제 WS와 동일하게 동작한다.
+ *
+ * ⚠️ 이 훅을 쓰는 ws-demo/nonverbal-demo 데모 페이지는 questions 없이 자체 sessionId만
+ *    쓰므로(REST 세션 미생성) 이 mock으로도 첫 질문이 오지 않는다 — 원래도 Phase 1 스켈레톤
+ *    데모였고 백엔드 의존이라 별도 처리하지 않는다.
  */
+
+// 아래는 원래 FastAPI 직접 연결 로직 (백엔드 복구 시 이 블록으로 되돌리세요):
+//
+// "use client"
+//
+// import { useCallback, useEffect, useRef, useState } from "react"
+// import {
+//   downstreamEventSchema,
+//   eventSnapshotMessageSchema,
+//   landmarkFrameMessageSchema,
+//   voiceMetricMessageSchema,
+// } from "../types/interviewProtocolSchema"
+// import type {
+//   ControlAction,
+//   EventSnapshotMessage,
+//   LandmarkFrameMessage,
+//   QuestionEvent,
+//   SummaryEvent,
+//   VoiceMetricMessage,
+// } from "../types/interviewProtocol"
+// import { getWsTicket, WsTicketError } from "../services/interviewService"
+// import { buildInterviewWsUrl } from "../lib/wsUrl"
+// import { logger } from "@/lib/logger"
+//
+// const WS_BASE = process.env.NEXT_PUBLIC_INTERVIEW_WS_URL ?? "ws://localhost:8000"
+//
+// (원본 전체 구현 — 브라우저가 FastAPI `/interviews/ws/{sessionId}` 에 직접 연결,
+//  티켓 발급 → WebSocket 오픈 → downstreamEventSchema 로 수신 메시지 검증 → 상태 반영,
+//  control/landmark/audio/voice_metric 을 zod 1차 검증 후 raw JSON/binary 로 송신)
 
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import {
-  downstreamEventSchema,
-  eventSnapshotMessageSchema,
-  landmarkFrameMessageSchema,
-  voiceMetricMessageSchema,
-} from "../types/interviewProtocolSchema"
 import type {
-  ControlAction,
   EventSnapshotMessage,
   LandmarkFrameMessage,
   QuestionEvent,
   SummaryEvent,
   VoiceMetricMessage,
 } from "../types/interviewProtocol"
-import { getWsTicket, WsTicketError } from "../services/interviewService"
-import { buildInterviewWsUrl } from "../lib/wsUrl"
-import { logger } from "@/lib/logger"
-
-const WS_BASE = process.env.NEXT_PUBLIC_INTERVIEW_WS_URL ?? "ws://localhost:8000"
+import type { LiveQuestion } from "../types/interviewSession"
+import { useInterviewSessionStore } from "../store/interviewSessionStore"
+import { getPersona } from "../lib/personas"
 
 export interface InterviewSocketOptions {
-  companyId?: string | null // 기업 분석 컨텍스트 주입용(선택)
-  jobTitle?: string | null // 지원 직무 — 질문 생성 컨텍스트(선택)
-  onAuthExpired?: () => void // 티켓 401(세션 만료) 시 호출 — 보통 로그인 페이지로 보냄
+  companyId?: string | null // 기업 분석 컨텍스트 주입용(선택) — mock에서는 미사용
+  jobTitle?: string | null // 지원 직무 — 질문 생성 컨텍스트(선택) — mock에서는 미사용
+  onAuthExpired?: () => void // 티켓 401(세션 만료) 시 호출 — mock 티켓은 항상 성공하므로 미사용
 }
 
 export type SocketState = "idle" | "connecting" | "open" | "closed"
@@ -44,7 +68,7 @@ export interface InterviewSocketView {
   state: SocketState
   question: QuestionEvent | null // 현재 질문
   transcript: string // 누적 자막(transcript_delta)
-  evaluation: string // 누적 평가(eval_delta)
+  evaluation: string // 누적 평가(eval_delta) — 현재 UI가 쓰지 않아 mock은 채우지 않음
   summary: SummaryEvent | null // 최종 요약
 }
 
@@ -56,179 +80,154 @@ const EMPTY_VIEW: InterviewSocketView = {
   summary: null,
 }
 
-export function useInterviewSocket(sessionId: string | null, options: InterviewSocketOptions = {}) {
-  const { companyId, jobTitle, onAuthExpired } = options
-  const socketRef = useRef<WebSocket | null>(null)
+// "AI가 질문을 준비/평가하는" 느낌을 주기 위한 인위적 지연.
+const MOCK_THINKING_DELAY_MS = 900
+
+// 음성 모드 답변 중 자막이 흘러들어오는 것처럼 보이게 하는 더미 문장(단어 단위로 트리클).
+// 질문 카테고리마다, 그리고 같은 카테고리가 반복돼도 매번 같은 문장이 나오지 않도록
+// 질문 번호로 로테이션한다 — 실제 답변이 아니라 mock STT이지만 "매번 똑같다"는 인상은 피한다.
+const MOCK_TRANSCRIPTS: Record<LiveQuestion["category"], string[]> = {
+  common: [
+    "안녕하세요 저는 맡은 일은 끝까지 책임지는 성격이고 팀과 적극적으로 소통하며 문제를 해결해 왔습니다",
+    "제 강점은 꼼꼼함이고 약점은 완벽을 추구하다 일정이 지연되는 경우가 있어 우선순위를 정해 보완하고 있습니다",
+    "팀 프로젝트에서 의견 충돌이 있을 때 데이터를 근거로 제시해 합의를 이끌어낸 경험이 있습니다",
+  ],
+  company: [
+    "귀사의 데이터 기반 의사결정 문화에 매력을 느껴 지원했고 입사 후 실제 서비스 지표 개선에 기여하고 싶습니다",
+    "최근 발표하신 신사업 관련 기사를 인상 깊게 보았고 그 방향에 제 역량을 보태고 싶어 지원했습니다",
+    "입사 후에는 담당 서비스의 핵심 지표를 직접 개선하는 프로젝트를 주도해보고 싶습니다",
+  ],
+  job: [
+    "이전 프로젝트에서 데이터 마트를 설계하며 쿼리 성능을 크게 개선한 경험이 이 직무에 강점이 될 것 같습니다",
+    "최근에는 새로운 데이터 파이프라인 도구를 직접 학습하고 사이드 프로젝트에 적용해보았습니다",
+    "결측치가 많은 데이터를 다뤄본 경험이 있고 원인을 분석해 보완하는 전처리 전략을 세운 적이 있습니다",
+  ],
+}
+
+function mockTranscriptFor(category: LiveQuestion["category"], questionNo: number): string {
+  const pool = MOCK_TRANSCRIPTS[category]
+  return pool[questionNo % pool.length]
+}
+
+// LiveQuestion.category → 면접관 페르소나(고정 매핑, personas.ts 3인 중 하나).
+function personaFor(category: LiveQuestion["category"]) {
+  const id =
+    category === "job" ? "tech_pressure" : category === "company" ? "culture_fit" : "practical"
+  return getPersona(id)
+}
+
+function toQuestionEvent(q: LiveQuestion, isLast: boolean): QuestionEvent {
+  const persona = personaFor(q.category)
+  return {
+    type: "question",
+    questionId: `mock-q-${q.no}`,
+    text: q.question,
+    kind: "main",
+    isLast,
+    personaId: persona?.id,
+    roleLabel: persona?.roleLabel,
+    voice: persona?.voice,
+  }
+}
+
+export function useInterviewSocket(
+  sessionId: string | null,
+  _options: InterviewSocketOptions = {}
+) {
+  // REST 세션 시작이 이미 만들어둔 질문 목록을 스토어에서 직접 읽는다(props로 새로 안 뚫음).
+  const session = useInterviewSessionStore((s) => s.session)
   const [view, setView] = useState<InterviewSocketView>(EMPTY_VIEW)
+  const questionIndexRef = useRef(0)
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
-  // 콜백을 ref 로 고정해, onAuthExpired 의 신원이 바뀌어도 연결 effect 가 재실행되지 않게 한다.
-  const onAuthExpiredRef = useRef(onAuthExpired)
-  onAuthExpiredRef.current = onAuthExpired
-
-  // 수신 메시지 1건을 검증 후 뷰 상태에 반영합니다.
-  const applyMessage = useCallback((raw: unknown) => {
-    const parsed = downstreamEventSchema.safeParse(raw)
-    if (!parsed.success) return // 계약 위반 메시지는 무시(스키마가 방어)
-
-    const event = parsed.data
-    setView((prev) => {
-      switch (event.type) {
-        case "question":
-          // 새 질문 시작 — 이전 답변의 자막·평가는 비웁니다.
-          return { ...prev, question: event, transcript: "", evaluation: "" }
-        case "transcript_delta":
-          return { ...prev, transcript: prev.transcript + event.delta }
-        case "eval_delta":
-          return { ...prev, evaluation: prev.evaluation + event.delta }
-        case "summary":
-          return { ...prev, summary: event }
-      }
-    })
+  const clearTimers = useCallback(() => {
+    timersRef.current.forEach(clearTimeout)
+    timersRef.current = []
   }, [])
 
-  // sessionId 가 정해지면 ① 단기 티켓을 발급받고 ② 그 티켓으로 WS 를 연다.
-  // 티켓은 1회용·60초 만료라 발급 직후 바로 연결한다(재연결 시 이 effect 가 다시 돌며
-  // 매번 새 티켓을 받는다). 발급은 비동기라, 그 사이 언마운트/세션 변경되면 cancelled 로 차단한다.
-  //
-  // ⚠️ TODO(Phase 6 · 배포 전 필수): 이 채널로 얼굴 스냅샷(event_snapshot)·음성(audio_chunk)이
-  //   흐른다. 인증은 단기 WS 티켓으로 해결됐으나, 평문(ws://)이라 로컬 데모 한정으로만 안전하다.
-  //   배포 전: wss:// 강제(프라이버시 데이터 평문 전송 금지) + origin 검증.
+  // sessionId 가 정해지면 "연결 중" → 첫 질문 도착을 흉내낸다.
   useEffect(() => {
-    if (!sessionId) return
+    if (!sessionId || !session || session.questions.length === 0) return
 
-    let cancelled = false
+    questionIndexRef.current = 0
+    clearTimers()
     setView({ ...EMPTY_VIEW, state: "connecting" })
 
-    async function connect(sid: string) {
-      let ticket: string
-      try {
-        const issued = await getWsTicket()
-        ticket = issued.ticket
-      } catch (err) {
-        if (cancelled) return
-        // 401(세션 만료) → 로그인으로. 그 외 실패 → 연결 포기(익명 폴백 없음).
-        if (err instanceof WsTicketError && err.isAuthError) {
-          onAuthExpiredRef.current?.()
-        } else {
-          logger.error("WS 티켓 발급 실패", err)
-        }
-        setView((prev) => ({ ...prev, state: "closed" }))
+    const timer = setTimeout(() => {
+      const first = session.questions[0]
+      setView((prev) => ({
+        ...prev,
+        state: "open",
+        question: toQuestionEvent(first, session.questions.length === 1),
+      }))
+    }, MOCK_THINKING_DELAY_MS)
+    timersRef.current.push(timer)
+
+    return () => clearTimers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId])
+
+  // ── 업스트림 액션(mock) ──────────────────────────────────────────────────
+
+  // 답변 구간 동안 더미 자막을 단어 단위로 흘려보낸다(음성 모드에서 "인식 중"처럼 보이게).
+  // 현재 질문의 카테고리·번호로 문장을 골라, 질문이 바뀌어도 매번 같은 답이 나오지 않게 한다.
+  const answerStart = useCallback(() => {
+    const q = session?.questions[questionIndexRef.current]
+    const transcript = q ? mockTranscriptFor(q.category, q.no) : MOCK_TRANSCRIPTS.common[0]
+    const words = transcript.split(" ")
+    words.forEach((_word, i) => {
+      const timer = setTimeout(() => {
+        setView((prev) => ({ ...prev, transcript: words.slice(0, i + 1).join(" ") }))
+      }, i * 150)
+      timersRef.current.push(timer)
+    })
+  }, [session])
+
+  const answerEnd = useCallback(() => clearTimers(), [clearTimers])
+
+  // "다음 질문" 요청 — 남은 질문이 있으면 다음 질문을, 마지막이었으면 summary 를 지연 후 반영한다.
+  const next = useCallback(() => {
+    if (!session) return
+    const nextIndex = questionIndexRef.current + 1
+
+    const timer = setTimeout(() => {
+      if (nextIndex >= session.questions.length) {
+        setView((prev) => ({
+          ...prev,
+          summary: {
+            type: "summary",
+            overallScore: 78,
+            languageFeedback: "질문 의도를 정확히 파악하고 논리적으로 답변을 구성했습니다.",
+            nonverbalFeedback: "표정과 시선 처리가 대체로 안정적이었습니다.",
+            improvements: ["결론을 먼저 말하면 답변 전달력이 더 높아집니다."],
+          },
+        }))
         return
       }
 
-      // 발급 도중 언마운트/세션 변경됐으면 연결하지 않는다.
-      if (cancelled) return
+      questionIndexRef.current = nextIndex
+      const q = session.questions[nextIndex]
+      setView((prev) => ({
+        ...prev,
+        transcript: "",
+        evaluation: "",
+        question: toQuestionEvent(q, nextIndex === session.questions.length - 1),
+      }))
+    }, MOCK_THINKING_DELAY_MS)
+    timersRef.current.push(timer)
+  }, [session])
 
-      const url = buildInterviewWsUrl({
-        base: WS_BASE,
-        sessionId: sid,
-        ticket,
-        companyId,
-        jobTitle,
-      })
-      const socket = new WebSocket(url)
-      socketRef.current = socket
-
-      // cancelled 가드: cleanup 으로 닫힌 옛 소켓의 onclose 가 뒤늦게 발화해, 새 실행이
-      // 세팅한 "connecting" 상태를 "closed" 로 덮거나 언마운트 후 setView 하지 않도록 막는다.
-      socket.onopen = () => {
-        if (cancelled) return
-        setView((prev) => ({ ...prev, state: "open" }))
-      }
-      socket.onclose = () => {
-        if (cancelled) return
-        setView((prev) => ({ ...prev, state: "closed" }))
-      }
-      socket.onmessage = (e) => {
-        if (cancelled) return
-        try {
-          applyMessage(JSON.parse(e.data))
-        } catch {
-          // JSON 이 아닌 프레임은 무시
-        }
-      }
-    }
-
-    void connect(sessionId)
-
-    return () => {
-      cancelled = true
-      socketRef.current?.close()
-      socketRef.current = null
-    }
-  }, [sessionId, companyId, jobTitle, applyMessage])
-
-  // ── 업스트림 송신 액션 ──────────────────────────────────────────────────────
-
-  // 모든 송신의 공통 관문. 소켓이 OPEN 일 때만 보내고, 닫힘/네트워크 오류로 인한 예외를
-  // 흡수한다. 비언어 캡처는 rAF 루프에서 매초 landmark_frame 을 보내므로, 닫힌(CLOSING/
-  // CLOSED) 소켓에 send 하면 던지는 InvalidStateError 가 루프를 오염시키지 않도록 차단한다.
-  // 송신 성공 여부를 boolean 으로 돌려주어, 손실 프레임을 호출 측이 셀 수 있게 한다.
-  // (버퍼링·재연결은 Phase 6 범위 — 지금은 손실 프레임을 다음 프레임으로 자연 복구한다.)
-  const safeSend = useCallback((data: string | ArrayBuffer | Blob): boolean => {
-    const socket = socketRef.current
-    if (!socket || socket.readyState !== WebSocket.OPEN) return false
-    try {
-      socket.send(data)
-      return true
-    } catch (err) {
-      logger.error("WS 송신 실패", err)
-      return false
-    }
-  }, [])
-
-  const sendControl = useCallback(
-    (action: ControlAction) => safeSend(JSON.stringify({ type: "control", action })),
-    [safeSend]
-  )
-
-  // 오디오 청크(binary)는 JSON 이 아니라 바이너리 프레임으로 보냅니다.
-  const sendAudio = useCallback((chunk: ArrayBuffer | Blob) => safeSend(chunk), [safeSend])
-
-  // 텍스트 모드 답변(타이핑) 송신 — 백엔드가 answer_end 시 오디오 전사 대신 이 텍스트를 쓴다.
-  const sendTextAnswer = useCallback(
-    (text: string) => safeSend(JSON.stringify({ type: "text_answer", text })),
-    [safeSend]
-  )
-
-  // 비언어 지표 프레임(landmark_frame) 송신 — 계약 위반 프레임이 서버로 새지 않도록
-  // 송신 직전 Zod 로 1차 검증한 뒤 raw snake_case JSON 으로 보냅니다.
-  const sendLandmark = useCallback(
-    (frame: LandmarkFrameMessage): boolean => {
-      const parsed = landmarkFrameMessageSchema.safeParse(frame)
-      if (!parsed.success) return false
-      return safeSend(JSON.stringify(parsed.data))
-    },
-    [safeSend]
-  )
-
-  // 이벤트 증거 스냅샷(event_snapshot) 송신 — 시선이탈·무표정 등 감지 시.
-  const sendEventSnapshot = useCallback(
-    (snapshot: EventSnapshotMessage): boolean => {
-      const parsed = eventSnapshotMessageSchema.safeParse(snapshot)
-      if (!parsed.success) return false
-      return safeSend(JSON.stringify(parsed.data))
-    },
-    [safeSend]
-  )
-
-  // 음성 물리지표(voice_metric) 송신 — 답변 중 ~1s 주기. landmark 와 동일하게 송신 직전
-  // Zod 로 1차 검증한 뒤 raw snake_case JSON 으로 보낸다. parse 결과(키 생략 그대로)를
-  // 보내 결측 필드가 null 로 새지 않게 한다(서버가 집계에서 제외).
-  const sendVoiceMetric = useCallback(
-    (metric: VoiceMetricMessage): boolean => {
-      const parsed = voiceMetricMessageSchema.safeParse(metric)
-      if (!parsed.success) return false
-      return safeSend(JSON.stringify(parsed.data))
-    },
-    [safeSend]
-  )
+  const sendTextAnswer = useCallback((_text: string): boolean => true, [])
+  const sendAudio = useCallback((_chunk: ArrayBuffer | Blob): boolean => true, [])
+  const sendLandmark = useCallback((_frame: LandmarkFrameMessage): boolean => true, [])
+  const sendEventSnapshot = useCallback((_snapshot: EventSnapshotMessage): boolean => true, [])
+  const sendVoiceMetric = useCallback((_metric: VoiceMetricMessage): boolean => true, [])
 
   return {
     ...view,
-    answerStart: useCallback(() => sendControl("answer_start"), [sendControl]),
-    answerEnd: useCallback(() => sendControl("answer_end"), [sendControl]),
-    next: useCallback(() => sendControl("next"), [sendControl]),
+    answerStart,
+    answerEnd,
+    next,
     sendAudio,
     sendTextAnswer,
     sendLandmark,

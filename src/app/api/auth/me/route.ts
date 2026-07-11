@@ -5,7 +5,7 @@
 // 토큰이 없거나(비로그인) 백엔드가 거부하면 401 을 돌려준다.
 
 import { NextRequest, NextResponse } from "next/server"
-import { backendApiUrl } from "../proxyAuth"
+import { MOCK_AUTH_TOKEN, MOCK_AUTH_USER } from "../proxyAuth"
 import { authCookieName } from "@/features/auth/authCookie"
 import { logger } from "@/lib/logger"
 
@@ -42,26 +42,38 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, message: "로그인이 필요합니다" }, { status: 401 })
   }
 
-  try {
-    const res = await fetch(`${backendApiUrl}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+  // try {
+  //   const res = await fetch(`${backendApiUrl}/auth/me`, {
+  //     headers: { Authorization: `Bearer ${token}` },
+  //   })
 
-    if (!res.ok) {
-      // 토큰 만료·위조 등 — 비로그인으로 처리
-      return NextResponse.json(
-        { success: false, message: "유효하지 않은 토큰입니다" },
-        { status: 401 }
-      )
-    }
+  //   if (!res.ok) {
+  //     // 토큰 만료·위조 등 — 비로그인으로 처리
+  //     return NextResponse.json(
+  //       { success: false, message: "유효하지 않은 토큰입니다" },
+  //       { status: 401 }
+  //     )
+  //   }
 
-    const user = await res.json()
-    return NextResponse.json({ success: true, data: user })
-  } catch (error) {
-    logger.error("GET /api/auth/me 실패", error)
+  //   const user = await res.json()
+  //   return NextResponse.json({ success: true, data: user })
+  // } catch (error) {
+  //   logger.error("GET /api/auth/me 실패", error)
+  //   return NextResponse.json(
+  //     { success: false, message: "백엔드 서버에 연결할 수 없습니다" },
+  //     { status: 502 }
+  //   )
+  // }
+
+  // hcr-backend 서버·DB 폐쇄로 위 로직 대신 mock 로그인(proxyAuth)이 심은 토큰인지만 확인한다.
+  // 그 외(구 토큰·조작값)는 비로그인 처리.
+  logger.api("GET", "/api/auth/me")
+  if (token !== MOCK_AUTH_TOKEN) {
     return NextResponse.json(
-      { success: false, message: "백엔드 서버에 연결할 수 없습니다" },
-      { status: 502 }
+      { success: false, message: "유효하지 않은 토큰입니다" },
+      { status: 401 }
     )
   }
+
+  return NextResponse.json({ success: true, data: MOCK_AUTH_USER })
 }

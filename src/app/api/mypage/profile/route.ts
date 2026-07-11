@@ -55,9 +55,9 @@ export async function GET() {
       {
         success: true,
         data: {
-          id: "1",
+          id: "4",
           name: "김취준",
-          email: "getajob@example.com",
+          email: "hcr@hcr.com",
           companySize: ["스타트업"],
           careerLevel: ["신입"],
           interestJobs: ["프론트엔드"],

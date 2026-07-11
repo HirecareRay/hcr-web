@@ -11,10 +11,28 @@
 // 남의/없는 세션은 백엔드가 404 로 응답하므로 그대로 전달한다.
 
 import { NextRequest, NextResponse } from "next/server"
-import { backendApiUrl } from "../../../auth/proxyAuth"
 import { authCookieName } from "@/features/auth/authCookie"
-import { interviewResultSchema } from "@/features/interview/types/interviewResultSchema"
-import { logger } from "@/lib/logger"
+import { buildDummyInterviewResult } from "../../dummyInterviewResult"
+
+// hcr-backend 서버·DB 폐쇄로 실제 조회 대신 mock 리포트를 반환한다(요청 id를 그대로 반영).
+// 아래는 원래 FastAPI 프록시 로직 (백엔드 복구 시 이 블록으로 되돌리세요):
+//
+// import { backendApiUrl } from "../../../auth/proxyAuth"
+// import { interviewResultSchema } from "@/features/interview/types/interviewResultSchema"
+// import { logger } from "@/lib/logger"
+//
+// const res = await fetch(
+//   `${backendApiUrl}/interviews/sessions/${encodeURIComponent(resultId)}`,
+//   {
+//     headers: { Authorization: `Bearer ${token}` },
+//     signal: AbortSignal.timeout(8000),
+//   }
+// )
+// if (res.status === 401) return NextResponse.json({ success: false, error: "유효하지 않은 토큰입니다" }, { status: 401 })
+// if (res.status === 404) return NextResponse.json({ success: false, error: "면접 기록을 찾을 수 없습니다" }, { status: 404 })
+// if (!res.ok) { logger.error(...); return NextResponse.json({ success: false, error: "..." }, { status: res.status }) }
+// const validated = interviewResultSchema.parse(await res.json())
+// return NextResponse.json({ success: true, data: validated })
 
 /**
  * @swagger
@@ -22,7 +40,7 @@ import { logger } from "@/lib/logger"
  *   get:
  *     summary: AI 면접 기록 상세(결과 리포트) 조회 API
  *     description: >
- *       로그인 사용자의 특정 면접 세션 결과를 반환합니다.
+ *       로그인 사용자의 특정 면접 세션 결과를 반환합니다(현재 mock).
  *       응답 형태는 /api/interview/results/{companyId} 와 동일한 InterviewResult 입니다.
  *       경로의 sessionId 는 목록(/api/interview/sessions/history) 각 항목의 resultId 입니다.
  *     parameters:
@@ -38,11 +56,7 @@ import { logger } from "@/lib/logger"
  *       400:
  *         description: 잘못된 요청 (resultId 누락)
  *       401:
- *         description: 비로그인 또는 토큰 만료·무효
- *       404:
- *         description: 존재하지 않거나 다른 사용자의 세션
- *       502:
- *         description: 백엔드 서버 연결 실패
+ *         description: 비로그인
  */
 export async function GET(
   req: NextRequest,
@@ -60,44 +74,5 @@ export async function GET(
     return NextResponse.json({ success: false, error: "로그인이 필요합니다" }, { status: 401 })
   }
 
-  try {
-    const res = await fetch(
-      `${backendApiUrl}/interviews/sessions/${encodeURIComponent(resultId)}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        // 백엔드가 멈추면 8초 후 끊어 무한 대기 대신 502 로 떨어지게 한다.
-        signal: AbortSignal.timeout(8000),
-      }
-    )
-
-    if (res.status === 401) {
-      return NextResponse.json(
-        { success: false, error: "유효하지 않은 토큰입니다" },
-        { status: 401 }
-      )
-    }
-    if (res.status === 404) {
-      return NextResponse.json(
-        { success: false, error: "면접 기록을 찾을 수 없습니다" },
-        { status: 404 }
-      )
-    }
-    if (!res.ok) {
-      logger.error(`면접 기록 상세 조회 실패 ${res.status}`)
-      return NextResponse.json(
-        { success: false, error: "면접 기록을 불러오는 중 오류가 발생했습니다" },
-        { status: res.status }
-      )
-    }
-
-    // 백엔드 응답이 계약(InterviewResult)을 지키는지 Zod로 검증한 뒤 내려보낸다.
-    const validated = interviewResultSchema.parse(await res.json())
-    return NextResponse.json({ success: true, data: validated })
-  } catch (error) {
-    logger.error("면접 기록 상세 조회 실패:", error)
-    return NextResponse.json(
-      { success: false, error: "백엔드 서버에 연결할 수 없습니다" },
-      { status: 502 }
-    )
-  }
+  return NextResponse.json({ success: true, data: buildDummyInterviewResult(resultId) })
 }

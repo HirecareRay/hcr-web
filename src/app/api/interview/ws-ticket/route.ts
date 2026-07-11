@@ -7,17 +7,36 @@
 // Bearer 로 백엔드에 중계해 티켓을 받아 돌려준다. 프론트는 그 티켓만 WS URL(?ticket=)에
 // 실어 연결한다(JWT 를 URL 에 노출하지 않는 표준 패턴).
 //
-// 인증 실패(쿠키 없음·만료·무효) → 401. 프론트는 이를 세션 만료로 보고 로그인 페이지로
-// 보낸다(면접은 로그인 필수). 백엔드엔 익명 우회가 안전망으로 남아 있지만, 프론트는
-// 익명 경로를 쓰지 않으므로 여기서 막는다.
+// ⚠️ mock 상태: 메인 면접방(useInterviewSocket)이 이제 실시간 WS 대신 REST 세션의
+// questions 를 타이머로 재생하는 방식으로 바뀌면서, 이 티켓을 요청하는 코드가 없다
+// (getWsTicket 호출부 없음 — interviewService.ts 에만 함수가 남아있다). ws-demo/
+// nonverbal-demo 데모 페이지가 향후 이 훅을 다시 쓰게 되더라도, 브라우저가 FastAPI에
+// 직접 WebSocket을 여는 구조라 실제 WS 서버가 없는 한 이 티켓만으로는 연결되지 않는다.
+// 백엔드 복구 전까지는 죽은 경로이지만, 엔드포인트 자체는 형태 유지를 위해 남겨둔다.
 
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import axios from "axios"
-import backendAxiosInstance from "@/lib/backendAxiosInstance"
 import { authCookieName } from "@/features/auth/authCookie"
-import { wsTicketSchema } from "@/features/interview/types/interviewSessionSchema"
-import { logger } from "@/lib/logger"
+
+// hcr-backend 서버·DB 폐쇄로 실제 티켓 발급 대신 고정 mock 티켓을 반환한다.
+// 아래는 원래 FastAPI 프록시 로직 (백엔드 복구 시 이 블록으로 되돌리세요):
+//
+// import axios from "axios"
+// import backendAxiosInstance from "@/lib/backendAxiosInstance"
+// import { wsTicketSchema } from "@/features/interview/types/interviewSessionSchema"
+// import { logger } from "@/lib/logger"
+//
+// try {
+//   const { data } = await backendAxiosInstance.post("/interviews/ws-ticket")
+//   const ticket = wsTicketSchema.parse(data)
+//   return NextResponse.json({ success: true, data: ticket })
+// } catch (error) {
+//   if (axios.isAxiosError(error) && error.response?.status === 401) {
+//     return NextResponse.json({ success: false, error: "세션이 만료되었습니다" }, { status: 401 })
+//   }
+//   logger.error(...)
+//   return NextResponse.json({ success: false, error: "WS 티켓을 발급하지 못했습니다" }, { status: 502 })
+// }
 
 /**
  * @swagger
@@ -26,51 +45,20 @@ import { logger } from "@/lib/logger"
  *     summary: 면접 WS 접속용 단기 티켓 발급
  *     tags: [Interview]
  *     description: >
- *       httpOnly 쿠키(hcr_token)의 JWT 를 Bearer 로 백엔드에 중계해 1회용·단기 티켓을 받는다.
- *       프론트는 받은 ticket 을 WS URL 쿼리(?ticket=)로만 전달한다.
+ *       hcr-backend 폐쇄로 고정 mock 티켓을 반환한다(현재 mock). WS 서버 자체가 없어
+ *       이 티켓으로 실제 소켓 연결은 되지 않는다 — ws-demo/nonverbal-demo 전용 한계.
  *     responses:
  *       200:
  *         description: 티켓 발급 성공 ({ ticket, expiresIn })
  *       401:
- *         description: 비로그인 또는 토큰 만료·무효
- *       502:
- *         description: 백엔드 서버 연결 실패
+ *         description: 비로그인
  */
 export async function POST() {
-  // 쿠키가 아예 없으면 백엔드를 때리지 않고 즉시 401(로그인 필요).
   const cookieStore = await cookies()
   const hasToken = !!cookieStore.get(authCookieName)?.value
   if (!hasToken) {
     return NextResponse.json({ success: false, error: "로그인이 필요합니다" }, { status: 401 })
   }
 
-  try {
-    // backendAxiosInstance 가 쿠키의 JWT 를 Bearer 헤더로 자동 주입한다.
-    const { data } = await backendAxiosInstance.post("/interviews/ws-ticket")
-
-    // 백엔드 응답이 계약(WsTicket)을 지키는지 Zod 로 검증한 뒤 내려보낸다.
-    const ticket = wsTicketSchema.parse(data)
-
-    return NextResponse.json({ success: true, data: ticket })
-  } catch (error) {
-    // 토큰 만료·무효 등 백엔드 401 → 그대로 전달(프론트가 로그인으로 보냄).
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      return NextResponse.json({ success: false, error: "세션이 만료되었습니다" }, { status: 401 })
-    }
-
-    // ⚠️ axios 에러 객체를 통째로 로깅하면 config.headers 의 Bearer JWT 가 로그에 남는다.
-    //   상태/응답본문/메시지만 추려 토큰 노출을 막는다(backendAxiosInstance 와 동일 원칙).
-    if (axios.isAxiosError(error)) {
-      logger.error(
-        `POST /api/interview/ws-ticket 실패 ${error.response?.status ?? "network"}`,
-        error.response?.data ?? error.message
-      )
-    } else {
-      logger.error("POST /api/interview/ws-ticket 실패", error)
-    }
-    return NextResponse.json(
-      { success: false, error: "WS 티켓을 발급하지 못했습니다" },
-      { status: 502 }
-    )
-  }
+  return NextResponse.json({ success: true, data: { ticket: "mock-ws-ticket", expiresIn: 60 } })
 }

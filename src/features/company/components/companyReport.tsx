@@ -24,6 +24,9 @@ interface Props {
 }
 
 const RESUME_UPLOAD_PATH = "/mypage/documents"
+// 서류적합도 분석 버튼의 기본 대상 채용공고 — hiring.openings 중 이 id가 있으면 우선(현재 mock의
+// "간판" 공고: analysis/fit·jobs mock과 동일 Data Scientist 채용), 없으면 첫 번째 공고로 폴백.
+const PRIMARY_FIT_JOB_ID = "5e9cabd040c307d7aa142e73"
 
 const reportTabs = [
   { key: "summary", label: "요약" },
@@ -47,7 +50,7 @@ export function CompanyReport({ companyId }: Props) {
       <CompanyHeader data={data} />
 
       <div className="px-4">
-        <PassReadinessCard companyId={companyId} />
+        <PassReadinessCard companyId={companyId} openings={data.hiring.openings} />
       </div>
 
       <div className="bg-background border-warm-border sticky top-0 z-10 mt-4 border-b">
@@ -142,9 +145,14 @@ function CompanyHeader({ data }: { data: CompanyReportData }) {
   )
 }
 
-function PassReadinessCard({ companyId }: { companyId: string }) {
+function PassReadinessCard({ companyId, openings }: { companyId: string; openings: JobPosting[] }) {
   // 로그인 상태에서만 실제 분석/면접 버튼을 노출. 비로그인/확인중이면 등록 유도.
   const isAuthenticated = useAuthStore((s) => s.status) === "authenticated"
+  // ponytail: buildDummyReport가 모든 companyId에 대해 같은 openings를 반환하고 항상
+  // PRIMARY_FIT_JOB_ID를 포함하므로 폴백 없이 단언한다. 실백엔드 연결로 회사별 openings가
+  // 달라지면 다시 폴백(또는 버튼 숨김)이 필요하다.
+  const primaryJob = openings.find((o) => o.id === PRIMARY_FIT_JOB_ID)!
+  const fitAnalysisPath = `/jobs/${primaryJob.id}/fit?companyId=${companyId}`
 
   return (
     <section className="bg-coral-light rounded-2xl p-5">
@@ -160,7 +168,7 @@ function PassReadinessCard({ companyId }: { companyId: string }) {
           </p>
           <div className="mt-3 space-y-2">
             <Link
-              href={RESUME_UPLOAD_PATH}
+              href={fitAnalysisPath}
               className="bg-primary flex items-center justify-center gap-1.5 rounded-2xl py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
             >
               <BarChart2 className="size-4" />
